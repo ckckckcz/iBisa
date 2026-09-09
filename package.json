@@ -1,0 +1,15 @@
+{
+  "name": "ibisa",
+  "private": true,
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck",
+    "clean": "turbo clean"
+  },
+  "devDependencies": {
+    "turbo": "^2.6.0"
+  },
+  "packageManager": "pnpm@9.15.6"
+}
