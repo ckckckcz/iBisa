@@ -71,6 +71,3 @@ export function Footer() {
     </footer>
   );
 }
-
-export { Footer as MinimalFooter };
-export default Footer;
