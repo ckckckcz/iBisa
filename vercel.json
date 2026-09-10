@@ -1,11 +1,5 @@
 {
   "framework": "nextjs",
   "buildCommand": "pnpm --filter web build",
-  "installCommand": "pnpm install",
-  "outputDirectory": "apps/web/.next",
-  "git": {
-    "deploymentEnabled": {
-      "main": true
-    }
-  }
+  "installCommand": "pnpm install"
 }
