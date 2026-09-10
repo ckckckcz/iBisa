@@ -5,7 +5,6 @@ export {
   HeroSection,
   AboutSection,
   ProgramSection,
-  StatsSection,
   TestimonialSection,
   CtaSection,
 } from "@/features/landing";
