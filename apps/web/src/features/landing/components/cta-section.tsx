@@ -13,12 +13,12 @@ export function CtaSection({ onConsultClick }: CtaSectionProps) {
         }}
       />
       <div className="relative z-10 mx-auto flex max-w-7xl flex-col items-center gap-5 text-center">
-        <p className="text-white/70 font-semibold text-xs tracking-widest uppercase">Konsultasi Gratis</p>
-        <h2 className="max-w-2xl font-sans text-3xl font-bold tracking-tight text-balance text-white sm:text-4xl md:text-[44px] md:leading-tight">
+        <p className="text-black font-semibold text-xs tracking-widest uppercase">Konsultasi Gratis</p>
+        <h2 className="max-w-2xl font-sans text-3xl font-bold tracking-tight text-balance text-black sm:text-4xl md:text-[44px] md:leading-tight">
           Siap lihat anak berkembang di kelas yang ngerti dia?
         </h2>
 
-        <p className="max-w-xl font-sans text-base leading-relaxed font-medium text-white/80 md:text-[17px]">
+        <p className="max-w-xl font-sans text-base leading-relaxed font-medium text-black md:text-[17px]">
           Ceritain kebutuhan siswa SLB kamu, kita petakan bareng jalur inklusifnya — gratis, tanpa
           komitmen. Ketemu guru pendamping yang pas, bukan coba-coba.
         </p>
