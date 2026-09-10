@@ -1,7 +1,7 @@
 export function WavyUnderline() {
   return (
     <svg
-      className="absolute -bottom-1.5 sm:-bottom-2 left-0 w-full h-1.5 sm:h-[9px] pointer-events-none overflow-visible"
+      className="absolute -bottom-1.5 sm:-bottom-2 left-0 w-full h-1.5 sm:h-2.25 pointer-events-none overflow-visible"
       viewBox="0 0 100 8"
       preserveAspectRatio="none"
       fill="none"

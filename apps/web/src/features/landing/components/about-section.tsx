@@ -1,8 +1,6 @@
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowUpRight01Icon } from "@hugeicons/core-free-icons";
-import { AboutSectionProps } from "@/lib/types";
-
-export function AboutSection({ onContactClick }: AboutSectionProps = {}) {
+export function AboutSection() {
   return (
     <section
       id="tentang-kami"
@@ -41,13 +39,13 @@ export function AboutSection({ onContactClick }: AboutSectionProps = {}) {
 
         <div id="keunggulan" className="flex-1 max-w-2xl flex flex-col items-start">
           <p className="text-[#090909] font-bold text-xl sm:text-2xl md:text-3xl lg:text-4xl leading-[1.18] tracking-tight">
-            Kami percaya setiap anak istimewa berhak
+            Pendidikan inklusif berarti
             <br />
-            <span className="text-[#090909]">tumbuh mandiri, berdaya,</span>{" "}
-            <span className="text-[#666666]">dan menyambut</span>
+            <span className="text-[#090909]">SLB yang ngikutin anak,</span>{" "}
+            <span className="text-[#666666]">bukan anak yang</span>
             <br />
             <span className="text-[#666666]">
-              masa depan dengan penuh rasa percaya diri.
+              dipaksa ngikutin kelas. Di situ iBisa ada.
             </span>
           </p>
 
@@ -56,9 +54,9 @@ export function AboutSection({ onContactClick }: AboutSectionProps = {}) {
               1.500+
             </span>
             <p className="text-[#090909] text-xs sm:text-sm leading-snug font-normal max-w-50">
-              anak istimewa &amp; siswa SLB berkembang
+              siswa SLB tumbuh lebih mandiri
               <br />
-              mandiri bersama kami.
+              di kelas inklusif kami.
             </p>
           </div>
         </div>
