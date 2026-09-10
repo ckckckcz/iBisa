@@ -22,20 +22,3 @@ export const FOOTER_SOCIAL: readonly FooterSocialLink[] = [
   { icon: YoutubeIcon, href: "#", label: "YouTube" },
   { icon: GithubIcon, href: "#", label: "GitHub" },
 ] as const;
-
-// full variants (uncomment if needed)
-// export const FOOTER_COMPANY_FULL: readonly FooterLink[] = [
-//   { title: "Tentang Kami", href: "#tentang-kami" },
-//   { title: "Layanan", href: "#layanan" },
-//   { title: "Testimoni", href: "#testimoni" },
-//   { title: "Kebijakan Privasi", href: "#" },
-//   { title: "Syarat Layanan", href: "#" },
-// ];
-// export const FOOTER_SOCIAL_FULL: readonly FooterSocialLink[] = [
-//   { icon: Facebook02Icon, href: "#", label: "Facebook" },
-//   { icon: InstagramIcon, href: "#", label: "Instagram" },
-//   { icon: Linkedin02Icon, href: "#", label: "LinkedIn" },
-//   { icon: YoutubeIcon, href: "#", label: "YouTube" },
-//   { icon: TwitterIcon, href: "#", label: "Twitter" },
-//   { icon: GithubIcon, href: "#", label: "GitHub" },
-// ];
