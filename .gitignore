@@ -1,2 +1,11 @@
 node_modules
 .env
+.turbo
+.turbo/cache
+.next
+dist
+*.log
+.turbo/turbo-typecheck.log
+apps/*/.turbo
+apps/*/.next
+apps/*/dist
