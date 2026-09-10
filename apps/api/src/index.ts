@@ -1,11 +1,12 @@
 import express from 'express';
 import type { Application, Request, Response } from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
+import * as helmetImport from 'helmet';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
+const helmet: any = (helmetImport as any).default ?? helmetImport;
 const app: Application = express();
 const port = process.env.PORT || 5000;
 
