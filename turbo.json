@@ -1,9 +1,10 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
+  "globalDependencies": ["**/.env.*", "pnpm-lock.yaml"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "dist/**"]
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
     "dev": {
       "cache": false,
