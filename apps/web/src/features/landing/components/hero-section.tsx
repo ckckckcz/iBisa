@@ -8,34 +8,15 @@ import {
 } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { HeroSectionProps } from "@/lib/types";
-import { Navbar } from "@/features/navbar";
 import { CloudDivider } from "@/features/landing/components/cloud-divider";
 
 export function HeroSection({ onConsultClick }: HeroSectionProps) {
   return (
     <section
       id="program"
-      className="relative w-full overflow-hidden bg-white flex flex-col items-center pt-4 sm:pt-6"
+      className="relative w-full overflow-hidden bg-white flex flex-col items-center"
       aria-labelledby="hero-heading"
     >
-      {/*<div
-        className="absolute inset-x-0 top-0 h-[420px] sm:h-[480px] bg-gradient-to-b from-blue-700/25 via-blue-700/10 to-transparent pointer-events-none"
-        aria-hidden="true"
-      />
-      <div
-        className="absolute -top-24 left-[8%] h-72 w-72 rounded-full bg-blue-700/20 blur-3xl pointer-events-none"
-        aria-hidden="true"
-      />
-      <div
-        className="absolute -top-16 right-[6%] h-80 w-80 rounded-full bg-blue-700/15 blur-3xl pointer-events-none"
-        aria-hidden="true"
-      />
-      <div
-        className="absolute right-0 top-0 h-full w-32 sm:w-44 opacity-[0.35] pointer-events-none bg-[linear-gradient(to_right,rgba(29,78,216,0.12)_1px,transparent_1px),linear-gradient(to_bottom,rgba(29,78,216,0.12)_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:linear-gradient(to_bottom,black,transparent)]"
-        aria-hidden="true"
-      />*/}
-
-      <Navbar onConsultClick={onConsultClick} />
 
       <div className="relative z-10 flex flex-col items-center px-4 w-full text-center max-w-3xl mx-auto pt-10 sm:pt-16">
         <h1
@@ -48,8 +29,9 @@ export function HeroSection({ onConsultClick }: HeroSectionProps) {
         </h1>
 
         <p className="text-neutral-500 text-xs sm:text-sm font-normal mt-3 sm:mt-4 max-w-md leading-relaxed">
-          Mendampingi setiap langkah tumbuh kembang anak istimewa melalui
-          pendekatan adaptif, terapi terpadu, dan kasih sayang tanpa batas.
+          Kelas yang ngikutin cara belajar siswa SLB, bukan sebaliknya. Kurikulum
+          adaptif, terapi terpadu, guru yang ngerti — biar anak istimewa
+          berkembang sebagai dirinya sendiri.
         </p>
 
         <div className="mt-5 sm:mt-6">
@@ -60,25 +42,25 @@ export function HeroSection({ onConsultClick }: HeroSectionProps) {
         </div>
 
         <div className="mt-16 sm:mt-24 relative z-10 flex items-end justify-center -space-x-5 sm:-space-x-10 w-full max-w-3xl mx-auto -mb-14 sm:-mb-24">
-          {/* Card 1: Kurikulum & Terapi Adaptif */}
+          {/* Card 1: Kurikulum SLB Adaptif */}
           <div className="w-24 sm:w-44 shrink-0 aspect-3/4 origin-bottom -rotate-12 translate-y-4 z-0 bg-white border border-neutral-100/90 rounded-2xl shadow-md p-2.5 sm:p-4 flex flex-col items-start justify-between text-left">
             <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
               <HugeiconsIcon icon={BookOpen02Icon} size={16} strokeWidth={1.8} />
             </div>
             <div>
               <span className="text-[7px] sm:text-[10px] font-bold tracking-wider text-blue-700 uppercase">
-                Metode Adaptif
+                Kurikulum SLB
               </span>
               <h3 className="text-[8px] sm:text-xs font-bold text-neutral-900 leading-tight mt-0.5">
-                Terapi & Belajar Terpadu
+                Ngikutin Anak
               </h3>
             </div>
             <div className="flex flex-col gap-1 w-full">
               <span className="inline-flex items-center text-[6px] sm:text-[9px] font-medium bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded-md">
-                ✓ Sensorik & Motorik
+                ✓ RPP Adaptif SLB
               </span>
               <span className="inline-flex items-center text-[6px] sm:text-[9px] font-medium bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded-md">
-                ✓ Terapi Wicara
+                ✓ Terapi Terpadu
               </span>
             </div>
           </div>
@@ -99,11 +81,11 @@ export function HeroSection({ onConsultClick }: HeroSectionProps) {
                 1.500+
               </span>
               <p className="text-[7px] sm:text-[10px] text-neutral-600 font-medium leading-snug mt-1">
-                Anak istimewa berkembang mandiri
+                Siswa SLB lebih mandiri
               </p>
             </div>
             <span className="text-[6px] sm:text-[9px] font-medium text-neutral-400">
-              Di 12+ SLB mitra
+              Di 12 SLB inklusif mitra
             </span>
           </div>
 
@@ -139,13 +121,13 @@ export function HeroSection({ onConsultClick }: HeroSectionProps) {
             </div>
             <div>
               <span className="text-[7px] sm:text-[10px] font-semibold text-blue-200 tracking-wide uppercase">
-                Pendamping Ahli
+                Pendamping SLB
               </span>
               <h3 className="text-[8px] sm:text-xs font-bold text-white leading-tight mt-0.5">
-                1-on-1 Guru Khusus
+                Guru Pendamping SLB
               </h3>
               <p className="text-[6px] sm:text-[9px] text-blue-100/90 leading-snug mt-1">
-                Dukungan personal sesuai keunikan anak.
+                1-on-1 sesuai profil belajar.
               </p>
             </div>
             <span className="inline-flex items-center gap-1 text-[6px] sm:text-[9px] font-semibold bg-white/20 text-white px-1.5 py-0.5 rounded-md">
@@ -166,14 +148,14 @@ export function HeroSection({ onConsultClick }: HeroSectionProps) {
               ))}
             </div>
             <p className="text-[7px] sm:text-[10px] text-neutral-700 font-medium italic leading-snug my-0.5">
-              “Anak kami jauh lebih mandiri dan ceria setiap hari.”
+              “Akhirnya ada kelas yang ngerti anak saya.”
             </p>
             <div>
               <span className="text-[7px] sm:text-[10px] font-bold text-neutral-900 block leading-tight">
                 Ibu Ratna Dewi
               </span>
               <span className="text-[6px] sm:text-[8px] text-neutral-400 block">
-                Wali Murid SLB
+                Wali Murid SLB Inklusif
               </span>
             </div>
           </div>
@@ -186,3 +168,4 @@ export function HeroSection({ onConsultClick }: HeroSectionProps) {
     </section>
   );
 }
+export default HeroSection;
