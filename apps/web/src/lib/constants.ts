@@ -1,4 +1,5 @@
-import { NavLink } from "./types";
+import { GithubIcon, YoutubeIcon } from "@hugeicons/core-free-icons";
+import { FooterLink, FooterSocialLink, NavLink } from "./types";
 
 export const NAV_LINKS: readonly NavLink[] = [
   { label: "Tentang Kami", href: "#tentang-kami" },
@@ -6,3 +7,35 @@ export const NAV_LINKS: readonly NavLink[] = [
   { label: "Testimoni", href: "#testimoni" },
   { label: "Konsultasi", href: "#konsultasi" },
 ];
+
+export const FOOTER_COMPANY: readonly FooterLink[] = [
+  { title: "Tentang Kami", href: "#tentang-kami" },
+  { title: "Testimoni", href: "#testimoni" },
+  { title: "Kebijakan Privasi", href: "#" },
+] as const;
+
+export const FOOTER_RESOURCES: readonly FooterLink[] = [
+  { title: "Pusat Bantuan", href: "#" },
+] as const;
+
+export const FOOTER_SOCIAL: readonly FooterSocialLink[] = [
+  { icon: YoutubeIcon, href: "#", label: "YouTube" },
+  { icon: GithubIcon, href: "#", label: "GitHub" },
+] as const;
+
+// full variants (uncomment if needed)
+// export const FOOTER_COMPANY_FULL: readonly FooterLink[] = [
+//   { title: "Tentang Kami", href: "#tentang-kami" },
+//   { title: "Layanan", href: "#layanan" },
+//   { title: "Testimoni", href: "#testimoni" },
+//   { title: "Kebijakan Privasi", href: "#" },
+//   { title: "Syarat Layanan", href: "#" },
+// ];
+// export const FOOTER_SOCIAL_FULL: readonly FooterSocialLink[] = [
+//   { icon: Facebook02Icon, href: "#", label: "Facebook" },
+//   { icon: InstagramIcon, href: "#", label: "Instagram" },
+//   { icon: Linkedin02Icon, href: "#", label: "LinkedIn" },
+//   { icon: YoutubeIcon, href: "#", label: "YouTube" },
+//   { icon: TwitterIcon, href: "#", label: "Twitter" },
+//   { icon: GithubIcon, href: "#", label: "GitHub" },
+// ];

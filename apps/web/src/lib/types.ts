@@ -53,3 +53,14 @@ export interface CtaSectionProps {
   readonly onConsultClick?: () => void;
 }
 
+export interface FooterLink {
+  readonly title: string;
+  readonly href: string;
+}
+
+export interface FooterSocialLink {
+  readonly icon: IconSvgElement;
+  readonly href: string;
+  readonly label: string;
+}
+

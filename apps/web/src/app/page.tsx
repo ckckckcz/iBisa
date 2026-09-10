@@ -8,6 +8,7 @@ import {
   TestimonialSection,
   CtaSection,
 } from "@/features/landing";
+import { Footer } from "@/features/footer";
 import { scrollToElement } from "@/lib/scroll";
 
 export default function Home() {
@@ -22,6 +23,7 @@ export default function Home() {
       <StatsSection />
       <TestimonialSection />
       <CtaSection onConsultClick={scrollToElement("konsultasi")} />
+      <Footer />
     </main>
   );
 }
