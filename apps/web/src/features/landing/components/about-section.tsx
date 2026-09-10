@@ -1,4 +1,8 @@
-export function AboutSection() {
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ArrowUpRight01Icon } from "@hugeicons/core-free-icons";
+import { AboutSectionProps } from "@/lib/types";
+
+export function AboutSection({ onContactClick }: AboutSectionProps = {}) {
   return (
     <section
       id="tentang-kami"
@@ -23,10 +27,14 @@ export function AboutSection() {
               Hubungi Kami
             </span>
             <span
-              className="w-5 h-5 rounded-full bg-white flex items-center justify-center text-xs text-[#111111] font-bold leading-none"
+              className="w-5 h-5 rounded-full bg-white flex items-center justify-center text-[#111111]"
               aria-hidden="true"
             >
-              ↗
+              <HugeiconsIcon
+                icon={ArrowUpRight01Icon}
+                size={12}
+                strokeWidth={2.5}
+              />
             </span>
           </a>
         </div>

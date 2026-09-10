@@ -3,3 +3,7 @@ export { WavyUnderline } from "@/features/landing/components/wavy-underline";
 export { CloudDivider } from "@/features/landing/components/cloud-divider";
 export { HeroSection } from "@/features/landing/components/hero-section";
 export { AboutSection } from "@/features/landing/components/about-section";
+export { ProgramSection } from "@/features/landing/components/program-section";
+export { StatsSection } from "@/features/landing/components/stats-section";
+export { TestimonialSection } from "@/features/landing/components/testimonial-section";
+export { CtaSection } from "@/features/landing/components/cta-section";
