@@ -1,11 +1,12 @@
 "use client"
 
 import * as React from "react"
-
+import { useRouter } from "next/navigation"
 import { NavMain } from "@/components/nav-main"
 import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
 import { TeamSwitcher } from "@/components/team-switcher"
+import { useAuth } from "@/hooks/use-auth"
 import {
   Sidebar,
   SidebarContent,
@@ -28,13 +29,7 @@ import {
 } from "@hugeicons/core-free-icons"
 import Image from "next/image"
 
-const data = {
-  user: {
-    name: "Bu Sari — Guru Inklusif",
-    email: "sari@bisa.id",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  teams: [
+const teams = [
     {
       name: "BISA LMS",
       logo: (
@@ -59,8 +54,9 @@ const data = {
       logo: <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} />,
       plan: "Model percontohan nasional",
     },
-  ],
-  navMain: [
+];
+
+const navMain = [
     {
       title: "Beranda",
       url: "/teacher",
@@ -122,40 +118,58 @@ const data = {
         { title: "Akses Orang Tua", url: "#" },
       ],
     },
-  ],
-  projects: [
-    {
-      name: "Tunanetra — Braille & Audio",
-      url: "#",
-      icon: <HugeiconsIcon icon={Task01Icon} strokeWidth={2} />,
-    },
-    {
-      name: "Tunarungu — Isyarat Visual",
-      url: "#",
-      icon: <HugeiconsIcon icon={Award01Icon} strokeWidth={2} />,
-    },
-    {
-      name: "Tunawicara — Artikulasi",
-      url: "#",
-      icon: <HugeiconsIcon icon={AccessibilityIcon} strokeWidth={2} />,
-    },
-  ],
-}
+];
+
+const projects = [
+  {
+    name: "Tunanetra — Braille & Audio",
+    url: "#",
+    icon: <HugeiconsIcon icon={Task01Icon} strokeWidth={2} />,
+  },
+  {
+    name: "Tunarungu — Isyarat Visual",
+    url: "#",
+    icon: <HugeiconsIcon icon={Award01Icon} strokeWidth={2} />,
+  },
+  {
+    name: "Tunawicara — Artikulasi",
+    url: "#",
+    icon: <HugeiconsIcon icon={AccessibilityIcon} strokeWidth={2} />,
+  },
+];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { profile } = useAuth();
+  const router = useRouter();
+  const homeByRole =
+    profile?.role === "teacher" ? "/teacher" : profile?.role === "student" ? "/student" : "/school";
+  const navMainWithRole = navMain.map((item, i) =>
+    i === 0 ? { ...item, url: homeByRole, items: item.items?.map((s, j) => (j === 0 ? { ...s, url: homeByRole } : s)) } : item
+  );
+  const user = {
+    name: profile?.full_name ?? "Pengguna BISA",
+    email: profile?.email ?? "",
+    avatar: "/avatars/shadcn.jpg",
+  };
+  function handleLogout() {
+    document.cookie = "token=; path=/; max-age=0";
+    localStorage.removeItem("token");
+    localStorage.removeItem("profile");
+    router.push("/login");
+  }
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <TeamSwitcher teams={teams} />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+        <NavMain items={navMainWithRole} />
+        <NavProjects projects={projects} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={user} onLogout={handleLogout} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
-  )
+  );
 }

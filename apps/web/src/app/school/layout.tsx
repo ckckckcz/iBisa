@@ -3,7 +3,7 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbP
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 
-export default function TeacherLayout({ children }: { children: React.ReactNode }) {
+export default function SchoolLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -14,9 +14,9 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
             <Separator orientation="vertical" className="mr-2 data-vertical:h-4 data-vertical:self-auto" />
             <Breadcrumb>
               <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block"><BreadcrumbLink href="/teacher">BISA</BreadcrumbLink></BreadcrumbItem>
+                <BreadcrumbItem className="hidden md:block"><BreadcrumbLink href="/school">BISA</BreadcrumbLink></BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
-                <BreadcrumbItem><BreadcrumbPage>Beranda Guru</BreadcrumbPage></BreadcrumbItem>
+                <BreadcrumbItem><BreadcrumbPage>Beranda Sekolah</BreadcrumbPage></BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
           </div>
