@@ -3,7 +3,7 @@ import { CtaSectionProps } from "@/lib/types";
 
 export function CtaSection({ onConsultClick }: CtaSectionProps) {
   return (
-    <section id="konsultasi" className="relative w-full scroll-mt-28 overflow-hidden bg-[#2b6cb0] px-6 py-20 sm:py-24">
+    <section id="konsultasi" className="relative w-full scroll-mt-28 overflow-hidden bg-blue-700 px-6 py-20 sm:py-24">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 z-0"
