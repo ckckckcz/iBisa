@@ -18,7 +18,7 @@ export function StatsSection({ stats = DEFAULT_STATS }: StatsSectionProps) {
   return (
     <section
       className="relative w-full bg-neutral-900 py-12 sm:py-14 px-6 sm:px-12 md:px-16 lg:px-24"
-      aria-label="Statistik iBisa"
+      aria-label="Statistik BISA"
     >
       <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 sm:gap-10">
         {stats.map((stat: StatItem) => (

@@ -19,7 +19,7 @@ app.use(express.json());
 app.get('/', (req: Request, res: Response) => {
   res.json({
     success: true,
-    message: 'iBisa Backend API is running successfully!',
+    message: 'Bisa Backend API is running successfully!',
   });
 });
 

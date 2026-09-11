@@ -13,8 +13,8 @@ export function Footer() {
           {/* Brand */}
           <div className="col-span-6 flex flex-col gap-4 md:col-span-3">
             <Link href="#" className="flex items-center gap-2 w-max">
-              <Image src="/logo1.png" alt="Logo iBisa" width={28} height={36} className="h-7 w-auto object-contain" />
-              <span className="text-neutral-900 font-bold text-lg tracking-wide">iBisa</span>
+              <Image src="/logo1.png" alt="Logo BISA" width={28} height={36} className="h-7 w-auto object-contain" />
+              <span className="text-neutral-900 font-bold text-lg tracking-wide">BISA</span>
             </Link>
             <p className="text-neutral-500 max-w-sm text-sm leading-relaxed text-balance">
               Platform pendampingan anak berkebutuhan khusus — terapi, pembelajaran adaptif, dan dukungan keluarga.
@@ -65,7 +65,7 @@ export function Footer() {
         </div>
 
         <div className="border-t border-neutral-100 py-6 flex flex-col items-center">
-          <p className="text-neutral-400 text-sm text-center">© {year} iBisa. All rights reserved.</p>
+          <p className="text-neutral-400 text-sm text-center">© {year} BISA. All rights reserved.</p>
         </div>
       </div>
     </footer>

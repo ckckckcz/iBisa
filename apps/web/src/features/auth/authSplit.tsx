@@ -21,7 +21,7 @@ export function AuthSplit({ mode, title, subtitle, children }: AuthSplitProps) {
         <div className="mx-auto flex min-h-full flex-col px-6 py-10 sm:px-8">
           <header className="mb-10 flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2 text-neutral-900 font-bold">
-              <span>iBisa</span>
+              <span>BISA</span>
             </Link>
             <Link
               href={`/${nextVerb}`}
@@ -44,8 +44,8 @@ export function AuthSplit({ mode, title, subtitle, children }: AuthSplitProps) {
           </main>
 
           <footer className="mt-10 flex items-center justify-between text-sm text-neutral-500">
-            <Link href="/" className="hover:text-neutral-900">iBisa.id</Link>
-            <span>iBisa © {new Date().getFullYear()}</span>
+            <Link href="/" className="hover:text-neutral-900">bisa.id</Link>
+            <span>BISA © {new Date().getFullYear()}</span>
           </footer>
         </div>
       </div>
@@ -55,7 +55,7 @@ export function AuthSplit({ mode, title, subtitle, children }: AuthSplitProps) {
         <div className="relative z-10 m-auto max-w-lg p-10">
           <div className="rounded-2xl bg-white p-6 shadow-lg ring-1 ring-black/5">
             <p className="text-sm text-neutral-500">Platform Pendidikan Inklusif</p>
-            <p className="mt-1 text-xl font-semibold text-neutral-900">iBisa</p>
+            <p className="mt-1 text-xl font-semibold text-neutral-900">BISA</p>
             <p className="mt-2 text-sm text-neutral-600">
               Mendampingi setiap langkah tumbuh kembang anak istimewa melalui pendekatan adaptif dan terpadu.
             </p>

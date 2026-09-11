@@ -18,7 +18,7 @@ export function AboutSection() {
 
           <a
             id="kontak"
-            href="mailto:halo@ibisa.id"
+            href="mailto:halo@bisa.id"
             className="inline-flex items-center justify-between gap-4 bg-[#050505] hover:bg-[#1a1a1a] text-white px-5 py-2.5 rounded-full transition-transform hover:scale-[1.02] active:scale-[0.98] shadow-md cursor-pointer"
           >
             <span className="text-xs sm:text-sm font-medium tracking-wide">
@@ -45,7 +45,7 @@ export function AboutSection() {
             <span className="text-[#666666]">bukan anak yang</span>
             <br />
             <span className="text-[#666666]">
-              dipaksa ngikutin kelas. Di situ iBisa ada.
+              dipaksa ngikutin kelas. Di situ BISA ada.
             </span>
           </p>
 

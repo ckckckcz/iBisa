@@ -3,21 +3,21 @@ import type { TestimonialItem } from "@/lib/types";
 export const TESTIMONIALS: readonly TestimonialItem[] = [
   {
     quote:
-      "Setelah 6 bulan bersama iBisa, anak kami yang sebelumnya tidak mau bicara sekarang sudah bisa mengungkapkan keinginannya sendiri. Perubahan yang luar biasa.",
+      "Setelah 6 bulan bersama BISA, anak kami yang sebelumnya tidak mau bicara sekarang sudah bisa mengungkapkan keinginannya sendiri. Perubahan yang luar biasa.",
     name: "Ibu Rina Kusuma",
     role: "Ibu dari Raffi, penyandang autisme",
     initials: "RK",
   },
   {
     quote:
-      "Kami merasa tidak sendirian lagi. Tim iBisa tidak hanya mendampingi anak, tapi juga membimbing kami sebagai orang tua untuk mengerti kebutuhan si kecil.",
+      "Kami merasa tidak sendirian lagi. Tim BISA tidak hanya mendampingi anak, tapi juga membimbing kami sebagai orang tua untuk mengerti kebutuhan si kecil.",
     name: "Bapak Dendi Santoso",
     role: "Ayah dari Nayla, tuna rungu",
     initials: "DS",
   },
   {
     quote:
-      "Program literasinya luar biasa. Anak saya yang dulu susah sekali membaca, sekarang sudah bisa membaca buku cerita sendiri. Terima kasih iBisa!",
+      "Program literasinya luar biasa. Anak saya yang dulu susah sekali membaca, sekarang sudah bisa membaca buku cerita sendiri. Terima kasih BISA!",
     name: "Ibu Sari Widiyanti",
     role: "Ibu dari Bintang, slow learner",
     initials: "SW",

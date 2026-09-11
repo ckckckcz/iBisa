@@ -35,7 +35,7 @@ export function HeroSection({ onConsultClick }: HeroSectionProps) {
         </p>
 
         <div className="mt-5 sm:mt-6">
-          <Button onClick={onConsultClick} variant="blue" size="default">
+          <Button onClick={onConsultClick} size="default" className="bg-blue-700 text-white hover:bg-blue-800">
             <span aria-hidden="true">✦</span>
             <span>Jadwalkan Konsultasi</span>
           </Button>
@@ -94,7 +94,7 @@ export function HeroSection({ onConsultClick }: HeroSectionProps) {
             <div className="relative w-14 sm:w-24 h-14 sm:h-24 shrink-0 flex items-center justify-center">
               <Image
                 src="/logo1.png"
-                alt="Logo iBisa"
+                alt="Logo BISA"
                 fill
                 sizes="(max-width: 640px) 100px, 150px"
                 className="object-contain"
@@ -103,7 +103,7 @@ export function HeroSection({ onConsultClick }: HeroSectionProps) {
             </div>
             <div>
               <span className="text-[9px] sm:text-sm font-bold text-neutral-900 block leading-tight">
-                iBisa Inklusi
+                BISA Inklusi
               </span>
               <span className="text-[7px] sm:text-[10px] text-neutral-500 block leading-tight mt-0.5">
                 Pendidikan Siswa SLB

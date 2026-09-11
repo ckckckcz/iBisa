@@ -13,13 +13,13 @@ export function Navbar({ onConsultClick }: NavbarProps) {
       >
         <Image
           src="/logo1.png"
-          alt="Logo iBisa"
+          alt="Logo BISA"
           width={28}
           height={36}
           className="h-7 sm:h-7 w-auto object-contain"
           priority
         />
-        <span>iBisa</span>
+        <span>BISA</span>
       </Link>
 
       <nav className="flex items-center gap-4 sm:gap-7" aria-label="Navigasi Utama">

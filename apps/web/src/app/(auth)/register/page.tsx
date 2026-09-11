@@ -40,7 +40,7 @@ export default function Register() {
     <AuthSplit
       mode="register"
       title="DAFTAR AKUN"
-      subtitle="Buat akun untuk mengakses layanan pendampingan iBisa."
+      subtitle="Buat akun untuk mengakses layanan pendampingan BISA."
     >
       <form method="post" action="/register" className="space-y-5" noValidate>
         <div>

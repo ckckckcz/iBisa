@@ -23,7 +23,7 @@ export function CtaSection({ onConsultClick }: CtaSectionProps) {
           komitmen. Ketemu guru pendamping yang pas, bukan coba-coba.
         </p>
 
-        <Button onClick={onConsultClick} variant="white" size="lg">
+        <Button onClick={onConsultClick} size="lg">
           Jadwalkan Konsultasi Gratis
         </Button>
       </div>
