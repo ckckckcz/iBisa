@@ -11,9 +11,12 @@ export function useAuth() {
     const load = async () => {
       try {
         const raw = localStorage.getItem("profile");
-        if (raw) {
-          setProfile(JSON.parse(raw) as Profile);
-          return;
+        if (raw && raw !== "null") {
+          const parsed = JSON.parse(raw) as Profile;
+          if (parsed && parsed.full_name) {
+            setProfile(parsed);
+            return;
+          }
         }
       } catch {}
       try {
@@ -33,7 +36,8 @@ export function useAuth() {
     const handler = () => {
       try {
         const raw = localStorage.getItem("profile");
-        setProfile(raw ? (JSON.parse(raw) as Profile) : null);
+        if (!raw || raw === "null") setProfile(null);
+        else setProfile(JSON.parse(raw) as Profile);
       } catch {
         setProfile(null);
       }

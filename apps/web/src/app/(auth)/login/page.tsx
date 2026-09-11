@@ -34,7 +34,8 @@ export default function Login() {
       if (!res.ok || !data.success) throw new Error(data.message ?? "Login gagal");
       document.cookie = `token=${data.token}; path=/; max-age=3600; SameSite=Lax`;
       localStorage.setItem("token", data.token);
-      localStorage.setItem("profile", JSON.stringify(data.profile));
+      if (data.profile) localStorage.setItem("profile", JSON.stringify(data.profile));
+      else localStorage.removeItem("profile");
       const role = data.profile?.role;
       if (role === "school") router.push("/school");
       else if (role === "teacher") router.push("/teacher");

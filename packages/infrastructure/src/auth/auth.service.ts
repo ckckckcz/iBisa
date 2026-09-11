@@ -51,10 +51,11 @@ export async function createSchoolWithManager(p: {
 
 export async function signInWithPassword(email: string, password: string) {
   const supabase = getSupabase();
-  if (!supabase) throw new Error("Supabase not configured");
+  const admin = getSupabaseAdmin();
+  if (!supabase || !admin) throw new Error("Supabase not configured");
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error || !data.session) throw new Error(error?.message ?? "Invalid credentials");
-  const { data: profile } = await supabase
+  const { data: profile } = await admin
     .from("users_with_role").select("id,email,full_name,role,school_id").eq("id", data.user.id).single();
   return { session: data.session, user: data.user, profile: profile ?? null };
 }
