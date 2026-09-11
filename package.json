@@ -1,5 +1,5 @@
 {
-  "name": "ibisa",
+  "name": "bisa",
   "private": true,
   "scripts": {
     "dev": "turbo dev",
