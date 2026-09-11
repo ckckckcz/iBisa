@@ -1,10 +1,12 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
+  "globalEnv": ["PORT", "NODE_ENV", "SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"],
   "globalDependencies": ["**/.env.*", "pnpm-lock.yaml"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["apps/web/.next/**", "apps/web/dist/**", "dist/**", ".next/**", "!.next/cache/**"]
+      "outputs": ["apps/web/.next/**", "apps/web/dist/**", "dist/**", ".next/**", "!.next/cache/**"],
+      "env": ["PORT", "NODE_ENV", "SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"]
     },
     "dev": {
       "cache": false,
