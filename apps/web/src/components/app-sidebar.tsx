@@ -56,69 +56,29 @@ const teams = [
     },
 ];
 
-const navMain = [
-    {
-      title: "Beranda",
-      url: "/teacher",
-      icon: <HugeiconsIcon icon={DashboardSquare01Icon} strokeWidth={2} />,
-      isActive: true,
-      items: [
-        { title: "Progres Belajar", url: "/teacher" },
-        { title: "Modul Rekomendasi", url: "#" },
-        { title: "Notifikasi", url: "#" },
-      ],
-    },
-    {
-      title: "Sesi Pembelajaran",
-      url: "#",
-      icon: <HugeiconsIcon icon={BookOpen02Icon} strokeWidth={2} />,
-      items: [
-        { title: "Materi Pembelajaran", url: "#" },
-        { title: "Latihan Soal Interaktif", url: "#" },
-        { title: "Sesi Aktif Hari Ini", url: "#" },
-      ],
-    },
-    {
-      title: "Kurikulum Adaptif",
-      url: "#",
-      icon: <HugeiconsIcon icon={Idea01Icon} strokeWidth={2} />,
-      items: [
-        { title: "Jalur Personal", url: "#" },
-        { title: "Kecepatan & Gaya Belajar", url: "#" },
-        { title: "Aksesibilitas", url: "#" },
-      ],
-    },
-    {
-      title: "Gamifikasi & Engagement",
-      url: "#",
-      icon: <HugeiconsIcon icon={GameController01Icon} strokeWidth={2} />,
-      items: [
-        { title: "Papan Peringkat", url: "#" },
-        { title: "Lencana & Reward", url: "#" },
-        { title: "Tantangan Mingguan", url: "#" },
-      ],
-    },
-    {
-      title: "Evaluasi & Profil",
-      url: "#",
-      icon: <HugeiconsIcon icon={Analytics01Icon} strokeWidth={2} />,
-      items: [
-        { title: "Evaluasi Pembelajaran", url: "#" },
-        { title: "Profil Siswa ABK", url: "#" },
-        { title: "Laporan Kemajuan", url: "#" },
-      ],
-    },
-    {
-      title: "Pengaturan",
-      url: "#",
-      icon: <HugeiconsIcon icon={Settings05Icon} strokeWidth={2} />,
-      items: [
-        { title: "Kelas & Rasio Guru-Murid", url: "#" },
-        { title: "Bantuan Ajar", url: "#" },
-        { title: "Akses Orang Tua", url: "#" },
-      ],
-    },
+const navSchool = [
+  { title: "Beranda", url: "/school", icon: <HugeiconsIcon icon={DashboardSquare01Icon} strokeWidth={2} />, isActive: true, items: [{ title: "Ringkasan", url: "/school" }] },
+  { title: "Manajemen Akun", url: "#", icon: <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} />, items: [{ title: "Guru", url: "/school/teachers" }, { title: "Murid", url: "/school/students" }] },
+  { title: "Kelas", url: "/school/classes", icon: <HugeiconsIcon icon={BookOpen02Icon} strokeWidth={2} />, items: [{ title: "Daftar Kelas", url: "/school/classes" }] },
+  { title: "Chat AI", url: "/school/ai", icon: <HugeiconsIcon icon={Idea01Icon} strokeWidth={2} />, items: [{ title: "Konfigurasi AI", url: "/school/ai" }] },
 ];
+
+const navTeacher = [
+  { title: "Beranda", url: "/teacher", icon: <HugeiconsIcon icon={DashboardSquare01Icon} strokeWidth={2} />, isActive: true, items: [{ title: "Progres Belajar", url: "/teacher" }, { title: "Modul Rekomendasi", url: "#" }] },
+  { title: "Sesi Pembelajaran", url: "#", icon: <HugeiconsIcon icon={BookOpen02Icon} strokeWidth={2} />, items: [{ title: "Materi Pembelajaran", url: "#" }] },
+];
+
+const navStudent = [
+  { title: "Beranda", url: "/student", icon: <HugeiconsIcon icon={DashboardSquare01Icon} strokeWidth={2} />, isActive: true, items: [{ title: "Modul Saya", url: "/student" }] },
+];
+
+const navMainByRole: Record<string, typeof navSchool> = {
+  school: navSchool,
+  teacher: navTeacher,
+  student: navStudent,
+};
+
+const navMain = navSchool;
 
 const projects = [
   {
@@ -141,11 +101,8 @@ const projects = [
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { profile } = useAuth();
   const router = useRouter();
-  const homeByRole =
-    profile?.role === "teacher" ? "/teacher" : profile?.role === "student" ? "/student" : "/school";
-  const navMainWithRole = navMain.map((item, i) =>
-    i === 0 ? { ...item, url: homeByRole, items: item.items?.map((s, j) => (j === 0 ? { ...s, url: homeByRole } : s)) } : item
-  );
+  const roleNav = navMainByRole[profile?.role ?? "school"] ?? navSchool;
+  const homeByRole = profile?.role === "teacher" ? "/teacher" : profile?.role === "student" ? "/student" : "/school";
   const displayName = profile?.full_name?.trim() || profile?.email?.split("@")[0] || "Pengguna BISA";
   const user = {
     name: displayName,
@@ -164,7 +121,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <TeamSwitcher teams={teams} />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={navMainWithRole} />
+        <NavMain items={roleNav} />
         <NavProjects projects={projects} />
       </SidebarContent>
       <SidebarFooter>
