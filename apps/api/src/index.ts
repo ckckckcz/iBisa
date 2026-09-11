@@ -1,10 +1,9 @@
+import 'dotenv/config';
 import express from 'express';
 import type { Application, Request, Response } from 'express';
 import cors from 'cors';
 import * as helmetImport from 'helmet';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import healthRouter from './routes/health.js';
 
 const helmet: any = (helmetImport as any).default ?? helmetImport;
 const app: Application = express();
@@ -15,12 +14,16 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
-// Basic Health Check Endpoint
 app.get('/', (req: Request, res: Response) => {
   res.json({
     success: true,
     message: 'Bisa Backend API is running successfully!',
   });
+});
+
+app.use('/health/supabase', healthRouter);
+app.get('/health', (_req: Request, res: Response) => {
+  res.json({ success: true, message: 'ok', supabase: '/health/supabase' });
 });
 
 app.listen(port, () => {
