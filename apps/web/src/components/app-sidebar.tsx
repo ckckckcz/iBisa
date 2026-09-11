@@ -146,8 +146,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const navMainWithRole = navMain.map((item, i) =>
     i === 0 ? { ...item, url: homeByRole, items: item.items?.map((s, j) => (j === 0 ? { ...s, url: homeByRole } : s)) } : item
   );
+  const displayName = profile?.full_name?.trim() || profile?.email?.split("@")[0] || "Pengguna BISA";
   const user = {
-    name: profile?.full_name ?? "Pengguna BISA",
+    name: displayName,
     email: profile?.email ?? "",
     avatar: "/avatars/shadcn.jpg",
   };
