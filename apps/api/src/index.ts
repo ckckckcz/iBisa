@@ -26,6 +26,10 @@ app.get('/health', (_req: Request, res: Response) => {
   res.json({ success: true, message: 'ok', supabase: '/health/supabase' });
 });
 
-app.listen(port, () => {
-  console.log(`[Server]: API running on http://localhost:${port}`);
-});
+export default app;
+
+if (!process.env.VERCEL) {
+  app.listen(port, () => {
+    console.log(`[Server]: API running on http://localhost:${port}`);
+  });
+}
