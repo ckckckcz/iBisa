@@ -12,8 +12,8 @@ const app: Application = express();
 const port = process.env.PORT || 5000;
 
 // Security & Utility Middlewares
+app.use(cors({ origin: true, credentials: true }));
 app.use(helmet());
-app.use(cors());
 app.use(express.json());
 
 app.get('/', (req: Request, res: Response) => {
