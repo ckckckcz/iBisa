@@ -71,8 +71,11 @@ export default function StreamingText({
   const [copied, setCopied] = useState(false);
   const [vote, setVote] = useState<"up" | "down" | null>(null);
   const [prevFullText, setPrevFullText] = useState(fullText);
-  if (prevFullText !== fullText) {
+  const [prevAnimate, setPrevAnimate] = useState(animate);
+
+  if (prevFullText !== fullText || prevAnimate !== animate) {
     setPrevFullText(fullText);
+    setPrevAnimate(animate);
     setCount(animate ? 0 : normalized.length);
     setSourcesOpen(false);
     setCopied(false);
