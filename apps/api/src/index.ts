@@ -2,7 +2,21 @@ import 'dotenv/config';
 import express from 'express';
 import type { Application, Request, Response } from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
+import {
+  contentSecurityPolicy,
+  crossOriginEmbedderPolicy,
+  crossOriginOpenerPolicy,
+  crossOriginResourcePolicy,
+  dnsPrefetchControl,
+  frameguard,
+  hidePoweredBy,
+  ieNoOpen,
+  noSniff,
+  originAgentCluster,
+  permittedCrossDomainPolicies,
+  referrerPolicy,
+  strictTransportSecurity,
+} from 'helmet';
 import healthRouter from './routes/health.js';
 import authRouter from './routes/auth.js';
 import schoolRouter from './routes/school.js';
@@ -11,9 +25,23 @@ import { authenticate, authorize, type AuthenticatedRequest } from './middleware
 const app: Application = express();
 const port = process.env.PORT || 5000;
 
-// Security & Utility Middlewares
+// Security & Utility Middlewares (setara helmet() default, tanpa default-import)
 app.use(cors({ origin: true, credentials: true }));
-app.use(helmet());
+for (const useHelmet of [
+  hidePoweredBy(),
+  noSniff(),
+  frameguard(),
+  ieNoOpen(),
+  dnsPrefetchControl(),
+  permittedCrossDomainPolicies(),
+  originAgentCluster(),
+  referrerPolicy(),
+  strictTransportSecurity(),
+  crossOriginResourcePolicy(),
+  crossOriginOpenerPolicy(),
+  crossOriginEmbedderPolicy(),
+  contentSecurityPolicy(),
+]) app.use(useHelmet);
 app.use(express.json());
 
 app.get('/', (req: Request, res: Response) => {
