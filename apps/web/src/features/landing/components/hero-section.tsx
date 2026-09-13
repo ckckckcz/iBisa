@@ -7,6 +7,7 @@ import {
   HeartHandshakeIcon,
 } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
+import { Reveal } from "@/components/ui/reveal";
 import { HeroSectionProps } from "@/lib/types";
 import { CloudDivider } from "@/features/landing/components/cloud-divider";
 
@@ -19,6 +20,7 @@ export function HeroSection({ onConsultClick }: HeroSectionProps) {
     >
 
       <div className="relative z-10 flex flex-col items-center px-4 w-full text-center max-w-3xl mx-auto pt-10 sm:pt-16">
+        <Reveal className="flex flex-col items-center">
         <h1
           id="hero-heading"
           className="text-neutral-900 font-medium text-4xl sm:text-6xl leading-[1.05] tracking-tight"
@@ -40,7 +42,9 @@ export function HeroSection({ onConsultClick }: HeroSectionProps) {
             <span>Jadwalkan Konsultasi</span>
           </Button>
         </div>
+        </Reveal>
 
+        <Reveal delay={0.15} y={32} className="w-full flex justify-center">
         <div className="mt-16 sm:mt-24 relative z-10 flex items-end justify-center -space-x-5 sm:-space-x-10 w-full max-w-3xl mx-auto -mb-14 sm:-mb-24">
           {/* Card 1: Kurikulum SLB Adaptif */}
           <div className="w-24 sm:w-44 shrink-0 aspect-3/4 origin-bottom -rotate-12 translate-y-4 z-0 bg-white border border-neutral-100/90 rounded-2xl shadow-md p-2.5 sm:p-4 flex flex-col items-start justify-between text-left">
@@ -160,6 +164,7 @@ export function HeroSection({ onConsultClick }: HeroSectionProps) {
             </div>
           </div>
         </div>
+        </Reveal>
       </div>
 
       <div className="relative z-30 w-full -mt-2 sm:-mt-4">

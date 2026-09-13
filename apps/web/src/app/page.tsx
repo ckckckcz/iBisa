@@ -1,5 +1,7 @@
 "use client";
 
+import { MotionConfig } from "motion/react";
+import { Reveal } from "@/components/ui/reveal";
 import { Navbar } from "@/features/navbar";
 import {
   HeroSection,
@@ -13,10 +15,11 @@ import { scrollToElement } from "@/lib/scroll";
 
 export default function Home() {
   return (
+    <MotionConfig reducedMotion="user">
     <main className="w-full min-h-screen bg-white relative flex flex-col overflow-x-hidden">
-      <div className="w-full flex justify-center pt-4 sm:pt-6 bg-white">
+      <Reveal y={-16} className="w-full flex justify-center pt-4 sm:pt-6 bg-white">
         <Navbar onConsultClick={scrollToElement("konsultasi")} />
-      </div>
+      </Reveal>
       <HeroSection
         onConsultClick={scrollToElement("konsultasi")}
         onExploreClick={scrollToElement("layanan")}
@@ -27,5 +30,6 @@ export default function Home() {
       <CtaSection onConsultClick={scrollToElement("konsultasi")} />
       <Footer />
     </main>
+    </MotionConfig>
   );
 }

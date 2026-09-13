@@ -1,6 +1,7 @@
 import { Marquee } from "@/components/ui/marquee";
 import { TESTIMONIALS } from "@/features/landing/data/testimonials";
 import { TestimonialCard } from "./testimonial-card";
+import { Reveal } from "@/components/ui/reveal";
 import type { TestimonialSectionProps } from "@/lib/types";
 
 export function TestimonialSection({ testimonials = TESTIMONIALS }: TestimonialSectionProps) {
@@ -17,6 +18,7 @@ export function TestimonialSection({ testimonials = TESTIMONIALS }: TestimonialS
     >
       <div className="max-w-6xl mx-auto px-6 sm:px-12 md:px-16 lg:px-24">
         <div className="mb-10 sm:mb-12">
+          <Reveal>
           <p className="text-blue-700 font-semibold text-xs sm:text-sm tracking-widest uppercase mb-3">
             Cerita Nyata SLB Inklusif
           </p>
@@ -26,6 +28,7 @@ export function TestimonialSection({ testimonials = TESTIMONIALS }: TestimonialS
           >
             Saat kelas inklusifnya pas, orang tua langsung ngerasa bedanya
           </h2>
+          </Reveal>
         </div>
       </div>
 

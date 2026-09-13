@@ -1,6 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { PROGRAMS } from "@/features/landing/data/programs";
+import { Reveal } from "@/components/ui/reveal";
 import type { ProgramSectionProps } from "@/lib/types";
 
 export function ProgramSection({ programs = PROGRAMS }: ProgramSectionProps) {
@@ -11,6 +12,7 @@ export function ProgramSection({ programs = PROGRAMS }: ProgramSectionProps) {
     <section id="layanan" className="bg-gray-50 py-16 md:py-24 dark:bg-transparent" aria-labelledby="program-heading">
       <div className="mx-auto max-w-3xl lg:max-w-6xl px-6 sm:px-12 md:px-16 lg:px-6">
         <div className="mb-12 sm:mb-14 max-w-2xl">
+          <Reveal>
           <p className="text-blue-700 font-semibold text-xs sm:text-sm tracking-widest uppercase mb-3">Program Inklusif SLB</p>
           <h2 id="program-heading" className="text-neutral-900 font-bold text-3xl sm:text-4xl md:text-5xl leading-tight tracking-tight">
             Kelas SLB yang
@@ -20,9 +22,11 @@ export function ProgramSection({ programs = PROGRAMS }: ProgramSectionProps) {
           <p className="mt-4 text-neutral-500 text-sm sm:text-base leading-relaxed">
             5 jalur inklusif, satu tujuan: siswa SLB lebih mandiri di kelas yang ngerti dia. Pilih yang paling pas, atau kombinasikan.
           </p>
+          </Reveal>
         </div>
 
         <div className="relative">
+          <Reveal delay={0.1}>
           <div className="relative z-10 grid grid-cols-6 gap-3">
             <Card className="relative col-span-full flex overflow-hidden lg:col-span-2 bg-white">
               <CardContent className="relative m-auto size-fit pt-6">
@@ -151,6 +155,7 @@ export function ProgramSection({ programs = PROGRAMS }: ProgramSectionProps) {
               </CardContent>
             </Card>
           </div>
+          </Reveal>
         </div>
       </div>
     </section>

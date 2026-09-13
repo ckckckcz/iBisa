@@ -1,5 +1,6 @@
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowUpRight01Icon } from "@hugeicons/core-free-icons";
+import { Reveal } from "@/components/ui/reveal";
 export function AboutSection() {
   return (
     <section
@@ -9,6 +10,7 @@ export function AboutSection() {
     >
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-start justify-between gap-10 md:gap-16">
         <div className="w-full md:w-70 flex flex-col items-start">
+          <Reveal className="flex flex-col items-start">
           <h2
             id="about-heading"
             className="text-[#090909] font-bold text-xs sm:text-sm tracking-widest uppercase mb-6 sm:mb-8"
@@ -35,9 +37,11 @@ export function AboutSection() {
               />
             </span>
           </a>
+          </Reveal>
         </div>
 
         <div id="keunggulan" className="flex-1 max-w-2xl flex flex-col items-start">
+          <Reveal>
           <p className="text-[#090909] font-bold text-xl sm:text-2xl md:text-3xl lg:text-4xl leading-[1.18] tracking-tight">
             Pendidikan inklusif berarti
             <br />
@@ -48,7 +52,9 @@ export function AboutSection() {
               dipaksa ngikutin kelas. Di situ BISA ada.
             </span>
           </p>
+          </Reveal>
 
+          <Reveal delay={0.1}>
           <div id="orang-tua" className="flex items-center gap-5 sm:gap-6 mt-8 sm:mt-10">
             <span className="text-[#090909] font-extrabold text-4xl sm:text-5xl md:text-6xl leading-none tracking-tight">
               1.500+
@@ -59,6 +65,7 @@ export function AboutSection() {
               di kelas inklusif kami.
             </p>
           </div>
+          </Reveal>
         </div>
       </div>
     </section>
