@@ -1,7 +1,7 @@
 create table if not exists public.ai_configs (
   school_id uuid primary key references public.schools(id) on delete cascade,
   system_prompt text not null default 'Kamu asisten BISA ramah untuk ABK.',
-  model text not null default 'gpt-4o-mini',
+  model text not null default 'gemini-3.6-flash',
   updated_at timestamptz default now()
 );
 
