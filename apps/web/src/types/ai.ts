@@ -18,7 +18,7 @@ export type ThinkingRow = {
   href?: string;
 };
 
-export type ChatMsg = { role: string; content: string; questions?: ApprovalQuestion[] };
+export type ChatMsg = { role: string; content: string; questions?: ApprovalQuestion[]; thoughts?: string[] };
 export type Session = { id: string; title: string; messages: ChatMsg[] };
 export type ModelItem = { key: string; name: string; tag: string };
 export type StreamingToken = { text: string; cite?: boolean };

@@ -41,8 +41,9 @@ export function useChat({ onMessageSent, getActiveId, setActiveId }: UseChatOpti
     if (!data.success) { setError(data.message); return; }
     const reply = data.data.content as string;
     const questions = data.data.questions as ApprovalQuestion[] | undefined;
+    const thoughts = data.data.thoughts as string[] | undefined;
     setStreaming(questions?.length ? '' : reply);
-    const full: ChatMsg[] = [...next, { role: 'assistant', content: reply, questions }];
+    const full: ChatMsg[] = [...next, { role: 'assistant', content: reply, questions, thoughts }];
     setChat(full);
     onMessageSent(sid, full);
   }

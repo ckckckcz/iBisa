@@ -17,17 +17,25 @@ export async function upsertAiConfig(schoolId: string, p: { system_prompt: strin
 }
 
 export type ApprovalQuestion = { q: string; type: "radio" | "check"; options: string[] };
-export type ChatReply = { role: string; content: string; questions?: ApprovalQuestion[] };
+export type ChatReply = { role: string; content: string; questions?: ApprovalQuestion[]; thoughts?: string[] };
 
 type OpenAiResponse = {
   error?: { message?: string };
   choices?: { message?: { role: string; content: string } }[];
 };
 
+type GeminiPart = { text?: string; thought?: boolean };
 type GeminiResponse = {
   error?: { message?: string };
-  candidates?: { content?: { parts?: { text?: string }[] } }[];
+  candidates?: { content?: { parts?: GeminiPart[] } }[];
 };
+
+function thoughtsFromParts(parts: GeminiPart[]): string[] {
+  const raw = parts.filter((p) => p.thought && p.text?.trim()).map((p) => p.text as string).join("\n");
+  if (!raw) return [];
+  const chunks = raw.split(/\n+/).flatMap((line) => line.replace(/^[-*•\d]+[.)\s]+/, "").split(/(?<=[.!?])\s+/));
+  return [...new Set(chunks.map((s) => s.trim()).filter((s) => s.length > 3))].slice(0, 6);
+}
 
 function parseReply(text: string): ChatReply {
   const m = text.match(/\{[\s\S]*"questions"[\s\S]*\}/);
@@ -73,16 +81,27 @@ async function chatWithGemini(config: { system_prompt: string; model: string }, 
     const questions = mockQuestions(last);
     return { role: "assistant", content: `[mock ${config.model}] ${config.system_prompt.slice(0, 120)} | pesan: ${last}`, questions };
   }
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${config.model}:generateContent`, {
+  const base = {
+    system_instruction: { parts: [{ text: `${config.system_prompt}\nFormat jawaban dengan markdown rapi: **bold** untuk penekanan, bullet (-) untuk daftar, tabel markdown bila perlu. Jangan pakai ASCII art.\nJika butuh klarifikasi sebelum menjawab, kembalikan JSON saja: {"content": "<kalimat pengantar singkat>", "questions": [{"q": "...", "type": "radio"|"check", "options": ["...", "..."]}]}. Maks 3 pertanyaan, tiap opsi maks 4.` }] },
+    contents: messages.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] })),
+  };
+  const body = { ...base, generationConfig: { thinkingConfig: { includeThoughts: true } } };
+
+  const post = (payload: unknown) => fetch(`https://generativelanguage.googleapis.com/v1beta/models/${config.model}:generateContent`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": key },
-    body: JSON.stringify({
-      system_instruction: { parts: [{ text: `${config.system_prompt}\nFormat jawaban dengan markdown rapi: **bold** untuk penekanan, bullet (-) untuk daftar, tabel markdown bila perlu. Jangan pakai ASCII art.\nJika butuh klarifikasi sebelum menjawab, kembalikan JSON saja: {"content": "<kalimat pengantar singkat>", "questions": [{"q": "...", "type": "radio"|"check", "options": ["...", "..."]}]}. Maks 3 pertanyaan, tiap opsi maks 4.` }] },
-      contents: messages.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] })),
-    }),
+    body: JSON.stringify(payload),
   });
-  const data = (await res.json()) as GeminiResponse;
+  let res = await post(body);
+  let data = (await res.json()) as GeminiResponse;
+  if (!res.ok && /think/i.test(data.error?.message ?? "")) {
+    res = await post(base);
+    data = (await res.json()) as GeminiResponse;
+  }
   if (!res.ok) throw new Error(data.error?.message ?? "AI error");
-  const text = data.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? "").join("") ?? "";
-  return parseReply(text);
+  const parts = data.candidates?.[0]?.content?.parts ?? [];
+  const thoughts = thoughtsFromParts(parts);
+  const text = parts.filter((p) => !p.thought).map((p) => p.text ?? "").join("") ?? "";
+  const reply = parseReply(text);
+  return thoughts.length ? { ...reply, thoughts } : reply;
 }

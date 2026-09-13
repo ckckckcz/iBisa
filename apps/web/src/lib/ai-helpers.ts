@@ -4,13 +4,33 @@ export function isGreeting(q: string): boolean {
   return /^(halo|hallo|hai|hi|hello|pagi|siang|sore|malam|assalamu'alaikum|assalamualaikum|test|tes|ok|oke|makasih|terima kasih)[.!,\s]*$/.test(s);
 }
 
+function hash(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+function pick<T>(pool: T[], seed: string): T {
+  return pool[hash(seed) % pool.length];
+}
+
+const OPENERS = ['Memahami pertanyaan', 'Mengenali maksud pertanyaan', 'Membaca konteks percakapan'];
+const CLOSERS = ['Menyusun jawaban', 'Merapikan jawaban', 'Menyiapkan jawaban akhir'];
+
 export function stepsFor(q: string): string[] | undefined {
   const s = q.toLowerCase();
-  if (s.includes('jadwal') || s.includes('piket')) return ['Memahami permintaan jadwal', 'Menyusun pembagian tugas'];
-  if (s.includes('materi') || s.includes('rangkum') || s.includes('pecahan')) return ['Meringkas materi', 'Menyusun penjelasan untuk siswa'];
-  if (s.includes('surat') || s.includes('undangan') || s.includes('draf') || s.includes('draft')) return ['Memahami format surat', 'Menyusun draf'];
-  if (s.includes('literasi') || s.includes('ide') || s.includes('kegiatan')) return ['Mencari ide kegiatan', 'Menyusun usulan'];
-  return undefined;
+  const middles: string[] | undefined =
+    s.includes('jadwal') || s.includes('piket')
+      ? ['Memahami permintaan jadwal', 'Menyusun pembagian tugas', 'Merapikan format tabel']
+      : s.includes('materi') || s.includes('rangkum') || s.includes('pecahan')
+        ? ['Meringkas materi', 'Menyusun penjelasan untuk siswa', 'Menyiapkan contoh sederhana']
+        : s.includes('surat') || s.includes('undangan') || s.includes('draf') || s.includes('draft')
+          ? ['Memahami format surat', 'Menyusun draf', 'Mengecek bahasa formal']
+          : s.includes('literasi') || s.includes('ide') || s.includes('kegiatan')
+            ? ['Mencari ide kegiatan', 'Menyusun usulan', 'Menyesuaikan durasi kegiatan']
+            : undefined;
+  const middle = middles ? pick(middles, q) : pick(['Menyiapkan konteks jawaban', 'Mencari informasi relevan', 'Menimbang sudut pandang'], q);
+  return [pick(OPENERS, q + '#o'), middle, pick(CLOSERS, q + '#c')];
 }
 
 export function followUpsFor(q: string): string[] {
