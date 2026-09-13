@@ -67,9 +67,9 @@ export function MemberForm({
             <Input placeholder="20260001" value={f.number} onChange={(e) => set("number", e.target.value)} />
           </div>
           <div className="grid gap-1.5">
-            <Label>Status</Label>
-            <Select value={f.status} onValueChange={(v) => set("status", v ?? "")}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <Label>Status</Label>
+              <Select value={f.status} onValueChange={(v) => set("status", v ?? "")}>
+                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="on_leave">On leave</SelectItem>
@@ -88,9 +88,9 @@ export function MemberForm({
           )}
 
           <div className="grid gap-1.5">
-            <Label>Gender</Label>
-            <Select value={f.gender} onValueChange={(v) => set("gender", v ?? "")}>
-              <SelectTrigger><SelectValue placeholder="Pilih" /></SelectTrigger>
+              <Label>Gender</Label>
+              <Select value={f.gender} onValueChange={(v) => set("gender", v ?? "")}>
+                <SelectTrigger className="w-full"><SelectValue placeholder="Pilih" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="male">Male</SelectItem>
                 <SelectItem value="female">Female</SelectItem>
