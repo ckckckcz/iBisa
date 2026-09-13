@@ -2,16 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { StatCards } from "@/features/school/stat-cards";
 import { MemberTable } from "@/features/school/member-table";
 import { MemberForm } from "@/features/school/member-form";
-import { GenderBadge, StatusBadge } from "@/features/school/member-badges";
-import { initials, type ClassOption, type Column, type FormPayload, type Member } from "@/types/school";
+import { studentColumns } from "@/features/school/student-columns";
+import { type ClassOption, type FormPayload, type Member } from "@/types/school";
 import { getToken } from "@/lib/ai-helpers";
 import { fetchSchoolList } from "@/lib/school-api";
-import { CalendarOffIcon, Chart01Icon, CheckmarkCircle01Icon, StudentsIcon } from "@hugeicons/core-free-icons";
+import { CalendarOffIcon, Chart01Icon, CheckmarkCircle01Icon, StudentsIcon, UnfoldMoreIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 
 export default function StudentsPage() {
   const [rows, setRows] = useState<Member[]>([]);
@@ -65,23 +65,7 @@ export default function StudentsPage() {
     return [...s].sort().map((g) => ({ value: g, label: g }));
   }, [rows]);
 
-  const columns: Column[] = [
-    { key: "number", label: "Number", sortable: true, render: (m) => m.number ?? "-" },
-    {
-      key: "full_name", label: "Full Name", sortable: true,
-      render: (m) => (
-        <span className="inline-flex items-center gap-2">
-          <Avatar className="size-7"><AvatarImage src={m.avatar_url ?? undefined} alt={m.full_name} /><AvatarFallback>{initials(m.full_name)}</AvatarFallback></Avatar>
-          <span className="font-medium">{m.full_name}</span>
-        </span>
-      ),
-    },
-    { key: "grade", label: "Grade", sortable: true, render: (m) => m.grade ?? "-" },
-    { key: "gender", label: "Gender", sortable: true, render: (m) => <GenderBadge g={m.gender} /> },
-    { key: "attendance_pct", label: "Attendance", sortable: true, render: (m) => <span className="tabular-nums">{m.attendance_pct ?? 0}%</span> },
-    { key: "guardian_name", label: "Guardian", sortable: true, render: (m) => m.guardian_name ?? "-" },
-    { key: "status", label: "Status", sortable: true, render: (m) => <StatusBadge s={m.status} /> },
-  ];
+  const columns = useMemo(() => studentColumns(), []);
 
   async function submit(p: FormPayload) {
     setSaving(true);
@@ -118,7 +102,7 @@ export default function StudentsPage() {
         <div className="flex">
           <Button className="rounded-r-none" onClick={() => { setEditing(null); setOpen(true); }}>Add Student</Button>
           <DropdownMenu>
-            <DropdownMenuTrigger render={<Button className="rounded-l-none border-l border-white/20 px-2">▾</Button>} />
+            <DropdownMenuTrigger render={<Button className="rounded-l-none border-l border-white/20 px-2"><HugeiconsIcon icon={UnfoldMoreIcon} strokeWidth={2} /></Button>} />
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => { setEditing(null); setOpen(true); }}>Tambah manual</DropdownMenuItem>
               <DropdownMenuItem onClick={() => alert("Import CSV segera hadir")}>Import CSV</DropdownMenuItem>

@@ -18,10 +18,11 @@ export function MemberTable({
   searchKeys: (keyof Member)[];
   filters: FilterDef[];
   exportName: string;
-  onEdit: (m: Member) => void;
-  onDelete: (m: Member) => void;
+  onEdit?: (m: Member) => void;
+  onDelete?: (m: Member) => void;
 }) {
   const t = useMemberTable({ rows, columns, searchKeys, filters });
+  const hasActions = !!onEdit || !!onDelete;
 
   return (
     <div className="flex flex-col gap-3">
@@ -47,7 +48,7 @@ export function MemberTable({
                   ) : c.label}
                 </TableHead>
               ))}
-              <TableHead className="text-right">Action</TableHead>
+              {hasActions && <TableHead className="text-right">Action</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -57,18 +58,20 @@ export function MemberTable({
                   <Checkbox checked={t.sel.has(m.id)} onCheckedChange={(v) => t.toggleRow(m.id, !!v)} aria-label="Select row" />
                 </TableCell>
                 {columns.map((c) => (<TableCell key={c.key}>{c.render(m)}</TableCell>))}
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm">···</Button>} />
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onEdit(m)}>Edit</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onDelete(m)}>Hapus</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
+                {hasActions && (
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm">···</Button>} />
+                      <DropdownMenuContent align="end">
+                        {onEdit && <DropdownMenuItem onClick={() => onEdit(m)}>Edit</DropdownMenuItem>}
+                        {onDelete && <DropdownMenuItem onClick={() => onDelete(m)}>Hapus</DropdownMenuItem>}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                )}
               </TableRow>
             ))}
-            {t.pageRows.length === 0 && (<TableRow><TableCell colSpan={columns.length + 2} className="py-8 text-center text-muted-foreground">Belum ada data</TableCell></TableRow>)}
+            {t.pageRows.length === 0 && (<TableRow><TableCell colSpan={columns.length + (hasActions ? 2 : 1)} className="py-8 text-center text-muted-foreground">Belum ada data</TableCell></TableRow>)}
           </TableBody>
         </Table>
       </div>
