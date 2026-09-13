@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getToken } from "@/lib/ai-helpers";
+import { fetchSchoolList } from "@/lib/school-api";
 
 type Kelas = { id: string; name: string; tingkat: string; wali_guru_id: string | null };
 type Guru = { id: string; full_name: string };
@@ -16,19 +17,31 @@ export default function ClassesPage() {
   const [form, setForm] = useState({ name: "", tingkat: "7", wali_guru_id: "" });
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
-  const load = useCallback(async () => {
+  async function load() {
     const token = getToken();
     const [c, g] = await Promise.all([
-      fetch(`${apiUrl}/school/classes`, { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()),
-      fetch(`${apiUrl}/school/teachers`, { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()),
+      fetchSchoolList(apiUrl, token, "classes"),
+      fetchSchoolList(apiUrl, token, "teachers"),
     ]);
     if (c.success) setRows(c.data);
     if (g.success) setGurus(g.data);
-  }, [apiUrl]);
+  }
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    let cancelled = false;
+    const token = getToken();
+    Promise.all([
+      fetchSchoolList(apiUrl, token, "classes"),
+      fetchSchoolList(apiUrl, token, "teachers"),
+    ])
+      .then(([c, g]) => {
+        if (cancelled) return;
+        if (c.success) setRows(c.data);
+        if (g.success) setGurus(g.data);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [apiUrl]);
 
   async function create() {
     const token = getToken();

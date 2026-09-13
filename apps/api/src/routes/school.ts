@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import { authenticate, authorize, type AuthenticatedRequest } from "../middlewares/auth.js";
 import { listMembers, createMember, deleteMember, updateMember } from "@bisa/infrastructure";
+import type { MemberCreateBody, MemberUpdateBody } from "@bisa/types";
 import { listClasses, createClass, updateClass, deleteClass } from "@bisa/infrastructure";
 import { getAiConfig, upsertAiConfig, chatWithAi } from "@bisa/infrastructure";
 
@@ -25,10 +26,10 @@ router.get("/teachers", async (req, res) => {
 router.post("/teachers", async (req, res) => {
   const sid = schoolId(req);
   if (!sid) return err(res, 400, "Akun belum terhubung sekolah");
-  const { full_name, email, password, whatsapp } = req.body ?? {};
+  const { full_name, email, password, whatsapp, number, gender, status, avatar_url, subject, grade, class_id, attendance_pct } = (req.body ?? {}) as MemberCreateBody;
   if (!full_name || !email || !password) return err(res, 400, "Field wajib");
   try {
-    const r = await createMember(sid, "teacher", { fullName: full_name, email, password, whatsapp });
+    const r = await createMember(sid, "teacher", { fullName: full_name, email, password, whatsapp, number, gender, status, avatar_url, subject, grade, class_id, attendance_pct });
     return res.status(201).json({ success: true, ...r });
   } catch (e) {
     return err(res, 400, e instanceof Error ? e.message : String(e));
@@ -45,10 +46,10 @@ router.get("/students", async (req, res) => {
 router.post("/students", async (req, res) => {
   const sid = schoolId(req);
   if (!sid) return err(res, 400, "Akun belum terhubung sekolah");
-  const { full_name, email, password, whatsapp } = req.body ?? {};
+  const { full_name, email, password, whatsapp, number, gender, status, avatar_url, guardian_name, grade, class_id, attendance_pct } = (req.body ?? {}) as MemberCreateBody;
   if (!full_name || !email || !password) return err(res, 400, "Field wajib");
   try {
-    const r = await createMember(sid, "student", { fullName: full_name, email, password, whatsapp });
+    const r = await createMember(sid, "student", { fullName: full_name, email, password, whatsapp, number, gender, status, avatar_url, guardian_name, grade, class_id, attendance_pct });
     return res.status(201).json({ success: true, ...r });
   } catch (e) {
     return err(res, 400, e instanceof Error ? e.message : String(e));
@@ -70,9 +71,9 @@ router.put("/users/:id", async (req, res) => {
   const sid = schoolId(req);
   if (!sid) return err(res, 400, "Akun belum terhubung sekolah");
   const { id } = req.params;
-  const { full_name, whatsapp } = req.body ?? {};
+  const { full_name, whatsapp, number, gender, status, avatar_url, guardian_name, grade, subject, class_id, attendance_pct } = (req.body ?? {}) as MemberUpdateBody;
   try {
-    const data = await updateMember(id, sid, { full_name, whatsapp });
+    const data = await updateMember(id, sid, { full_name, whatsapp, number, gender, status, avatar_url, guardian_name, grade, subject, class_id, attendance_pct });
     return res.json({ success: true, data });
   } catch (e) {
     return err(res, 400, e instanceof Error ? e.message : String(e));

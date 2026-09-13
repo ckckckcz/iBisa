@@ -1,4 +1,9 @@
-# src/types (legacy)
+# src/types (web)
 
-Kosong — type shared pindah ke `@bisa/types` (`packages/types`).
-Folder ini reserved, jangan isi baru.
+Tipe **UI khusus web**. Kontrak data (`Member`, `Gender`, `MemberStatus`,
+`ClassOption`, `MemberCreateBody`, `MemberUpdateBody`) tinggal di `@bisa/types`
+(`packages/types`) dan di re-export dari `school.ts` supaya import `@/types/school`
+yang sudah ada tetap jalan.
+
+Aturan: jangan taruh tipe server/API di sini. Kontrak yang dipakai `apps/api`
+wajib masuk `@bisa/types`.

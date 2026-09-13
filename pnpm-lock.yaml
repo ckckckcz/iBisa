@@ -17,6 +17,9 @@ importers:
       '@bisa/infrastructure':
         specifier: workspace:^
         version: link:../../packages/infrastructure
+      '@bisa/types':
+        specifier: workspace:^
+        version: link:../../packages/types
       cors:
         specifier: ^2.8.5
         version: 2.8.6
@@ -51,6 +54,9 @@ importers:
       '@base-ui/react':
         specifier: ^1.8.0
         version: 1.8.0(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@bisa/types':
+        specifier: workspace:^
+        version: link:../../packages/types
       '@dnd-kit/core':
         specifier: ^6.3.1
         version: 6.3.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8)

@@ -5,6 +5,11 @@ export type RoleName = "student" | "teacher" | "school";
 export async function createUserWithProfile(p: {
   email: string; password: string; fullName: string; role: RoleName;
   schoolId?: string | null; whatsapp?: string | null;
+  number?: string | null; gender?: "male" | "female" | null;
+  status?: "active" | "on_leave" | "inactive";
+  avatar_url?: string | null; guardian_name?: string | null;
+  attendance_pct?: number | null; grade?: string | null;
+  subject?: string | null; class_id?: string | null;
 }) {
   const admin = getSupabaseAdmin(), supabase = getSupabase();
   if (!admin || !supabase) throw new Error("Supabase not configured");
@@ -22,6 +27,10 @@ export async function createUserWithProfile(p: {
   const { error: profileErr } = await admin.from("users").insert({
     id: user.id, email: p.email, full_name: p.fullName,
     role_id: role.id, school_id: p.schoolId ?? null, whatsapp: p.whatsapp ?? null,
+    number: p.number ?? null, gender: p.gender ?? null, status: p.status ?? "active",
+    avatar_url: p.avatar_url ?? null, guardian_name: p.guardian_name ?? null,
+    attendance_pct: p.attendance_pct ?? 100, grade: p.grade ?? null,
+    subject: p.subject ?? null, class_id: p.class_id ?? null,
   });
   if (profileErr) {
     await admin.auth.admin.deleteUser(user.id).catch(() => {});
