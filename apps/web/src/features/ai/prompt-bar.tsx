@@ -291,9 +291,10 @@ export default function PromptBar({
     if (!canSend || extracting) return;
     onSend?.(draft.trim(), readyFiles.length ? readyFiles : undefined);
     setDraft('');
-    setPicked([]);
+    // ponytail: chip error dipertahankan biar bisa retry — yang terkirim cuma yang ready
+    setPicked((c) => c.filter((p) => p.status === 'error'));
     setAttachError('');
-    closeMenus();
+    setModelOpen(false);
     if (fileRef.current) fileRef.current.value = '';
     celebrate();
   };
