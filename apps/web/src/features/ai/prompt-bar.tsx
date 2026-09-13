@@ -291,7 +291,6 @@ export default function PromptBar({
     if (!canSend || extracting) return;
     onSend?.(draft.trim(), readyFiles.length ? readyFiles : undefined);
     setDraft('');
-    // ponytail: chip error dipertahankan biar bisa retry — yang terkirim cuma yang ready
     setPicked((c) => c.filter((p) => p.status === 'error'));
     setAttachError('');
     setModelOpen(false);

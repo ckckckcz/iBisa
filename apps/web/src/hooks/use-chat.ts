@@ -6,7 +6,6 @@ import { STREAMING_TIMING } from '@/lib/constants';
 import type { ApprovalQuestion, Attachment, ChatMsg } from '@/types/ai';
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000';
-// jeda maks nunggu animasi streaming selesai sebelum prompt antrean jalan
 const STREAM_WAIT_CAP_MS = 10000;
 const STREAM_WAIT_BUFFER_MS = 400;
 
