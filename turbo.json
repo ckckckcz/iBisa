@@ -1,12 +1,12 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
-  "globalEnv": ["PORT", "NODE_ENV", "SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"],
+  "globalEnv": ["PORT", "NODE_ENV", "SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY", "GEMINI_API_KEY", "OPENAI_API_KEY"],
   "globalDependencies": ["**/.env.*", "pnpm-lock.yaml"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["apps/web/.next/**", "apps/web/dist/**", "dist/**", ".next/**", "!.next/cache/**"],
-      "env": ["PORT", "NODE_ENV", "SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"]
+      "env": ["PORT", "NODE_ENV", "SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY", "GEMINI_API_KEY", "OPENAI_API_KEY"]
     },
     "dev": {
       "cache": false,
