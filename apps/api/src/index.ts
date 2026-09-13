@@ -2,13 +2,12 @@ import 'dotenv/config';
 import express from 'express';
 import type { Application, Request, Response } from 'express';
 import cors from 'cors';
-import * as helmetImport from 'helmet';
+import helmet from 'helmet';
 import healthRouter from './routes/health.js';
 import authRouter from './routes/auth.js';
 import schoolRouter from './routes/school.js';
-import { authenticate, authorize } from './middlewares/auth.js';
+import { authenticate, authorize, type AuthenticatedRequest } from './middlewares/auth.js';
 
-const helmet: any = (helmetImport as any).default ?? helmetImport;
 const app: Application = express();
 const port = process.env.PORT || 5000;
 
@@ -30,9 +29,9 @@ app.get('/health', (_req: Request, res: Response) => {
 });
 app.use('/auth', authRouter);
 app.use('/school', schoolRouter);
-app.get('/school/me', authenticate, authorize('school'), (req: Request, res: Response) => res.json({ success: true, profile: (req as any).profile }));
-app.get('/teacher/me', authenticate, authorize('teacher'), (req: Request, res: Response) => res.json({ success: true, profile: (req as any).profile }));
-app.get('/student/me', authenticate, authorize('student'), (req: Request, res: Response) => res.json({ success: true, profile: (req as any).profile }));
+app.get('/school/me', authenticate, authorize('school'), (req: Request, res: Response) => res.json({ success: true, profile: (req as AuthenticatedRequest).profile }));
+app.get('/teacher/me', authenticate, authorize('teacher'), (req: Request, res: Response) => res.json({ success: true, profile: (req as AuthenticatedRequest).profile }));
+app.get('/student/me', authenticate, authorize('student'), (req: Request, res: Response) => res.json({ success: true, profile: (req as AuthenticatedRequest).profile }));
 
 export default app;
 

@@ -1,5 +1,5 @@
 import { Router, type Request, type Response } from "express";
-import { getSupabaseAdmin, createSchoolWithManager, createUserWithProfile, signInWithPassword } from "@bisa/infrastructure";
+import { getSupabaseAdmin, createSchoolWithManager, createUserWithProfile, signInWithPassword, type RoleName } from "@bisa/infrastructure";
 
 const router = Router();
 const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
@@ -41,8 +41,8 @@ router.post("/register", async (req: Request, res: Response) => {
   ).find(([c]) => c);
   if (invalid) return err(res, 400, invalid[1]);
 
-  const catchReg = (e: any, dupMsg: string) => {
-    const msg: string = e?.message ?? "Register gagal";
+  const catchReg = (e: unknown, dupMsg: string) => {
+    const msg: string = e instanceof Error ? e.message : "Register gagal";
     return err(res, isDupe(msg) ? 409 : 400, isDupe(msg) ? dupMsg : msg);
   };
 
@@ -58,8 +58,10 @@ router.post("/register", async (req: Request, res: Response) => {
 
   if (!["student", "teacher", "school"].includes(role))
     return err(res, 400, "Role tidak valid");
+  if (role === "school")
+    return err(res, 400, "Data sekolah (nama + NPSN) wajib untuk akun sekolah");
   try {
-    const { userId } = await createUserWithProfile({ email, password: pw, fullName, role: role as any, whatsapp });
+    const { userId } = await createUserWithProfile({ email, password: pw, fullName, role: role as RoleName, whatsapp });
     return res.status(201).json({ success: true, message: "Register berhasil", userId, role });
   } catch (e) { return catchReg(e, "Email sudah terdaftar"); }
 });
@@ -76,7 +78,7 @@ router.post("/login", async (req: Request, res: Response) => {
       token: session.access_token, refresh_token: session.refresh_token,
       expires_at: session.expires_at, user: { id: session.user.id, email }, profile,
     });
-  } catch (e: any) { return err(res, 401, e?.message ?? "Email atau password salah"); }
+  } catch (e) { return err(res, 401, e instanceof Error ? e.message : "Email atau password salah"); }
 });
 
 router.get("/me", async (req: Request, res: Response) => {

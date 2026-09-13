@@ -1,5 +1,5 @@
 import { Router, type Request, type Response } from "express";
-import { authenticate, authorize } from "../middlewares/auth.js";
+import { authenticate, authorize, type AuthenticatedRequest } from "../middlewares/auth.js";
 import { listMembers, createMember, deleteMember, updateMember } from "@bisa/infrastructure";
 import { listClasses, createClass, updateClass, deleteClass } from "@bisa/infrastructure";
 import { getAiConfig, upsertAiConfig, chatWithAi } from "@bisa/infrastructure";
@@ -8,7 +8,7 @@ const router = Router();
 router.use(authenticate, authorize("school"));
 
 function schoolId(req: Request) {
-  return (req as any).profile.school_id as string | null;
+  return (req as AuthenticatedRequest).profile?.school_id ?? null;
 }
 
 function err(res: Response, status: number, message: string) {
@@ -30,8 +30,8 @@ router.post("/teachers", async (req, res) => {
   try {
     const r = await createMember(sid, "teacher", { fullName: full_name, email, password, whatsapp });
     return res.status(201).json({ success: true, ...r });
-  } catch (e: any) {
-    return err(res, 400, e.message);
+  } catch (e) {
+    return err(res, 400, e instanceof Error ? e.message : String(e));
   }
 });
 
@@ -50,8 +50,8 @@ router.post("/students", async (req, res) => {
   try {
     const r = await createMember(sid, "student", { fullName: full_name, email, password, whatsapp });
     return res.status(201).json({ success: true, ...r });
-  } catch (e: any) {
-    return err(res, 400, e.message);
+  } catch (e) {
+    return err(res, 400, e instanceof Error ? e.message : String(e));
   }
 });
 
@@ -61,8 +61,8 @@ router.delete("/users/:id", async (req, res) => {
   try {
     await deleteMember(id);
     return res.json({ success: true });
-  } catch (e: any) {
-    return err(res, 400, e.message);
+  } catch (e) {
+    return err(res, 400, e instanceof Error ? e.message : String(e));
   }
 });
 
@@ -74,8 +74,8 @@ router.put("/users/:id", async (req, res) => {
   try {
     const data = await updateMember(id, sid, { full_name, whatsapp });
     return res.json({ success: true, data });
-  } catch (e: any) {
-    return err(res, 400, e.message);
+  } catch (e) {
+    return err(res, 400, e instanceof Error ? e.message : String(e));
   }
 });
 
@@ -94,8 +94,8 @@ router.post("/classes", async (req, res) => {
   try {
     const data = await createClass(sid, { name, tingkat, wali_guru_id });
     return res.status(201).json({ success: true, data });
-  } catch (e: any) {
-    return err(res, 400, e.message);
+  } catch (e) {
+    return err(res, 400, e instanceof Error ? e.message : String(e));
   }
 });
 
@@ -105,8 +105,8 @@ router.put("/classes/:id", async (req, res) => {
   try {
     const data = await updateClass(sid, req.params.id, req.body ?? {});
     return res.json({ success: true, data });
-  } catch (e: any) {
-    return err(res, 400, e.message);
+  } catch (e) {
+    return err(res, 400, e instanceof Error ? e.message : String(e));
   }
 });
 
@@ -116,8 +116,8 @@ router.delete("/classes/:id", async (req, res) => {
   try {
     await deleteClass(sid, req.params.id);
     return res.json({ success: true });
-  } catch (e: any) {
-    return err(res, 400, e.message);
+  } catch (e) {
+    return err(res, 400, e instanceof Error ? e.message : String(e));
   }
 });
 
@@ -145,8 +145,8 @@ router.post("/ai/chat", async (req, res) => {
   try {
     const reply = await chatWithAi(sid, messages);
     return res.json({ success: true, data: reply });
-  } catch (e: any) {
-    return err(res, 500, e.message);
+  } catch (e) {
+    return err(res, 500, e instanceof Error ? e.message : String(e));
   }
 });
 

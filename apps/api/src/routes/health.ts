@@ -33,13 +33,13 @@ router.get("/", async (_req: Request, res: Response) => {
       latencyMs,
       message: "Supabase connected",
     });
-  } catch (e: any) {
+  } catch (e) {
     return res.status(503).json({
       success: false,
       connected: false,
       service: "supabase",
       latencyMs: Date.now() - start,
-      message: e?.message ?? "Supabase connection failed",
+      message: e instanceof Error ? e.message : "Supabase connection failed",
     });
   }
 });
