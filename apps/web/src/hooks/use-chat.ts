@@ -2,9 +2,15 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { getToken } from '@/lib/ai-helpers';
+import { STREAMING_TIMING } from '@/lib/constants';
 import type { ApprovalQuestion, ChatMsg } from '@/types/ai';
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000';
+// jeda maks nunggu animasi streaming selesai sebelum prompt antrean jalan
+const STREAM_WAIT_CAP_MS = 10000;
+const STREAM_WAIT_BUFFER_MS = 400;
+
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 export type UseChatOptions = {
   onMessageSent: (sid: string, messages: ChatMsg[], firstText?: string) => void;
@@ -57,6 +63,11 @@ export function useChat({ onMessageSent, getActiveId, setActiveId }: UseChatOpti
         onMessageSent(sid, full);
         pendingRef.current -= 1;
         setQueued((c) => Math.max(0, c - 1));
+
+        if (pendingRef.current > 0 && !questions?.length && reply.trim()) {
+          const words = reply.trim().split(/\s+/).length;
+          await sleep(Math.min(words * STREAMING_TIMING.WORD_MS + STREAM_WAIT_BUFFER_MS, STREAM_WAIT_CAP_MS));
+        }
       }
     } finally {
       busyRef.current = false;
