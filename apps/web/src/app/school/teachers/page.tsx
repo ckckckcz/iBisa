@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { getToken } from "@/lib/ai-helpers";
 
 type Row = { id: string; email: string; full_name: string; whatsapp: string | null };
 
@@ -12,21 +13,17 @@ export default function TeachersPage() {
   const [form, setForm] = useState({ full_name: "", email: "", password: "", whatsapp: "" });
   const [loading, setLoading] = useState(false);
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
-  function getToken() {
-    if (typeof document === "undefined") return "";
-    return document.cookie.split("; ").find((c) => c.startsWith("token="))?.split("=")[1] ?? localStorage.getItem("token") ?? "";
-  }
 
-  async function load() {
+  const load = useCallback(async () => {
     const res = await fetch(`${apiUrl}/school/teachers`, { headers: { Authorization: `Bearer ${getToken()}` } });
     const data = await res.json();
     if (data.success) setRows(data.data);
     else if (!data.success) console.warn(data.message);
-  }
+  }, [apiUrl]);
 
   useEffect(() => {
-    load();
-  }, []);
+    void load();
+  }, [load]);
 
   async function create() {
     setLoading(true);
@@ -35,7 +32,7 @@ export default function TeachersPage() {
     if (!data.success) alert(data.message);
     else {
       setForm({ full_name: "", email: "", password: "", whatsapp: "" });
-      load();
+      void load();
     }
     setLoading(false);
   }
@@ -43,7 +40,7 @@ export default function TeachersPage() {
   async function del(id: string) {
     if (!confirm("Hapus?")) return;
     await fetch(`${apiUrl}/school/users/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${getToken()}` } });
-    load();
+    void load();
   }
 
   return (

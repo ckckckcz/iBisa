@@ -41,8 +41,8 @@ export default function Login() {
       else if (role === "teacher") router.push("/teacher");
       else if (role === "student") router.push("/student");
       else router.push("/school");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }

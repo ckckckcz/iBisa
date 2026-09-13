@@ -40,7 +40,7 @@ export default function Register() {
     return (
       form.school_name.trim().length >= 3 &&
       /^[0-9]{8,12}$/.test(form.npsn.trim()) &&
-      jenjangList.includes(form.jenjang as any) &&
+      jenjangList.includes(form.jenjang as (typeof jenjangList)[number]) &&
       form.alamat.trim().length >= 10 &&
       form.kota.trim().length >= 2 &&
       form.provinsi.trim().length >= 2
@@ -73,8 +73,8 @@ export default function Register() {
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.message ?? "Registrasi gagal");
       router.push("/login");
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }

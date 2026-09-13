@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { getToken } from "@/lib/ai-helpers";
 
 type Kelas = { id: string; name: string; tingkat: string; wali_guru_id: string | null };
 type Guru = { id: string; full_name: string };
@@ -14,35 +15,41 @@ export default function ClassesPage() {
   const [gurus, setGurus] = useState<Guru[]>([]);
   const [form, setForm] = useState({ name: "", tingkat: "7", wali_guru_id: "" });
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
-  const token = typeof document !== "undefined" ? document.cookie.split("; ").find((c) => c.startsWith("token="))?.split("=")[1] ?? localStorage.getItem("token") ?? "" : "";
 
-  async function load() {
+  const load = useCallback(async () => {
+    const token = getToken();
     const [c, g] = await Promise.all([
       fetch(`${apiUrl}/school/classes`, { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()),
       fetch(`${apiUrl}/school/teachers`, { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()),
     ]);
     if (c.success) setRows(c.data);
     if (g.success) setGurus(g.data);
-  }
+  }, [apiUrl]);
 
   useEffect(() => {
-    load();
-  }, []);
+    void load();
+  }, [load]);
 
   async function create() {
-    const res = await fetch(`${apiUrl}/school/classes`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ ...form, wali_guru_id: form.wali_guru_id || null }) });
+    const token = getToken();
+    const res = await fetch(`${apiUrl}/school/classes`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ ...form, wali_guru_id: form.wali_guru_id || null }),
+    });
     const data = await res.json();
     if (!data.success) alert(data.message);
     else {
       setForm({ name: "", tingkat: "7", wali_guru_id: "" });
-      load();
+      void load();
     }
   }
 
   async function del(id: string) {
     if (!confirm("Hapus kelas?")) return;
+    const token = getToken();
     await fetch(`${apiUrl}/school/classes/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
-    load();
+    void load();
   }
 
   return (
