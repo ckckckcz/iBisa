@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AI_MODELS } from '@/lib/constants';
-import { isGreeting, stepsFor, followUpsFor } from '@/lib/ai-helpers';
+import { followUpsFor } from '@/lib/ai-helpers';
 import { useChatSessions } from '@/hooks/use-chat-sessions';
 import { useAiConfig } from '@/hooks/use-ai-config';
 import { useChat } from '@/hooks/use-chat';
@@ -25,7 +25,7 @@ export default function AiPage() {
 
   const { prompt, setPrompt, model, setModel, error: configError, setError: setConfigError, save } = useAiConfig();
   const { sessions, activeId, setActiveId, persistSessions, newChat: resetSession, pickSession, deleteSession } = useChatSessions();
-  const { chat, setChat, thinking, streaming, activeQuery, error: chatError, send, reset: resetChat } = useChat({
+  const { chat, setChat, thinking, streaming, activeQuery, queued, error: chatError, send, reset: resetChat } = useChat({
     getActiveId: () => activeId,
     setActiveId,
     onMessageSent: persistSessions,
@@ -139,10 +139,10 @@ export default function AiPage() {
                     </div>
                   );
                 })}
-                {thinking && !isGreeting(activeQuery) && (
-                  <Thinking thinking={true} steps={stepsFor(activeQuery)} />
-                )}
                 {thinking && <Loading label={`Memanggil ${model}`} variant="Drive" />}
+                {queued > 1 && (
+                  <div className="text-xs text-neutral-500">⏳ {queued - 1} pertanyaan dalam antrean…</div>
+                )}
               </div>
               <div className="mx-auto w-full max-w-2xl shrink-0 px-4 pt-3 pb-1">
                 <PromptBar placeholder="Tanya AI..." onSend={send} currentModel={model} onModelChange={setModel} models={MODEL_ITEMS} />
