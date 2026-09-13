@@ -17,9 +17,9 @@ export default function Home() {
   return (
     <MotionConfig reducedMotion="user">
     <main className="w-full min-h-screen bg-white relative flex flex-col overflow-x-hidden">
-      <Reveal y={-16} className="w-full flex justify-center pt-4 sm:pt-6 bg-white">
+      <div className="w-full flex justify-center pt-4 sm:pt-6 bg-white">
         <Navbar onConsultClick={scrollToElement("konsultasi")} />
-      </Reveal>
+      </div>
       <HeroSection
         onConsultClick={scrollToElement("konsultasi")}
         onExploreClick={scrollToElement("layanan")}
