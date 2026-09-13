@@ -37,16 +37,26 @@ function fileToDataUrl(file: File): Promise<string> {
 }
 
 async function extractPdf(file: File): Promise<string> {
-
   const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
   const buf = await file.arrayBuffer();
-  const doc = await pdfjs.getDocument({ data: buf }).promise;
+  let doc;
+  try {
+    doc = await pdfjs.getDocument({ data: buf }).promise;
+  } catch (e) {
+    if (/password|encrypt/i.test(e instanceof Error ? e.message : '')) {
+      throw new Error(`"${file.name}" terkunci password. Buka kuncinya dulu.`);
+    }
+    throw new Error(`"${file.name}" tidak bisa dibaca sebagai PDF.`);
+  }
   const pages: string[] = [];
   const n = Math.min(doc.numPages, ATTACH_LIMITS.maxPdfPages);
   for (let i = 1; i <= n; i++) {
     const page = await doc.getPage(i);
     const content = await page.getTextContent();
     pages.push(content.items.map((it) => ('str' in it ? (it.str as string) : '')).join(' '));
+  }
+  if (!pages.join('').trim()) {
+    throw new Error(`"${file.name}" tampaknya hasil scan/foto, teksnya tidak terbaca. Kirim sebagai gambar (screenshot/foto) supaya AI bisa melihatnya.`);
   }
   const note = doc.numPages > n ? `\n\n[hanya ${n} dari ${doc.numPages} halaman dibaca]` : '';
   return trimText(pages.join('\n\n')) + note;
@@ -55,7 +65,15 @@ async function extractPdf(file: File): Promise<string> {
 async function extractDocx(file: File): Promise<string> {
   const mammoth = await import('mammoth');
   const buf = await file.arrayBuffer();
-  const out = await mammoth.extractRawText({ arrayBuffer: buf });
+  let out;
+  try {
+    out = await mammoth.extractRawText({ arrayBuffer: buf });
+  } catch {
+    throw new Error(`"${file.name}" tidak bisa dibaca sebagai DOCX.`);
+  }
+  if (!out.value.trim()) {
+    throw new Error(`"${file.name}" tidak ada teks yang terbaca.`);
+  }
   return trimText(out.value);
 }
 
