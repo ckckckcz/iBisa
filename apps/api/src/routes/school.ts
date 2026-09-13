@@ -1,6 +1,8 @@
 import { Router, type Request, type Response } from "express";
+import multer from "multer";
 import { authenticate, authorize, type AuthenticatedRequest } from "../middlewares/auth.js";
 import { listMembers, createMember, deleteMember, updateMember } from "@bisa/infrastructure";
+import { uploadAvatar } from "@bisa/infrastructure";
 import type { MemberCreateBody, MemberUpdateBody } from "@bisa/types";
 import { listClasses, createClass, updateClass, deleteClass } from "@bisa/infrastructure";
 import { getAiConfig, upsertAiConfig, chatWithAi } from "@bisa/infrastructure";
@@ -51,6 +53,27 @@ router.post("/students", async (req, res) => {
   try {
     const r = await createMember(sid, "student", { fullName: full_name, email, password, whatsapp, number, gender, status, avatar_url, guardian_name, grade, class_id, attendance_pct });
     return res.status(201).json({ success: true, ...r });
+  } catch (e) {
+    return err(res, 400, e instanceof Error ? e.message : String(e));
+  }
+});
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 2 * 1024 * 1024, files: 1 },
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype.startsWith("image/")) cb(null, true);
+    else cb(new Error("File harus gambar"));
+  },
+});
+
+router.post("/uploads/avatar", upload.single("avatar"), async (req, res) => {
+  const sid = schoolId(req);
+  if (!sid) return err(res, 400, "Akun belum terhubung sekolah");
+  try {
+    if (!req.file) return err(res, 400, "File wajib");
+    const url = await uploadAvatar(sid, req.file.buffer, req.file.mimetype);
+    return res.status(201).json({ success: true, url });
   } catch (e) {
     return err(res, 400, e instanceof Error ? e.message : String(e));
   }

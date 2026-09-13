@@ -11,6 +11,7 @@ import { GenderBadge, StatusBadge } from "@/features/school/member-badges";
 import { initials, type ClassOption, type Column, type FormPayload, type Member } from "@/types/school";
 import { getToken } from "@/lib/ai-helpers";
 import { fetchSchoolList } from "@/lib/school-api";
+import { CalendarOffIcon, Chart01Icon, CheckmarkCircle01Icon, StudentsIcon } from "@hugeicons/core-free-icons";
 
 export default function StudentsPage() {
   const [rows, setRows] = useState<Member[]>([]);
@@ -52,10 +53,10 @@ export default function StudentsPage() {
     const leave = rows.filter((r) => r.status === "on_leave").length;
     const avg = total ? Math.round(rows.reduce((a, r) => a + (r.attendance_pct ?? 0), 0) / total) : 0;
     return [
-      { label: "Total Students", value: String(total), sub: "vs last year", delta: "4%" },
-      { label: "Active Students", value: String(active), sub: "vs last semester", delta: "7%", down: true },
-      { label: "On Leave", value: String(leave), sub: "This Semester", delta: "4%" },
-      { label: "Avg Attendance", value: `${avg}%`, sub: "This Semester" },
+      { label: "Total Students", value: String(total), sub: "vs last year", delta: "4%", icon: StudentsIcon },
+      { label: "Active Students", value: String(active), sub: "vs last semester", delta: "7%", down: true, icon: CheckmarkCircle01Icon },
+      { label: "On Leave", value: String(leave), sub: "This Semester", delta: "4%", icon: CalendarOffIcon },
+      { label: "Avg Attendance", value: `${avg}%`, sub: "This Semester", icon: Chart01Icon },
     ];
   }, [rows]);
 
@@ -135,7 +136,7 @@ export default function StudentsPage() {
         ]}
         exportName="students" onEdit={(m) => { setEditing(m); setOpen(true); }} onDelete={remove}
       />
-      <MemberForm open={open} onOpenChange={setOpen} mode="student" initial={editing} classOptions={classes} saving={saving} onSubmit={submit} />
+      <MemberForm open={open} onOpenChange={setOpen} mode="student" initial={editing} classOptions={classes} saving={saving} apiUrl={apiUrl} onSubmit={submit} />
     </div>
   );
 }

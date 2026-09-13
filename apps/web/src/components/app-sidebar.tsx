@@ -3,7 +3,6 @@
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import { NavMain } from "@/components/nav-main"
-import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
 import { TeamSwitcher } from "@/components/team-switcher"
 import { useAuth } from "@/hooks/use-auth"
@@ -23,8 +22,6 @@ import {
   UserGroupIcon,
   AccessibilityIcon,
   Idea01Icon,
-  Task01Icon,
-  Award01Icon,
   Settings05Icon,
 } from "@hugeicons/core-free-icons"
 import Image from "next/image"
@@ -80,24 +77,6 @@ const navMainByRole: Record<string, typeof navSchool> = {
 
 const navMain = navSchool;
 
-const projects = [
-  {
-    name: "Tunanetra — Braille & Audio",
-    url: "#",
-    icon: <HugeiconsIcon icon={Task01Icon} strokeWidth={2} />,
-  },
-  {
-    name: "Tunarungu — Isyarat Visual",
-    url: "#",
-    icon: <HugeiconsIcon icon={Award01Icon} strokeWidth={2} />,
-  },
-  {
-    name: "Tunawicara — Artikulasi",
-    url: "#",
-    icon: <HugeiconsIcon icon={AccessibilityIcon} strokeWidth={2} />,
-  },
-];
-
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { profile } = useAuth();
   const router = useRouter();
@@ -122,7 +101,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={roleNav} />
-        <NavProjects projects={projects} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={user} onLogout={handleLogout} />

@@ -11,6 +11,7 @@ import { GenderBadge, StatusBadge } from "@/features/school/member-badges";
 import { initials, type Column, type FormPayload, type Member } from "@/types/school";
 import { getToken } from "@/lib/ai-helpers";
 import { fetchSchoolList } from "@/lib/school-api";
+import { BookOpen01Icon, CalendarOffIcon, CheckmarkCircle01Icon, TeacherIcon } from "@hugeicons/core-free-icons";
 
 export default function TeachersPage() {
   const [rows, setRows] = useState<Member[]>([]);
@@ -55,10 +56,10 @@ export default function TeachersPage() {
     const active = rows.filter((r) => r.status === "active").length;
     const leave = rows.filter((r) => r.status === "on_leave").length;
     return [
-      { label: "Total Teachers", value: String(total), sub: "vs last year", delta: "4%" },
-      { label: "Active Teachers", value: String(active), sub: "vs last semester", delta: "7%", down: true },
-      { label: "On Leave", value: String(leave), sub: "This Semester", delta: "4%" },
-      { label: "Homeroom", value: String(waliCount), sub: "Wali kelas aktif" },
+      { label: "Total Teachers", value: String(total), sub: "vs last year", delta: "4%", icon: TeacherIcon },
+      { label: "Active Teachers", value: String(active), sub: "vs last semester", delta: "7%", down: true, icon: CheckmarkCircle01Icon },
+      { label: "On Leave", value: String(leave), sub: "This Semester", delta: "4%", icon: CalendarOffIcon },
+      { label: "Homeroom", value: String(waliCount), sub: "Wali kelas aktif", icon: BookOpen01Icon },
     ];
   }, [rows, waliCount]);
 
@@ -136,7 +137,7 @@ export default function TeachersPage() {
         ]}
         exportName="teachers" onEdit={(m) => { setEditing(m); setOpen(true); }} onDelete={remove}
       />
-      <MemberForm open={open} onOpenChange={setOpen} mode="teacher" initial={editing} classOptions={[]} saving={saving} onSubmit={submit} />
+      <MemberForm open={open} onOpenChange={setOpen} mode="teacher" initial={editing} classOptions={[]} saving={saving} apiUrl={apiUrl} onSubmit={submit} />
     </div>
   );
 }

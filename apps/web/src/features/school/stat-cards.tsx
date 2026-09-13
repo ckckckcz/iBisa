@@ -1,6 +1,10 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { HugeiconsIcon, type HugeiconsIconProps } from "@hugeicons/react";
 
-export type StatItem = { label: string; value: string; sub: string; delta?: string; down?: boolean };
+export type StatItem = {
+  label: string; value: string; sub: string; delta?: string; down?: boolean;
+  icon: HugeiconsIconProps["icon"];
+};
 
 export function StatCards({ items }: { items: StatItem[] }) {
   return (
@@ -9,8 +13,8 @@ export function StatCards({ items }: { items: StatItem[] }) {
         <Card key={s.label}>
           <CardContent className="flex flex-col gap-1 p-4">
             <div className="flex items-center gap-2">
-              <span className="grid size-6 place-items-center rounded-md bg-violet-600 text-[11px] font-bold text-white">
-                {s.label.slice(0, 1)}
+              <span className="grid size-6 place-items-center rounded-md bg-blue-700 text-white">
+                <HugeiconsIcon icon={s.icon} strokeWidth={2} className="size-3.5" />
               </span>
               <span className="text-xs font-medium text-muted-foreground">{s.label}</span>
             </div>
