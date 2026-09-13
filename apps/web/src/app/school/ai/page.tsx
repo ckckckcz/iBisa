@@ -112,12 +112,18 @@ export default function AiPage() {
                 {chat.map((m, i) => {
                   const isLast = i === chat.length - 1;
                   return (
-                    <div key={i} className={`rounded px-3 py-2 text-sm ${m.role === 'user' ? 'bg-blue-50' : ''}`}>
+                    <div key={i} className={`w-full rounded px-3 py-2 text-sm ${m.role === 'user' ? 'bg-blue-50' : ''}`}>
                       {m.role === 'assistant' ? (
                         <>
+                          {m.thoughts?.length ? (
+                            <div className="mb-1">
+                              <Thinking thinking={false} steps={m.thoughts} />
+                            </div>
+                          ) : null}
                           <SelectableMessage onAction={(action, selected) => send(`${action} teks berikut: "${selected}"`)}>
                             <StreamingText
                               text={isLast && streaming ? streaming : m.content}
+                              animate={isLast && streaming !== ''}
                               followUps={isLast ? followUpsFor(activeQuery) : []}
                               onFollowUp={(f) => send(f)}
                               onRetry={isLast && activeQuery ? () => send(activeQuery) : undefined}
@@ -134,11 +140,9 @@ export default function AiPage() {
                   );
                 })}
                 {thinking && !isGreeting(activeQuery) && (
-                  <div className="rounded bg-white border p-3">
-                    <Thinking thinking={true} steps={stepsFor(activeQuery)} />
-                  </div>
+                  <Thinking thinking={true} steps={stepsFor(activeQuery)} />
                 )}
-                {thinking && <Loading label="Memanggil model" variant="Drive" />}
+                {thinking && <Loading label={`Memanggil ${model}`} variant="Drive" />}
               </div>
               <div className="mx-auto w-full max-w-2xl shrink-0 px-4 pt-3 pb-1">
                 <PromptBar placeholder="Tanya AI..." onSend={send} currentModel={model} onModelChange={setModel} models={MODEL_ITEMS} />

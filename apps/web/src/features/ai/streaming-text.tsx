@@ -48,6 +48,7 @@ export default function StreamingText({
   sources = [],
   followUps = [],
   loop = false,
+  animate = true,
   onDone,
   onFollowUp,
   onRetry,
@@ -57,20 +58,22 @@ export default function StreamingText({
   sources?: StreamingSource[];
   followUps?: string[];
   loop?: boolean;
+  /** false = tampil final instan, untuk pesan historis biar gak replay animasi */
+  animate?: boolean;
   onDone?: () => void;
   onFollowUp?: (text: string, index: number) => void;
   onRetry?: () => void;
 }) {
   const normalized: StreamingToken[] = tokens ?? (text ? text.split(" ").map((t) => ({ text: t })) : []);
   const fullText = normalized.filter((t) => !t.cite).map((t) => t.text).join(" ");
-  const [count, setCount] = useState(0);
+  const [count, setCount] = useState(animate ? 0 : normalized.length);
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [vote, setVote] = useState<"up" | "down" | null>(null);
   const [prevFullText, setPrevFullText] = useState(fullText);
   if (prevFullText !== fullText) {
     setPrevFullText(fullText);
-    setCount(0);
+    setCount(animate ? 0 : normalized.length);
     setSourcesOpen(false);
     setCopied(false);
     setVote(null);
@@ -78,11 +81,11 @@ export default function StreamingText({
   const done = count >= normalized.length;
 
   useEffect(() => {
-    if (normalized.length === 0) return;
+    if (!animate || normalized.length === 0) return;
     if (done && !loop) { onDone?.(); return; }
     const t = setTimeout(() => setCount((c) => (c >= normalized.length ? 0 : c + 1)), done ? STREAMING_TIMING.HOLD_MS : STREAMING_TIMING.WORD_MS);
     return () => clearTimeout(t);
-  }, [count, done, loop, normalized.length, onDone]);
+  }, [animate, count, done, loop, normalized.length, onDone]);
 
   async function copy() {
     try {
