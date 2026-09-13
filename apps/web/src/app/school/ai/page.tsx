@@ -135,7 +135,25 @@ export default function AiPage() {
                             </div>
                           ) : null}
                         </>
-                      ) : m.content}
+                      ) : (
+                        <>
+                          {(m.attachments ?? []).map((a) =>
+                            a.kind === 'image' ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img key={a.name} src={`data:${a.mimeType};base64,${a.data}`} alt={a.name} className="mb-1.5 max-h-48 rounded-lg object-cover" />
+                            ) : null,
+                          )}
+                          {(m.attachmentMeta ?? m.attachments?.map((a) => ({ kind: a.kind, name: a.name })) ?? []).map((meta) =>
+                            meta.kind === 'text' ? (
+                              <span key={meta.name} className="mb-1.5 inline-flex items-center gap-1 rounded-[6px] bg-white/70 px-1.5 py-0.5 font-mono text-[11px] text-neutral-600">
+                                <span className="rounded bg-neutral-200 px-1 text-[9px] font-bold uppercase">{meta.name.split('.').pop()}</span>
+                                {meta.name}
+                              </span>
+                            ) : null,
+                          )}
+                          {m.content ? <div>{m.content}</div> : null}
+                        </>
+                      )}
                     </div>
                   );
                 })}

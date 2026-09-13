@@ -2,9 +2,10 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { ArrowDown01Icon, ArrowUp01Icon, Tick02Icon } from '@hugeicons/core-free-icons';
+import { Add01Icon, ArrowDown01Icon, ArrowUp01Icon, Cancel01Icon, Tick02Icon } from '@hugeicons/core-free-icons';
 import { createShader, playSweep, accentChain, ACCENTS } from 'glimm';
 import { AI_MODELS } from '@/lib/constants';
+import { ATTACH_ACCEPT, ATTACH_LIMITS, extractFile, type Attachment } from '@/lib/attachments';
 
 const RAINBOW = accentChain([ACCENTS.red, ACCENTS.orange, ACCENTS.yellow, ACCENTS.green, ACCENTS.cyan, ACCENTS.blue, ACCENTS.purple]);
 
@@ -16,11 +17,34 @@ export default function PromptBar({
   onModelChange,
 }: {
   placeholder?: string;
-  onSend?: (text: string) => void;
+  onSend?: (text: string, files?: Attachment[]) => void;
   models?: { key: string; name: string; tag: string }[];
   currentModel?: string;
   onModelChange?: (model: string) => void;
 }) {
+  type Picked = { id: string; status: 'loading' | 'ready' | 'error'; error?: string; attachment?: Attachment };
+  const [picked, setPicked] = useState<Picked[]>([]);
+  const [attachError, setAttachError] = useState('');
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function pickFiles(list: FileList | null) {
+    if (!list?.length) return;
+    setAttachError('');
+    const room = ATTACH_LIMITS.maxFiles - picked.length;
+    if (room <= 0) { setAttachError(`Maksimal ${ATTACH_LIMITS.maxFiles} file.`); return; }
+    const batch = [...list].slice(0, room);
+    if (list.length > room) setAttachError(`Maksimal ${ATTACH_LIMITS.maxFiles} file, sisanya diabaikan.`);
+    const entries: Picked[] = batch.map((f) => ({ id: `${Date.now()}-${f.name}`, status: 'loading' as const }));
+    setPicked((c) => [...c, ...entries]);
+    await Promise.all(batch.map(async (f, i) => {
+      try {
+        const attachment = await extractFile(f);
+        setPicked((c) => c.map((p) => (p.id === entries[i].id ? { ...p, status: 'ready' as const, attachment } : p)));
+      } catch (e) {
+        setPicked((c) => c.map((p) => (p.id === entries[i].id ? { ...p, status: 'error' as const, error: e instanceof Error ? e.message : 'Gagal membaca file.' } : p)));
+      }
+    }));
+  }
   const MODELS = models ?? AI_MODELS;
   const [draft, setDraft] = useState('');
   const [modelOpen, setModelOpen] = useState(false);
@@ -135,8 +159,8 @@ export default function PromptBar({
     const measure = measureRef.current;
     const modelButton = modelRef.current;
     if (!input || !controls || !measure || !modelButton) return;
-    const fixed = 28 + modelButton.offsetWidth;
-    const gaps = 4 * 2;
+    const fixed = 28 + 28 + modelButton.offsetWidth;
+    const gaps = 4 * 3;
     const inline = controls.clientWidth - fixed - gaps;
     const need = draft.includes('\n') || measure.offsetWidth + 8 > inline;
     if (need !== expanded) setExpanded(need);
@@ -147,14 +171,19 @@ export default function PromptBar({
     input.style.overflowY = h > max ? 'auto' : 'hidden';
   }, [draft, expanded]);
 
-  const canSend = draft.trim().length > 0;
+  const readyFiles = picked.filter((p) => p.status === 'ready' && p.attachment).map((p) => p.attachment as Attachment);
+  const extracting = picked.some((p) => p.status === 'loading');
+  const canSend = draft.trim().length > 0 || (readyFiles.length > 0 && !extracting);
   const wide = expanded;
 
   const send = () => {
-    if (!canSend) return;
-    onSend?.(draft.trim());
+    if (!canSend || extracting) return;
+    onSend?.(draft.trim(), readyFiles.length ? readyFiles : undefined);
     setDraft('');
+    setPicked([]);
+    setAttachError('');
     setModelOpen(false);
+    if (fileRef.current) fileRef.current.value = '';
   };
 
   return (
@@ -210,14 +239,43 @@ export default function PromptBar({
             {draft}
           </span>
 
+          {picked.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 px-0.5 pt-1">
+              {picked.map((p) => (
+                <span key={p.id} title={p.error ?? p.attachment?.name} className={`flex h-7 items-center gap-1.5 rounded-[8px] py-1 pr-1 pl-1.5 text-[11.5px] ${p.status === 'error' ? 'bg-red-50 text-red-600' : 'bg-neutral-100 text-neutral-700'}`}>
+                  {p.status === 'loading' ? (
+                    <span className="size-3.5 animate-spin rounded-full border-[1.5px] border-neutral-300 border-t-neutral-600" />
+                  ) : p.attachment?.kind === 'image' ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={`data:${p.attachment.mimeType};base64,${p.attachment.data}`} alt="" className="size-4 rounded-[4px] object-cover" />
+                  ) : (
+                    <HugeiconsIcon icon={Add01Icon} size={12} />
+                  )}
+                  <span className="max-w-36 truncate">{p.attachment?.name ?? 'Memproses…'}</span>
+                  {p.status === 'error' && <span className="max-w-48 truncate text-[10.5px]">{p.error}</span>}
+                  <button type="button" aria-label="Hapus lampiran" onClick={() => setPicked((c) => c.filter((x) => x.id !== p.id))} className="flex size-5 items-center justify-center rounded-[5px] hover:bg-neutral-200">
+                    <HugeiconsIcon icon={Cancel01Icon} size={12} strokeWidth={2} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+          {attachError && <p className="px-1 text-[11px] text-red-600">{attachError}</p>}
+
           <div
             ref={controlsRef}
-            className={`grid items-end gap-x-1 gap-y-1.5 ${
-              wide
-                ? 'grid-cols-[minmax(0,1fr)_auto_28px]'
-                : 'grid-cols-[minmax(0,1fr)_auto_28px]'
-            }`}
+            className="grid items-end gap-x-1 gap-y-1.5 grid-cols-[28px_minmax(0,1fr)_auto_28px]"
           >
+            <input ref={fileRef} type="file" multiple accept={ATTACH_ACCEPT} className="hidden" aria-label="Lampirkan file" onChange={(e) => { void pickFiles(e.target.files); e.target.value = ''; }} />
+            <button
+              type="button"
+              aria-label="Lampirkan file"
+              title="Lampirkan gambar / PDF / dokumen"
+              onClick={() => fileRef.current?.click()}
+              className="col-start-1 row-start-1 flex size-7 shrink-0 items-center justify-center justify-self-start rounded-[8px] hover:bg-neutral-100"
+            >
+              <HugeiconsIcon icon={Add01Icon} size={16} strokeWidth={2} />
+            </button>
             <textarea
               ref={inputRef}
               rows={1}
@@ -232,7 +290,7 @@ export default function PromptBar({
               placeholder={placeholder ?? 'Write a message\u2026'}
               aria-label="Prompt"
               className={`min-h-7 px-1 py-[5px] text-[13px] leading-[18px] min-w-0 w-full resize-none bg-transparent outline-none placeholder:text-neutral-400 ${
-                wide ? 'col-span-full col-start-1 row-start-1' : 'col-start-1 row-start-1'
+                wide ? 'col-span-full col-start-1 row-start-1' : 'col-start-2 row-start-1'
               }`}
             />
             <button
@@ -241,7 +299,7 @@ export default function PromptBar({
               aria-expanded={modelOpen}
               onClick={() => setModelOpen((c) => !c)}
               className={`flex h-7 shrink-0 items-center gap-1 px-1.5 text-[12px] font-medium hover:bg-neutral-100 rounded-[8px] ${
-                wide ? 'col-start-2 row-start-2 justify-self-start' : 'col-start-2 row-start-1'
+                wide ? 'col-start-2 row-start-2 justify-self-start' : 'col-start-3 row-start-1'
               }`}
             >
               {model.name}
@@ -255,7 +313,7 @@ export default function PromptBar({
               disabled={!canSend}
               onClick={send}
               className={`flex size-7 shrink-0 items-center justify-center enabled:active:scale-[0.94] rounded-[8px] ${
-                wide ? 'col-start-3 row-start-2' : 'col-start-3 row-start-1'
+                wide ? 'col-start-4 row-start-2' : 'col-start-4 row-start-1'
               }`}
               style={{ background: canSend ? 'black' : '#e5e5e5', color: canSend ? 'white' : '#737373' }}
             >

@@ -42,7 +42,7 @@ for (const useHelmet of [
   crossOriginEmbedderPolicy(),
   contentSecurityPolicy(),
 ]) app.use(useHelmet);
-app.use(express.json());
+app.use(express.json({ limit: '15mb' })); // lampiran gambar base64
 
 app.get('/', (req: Request, res: Response) => {
   res.json({

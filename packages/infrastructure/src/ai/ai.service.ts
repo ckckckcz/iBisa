@@ -18,6 +18,12 @@ export async function upsertAiConfig(schoolId: string, p: { system_prompt: strin
 
 export type ApprovalQuestion = { q: string; type: "radio" | "check"; options: string[] };
 export type ChatReply = { role: string; content: string; questions?: ApprovalQuestion[]; thoughts?: string[] };
+export type ChatAttachment =
+  | { kind: "image"; name: string; mimeType: string; data: string }
+  | { kind: "text"; name: string; text: string };
+export type ChatMessage = { role: string; content: string; attachments?: ChatAttachment[] };
+
+const MAX_ATTACH_CHARS = 30000;
 
 type OpenAiResponse = {
   error?: { message?: string };
@@ -59,7 +65,19 @@ function mockQuestions(last: string): ApprovalQuestion[] | undefined {
   return undefined;
 }
 
-export async function chatWithAi(schoolId: string, messages: { role: string; content: string }[]): Promise<ChatReply> {
+function toGeminiParts(m: ChatMessage): unknown[] {
+  const parts: unknown[] = [{ text: m.content }];
+  for (const a of m.attachments?.slice(0, 3) ?? []) {
+    if (a.kind === "image" && a.data) {
+      parts.push({ inlineData: { mimeType: a.mimeType, data: a.data } });
+    } else if (a.kind === "text" && a.text.trim()) {
+      parts.push({ text: `[Lampiran ${a.name}]:\n${a.text.slice(0, MAX_ATTACH_CHARS)}` });
+    }
+  }
+  return parts;
+}
+
+export async function chatWithAi(schoolId: string, messages: ChatMessage[]): Promise<ChatReply> {
   const config = await getAiConfig(schoolId);
   if (config.model.startsWith("gemini")) return chatWithGemini(config, messages);
   const key = process.env.OPENAI_API_KEY;
@@ -74,7 +92,7 @@ export async function chatWithAi(schoolId: string, messages: { role: string; con
   return data.choices?.[0]?.message ?? { role: "assistant", content: "" };
 }
 
-async function chatWithGemini(config: { system_prompt: string; model: string }, messages: { role: string; content: string }[]): Promise<ChatReply> {
+async function chatWithGemini(config: { system_prompt: string; model: string }, messages: ChatMessage[]): Promise<ChatReply> {
   const last = messages.at(-1)?.content ?? "";
   const key = process.env.GEMINI_API_KEY;
   if (!key) {
@@ -83,7 +101,7 @@ async function chatWithGemini(config: { system_prompt: string; model: string }, 
   }
   const base = {
     system_instruction: { parts: [{ text: `${config.system_prompt}\nFormat jawaban dengan markdown rapi: **bold** untuk penekanan, bullet (-) untuk daftar, tabel markdown bila perlu. Jangan pakai ASCII art.\nJika butuh klarifikasi sebelum menjawab, kembalikan JSON saja: {"content": "<kalimat pengantar singkat>", "questions": [{"q": "...", "type": "radio"|"check", "options": ["...", "..."]}]}. Maks 3 pertanyaan, tiap opsi maks 4.` }] },
-    contents: messages.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] })),
+    contents: messages.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: toGeminiParts(m) })),
   };
   const body = { ...base, generationConfig: { thinkingConfig: { includeThoughts: true } } };
 

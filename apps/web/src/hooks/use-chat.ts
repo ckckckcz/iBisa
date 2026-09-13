@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { getToken } from '@/lib/ai-helpers';
 import { STREAMING_TIMING } from '@/lib/constants';
-import type { ApprovalQuestion, ChatMsg } from '@/types/ai';
+import type { ApprovalQuestion, Attachment, ChatMsg } from '@/types/ai';
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000';
 // jeda maks nunggu animasi streaming selesai sebelum prompt antrean jalan
@@ -44,7 +44,7 @@ export function useChat({ onMessageSent, getActiveId, setActiveId }: UseChatOpti
         const res = await fetch(`${apiUrl}/school/ai/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-          body: JSON.stringify({ messages: history.map(({ role, content }) => ({ role, content })) }),
+          body: JSON.stringify({ messages: history.map(({ role, content, attachments }) => ({ role, content, attachments })) }),
         });
         const data = await res.json();
         if (!data.success) {
@@ -75,17 +75,17 @@ export function useChat({ onMessageSent, getActiveId, setActiveId }: UseChatOpti
     }
   }
 
-  async function send(text: string): Promise<void> {
+  async function send(text: string, files?: Attachment[]): Promise<void> {
     const clean = text.trim();
-    if (!clean) return;
+    if (!clean && !files?.length) return;
     setError('');
     const currentActiveId = getActiveId();
     const sid = currentActiveId ?? crypto.randomUUID();
     if (!currentActiveId) setActiveId(sid);
-    const next: ChatMsg[] = [...chatRef.current, { role: 'user', content: clean }];
+    const next: ChatMsg[] = [...chatRef.current, { role: 'user', content: clean, attachments: files?.length ? files : undefined }];
     chatRef.current = next;
     setChat(next);
-    onMessageSent(sid, next, clean);
+    onMessageSent(sid, next, clean || `Lampiran: ${files?.map((f) => f.name).join(', ') ?? ''}`);
     pendingRef.current += 1;
     setQueued((c) => c + 1);
     void pump(sid);
