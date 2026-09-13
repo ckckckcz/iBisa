@@ -101,20 +101,19 @@ export function MemberForm({
 
           {mode === "student" ? (
             <>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="grid gap-1.5"><Label>Grade (otomatis)</Label><Input value={grade} readOnly placeholder="-" className="bg-muted" /></div>
-                <div className="grid gap-1.5"><Label>Attendance %</Label><Input type="number" min={0} max={100} value={f.attendance_pct} onChange={(e) => set("attendance_pct", Number(e.target.value))} /></div>
-              </div>
+              <div className="grid gap-1.5"><Label>Attendance %</Label><Input type="number" min={0} max={100} value={f.attendance_pct} onChange={(e) => set("attendance_pct", Number(e.target.value))} /></div>
               <div className="grid gap-1.5">
                 <Label>Kelas *</Label>
                 <Select value={f.class_id} onValueChange={(v) => set("class_id", v ?? "")}>
-                  <SelectTrigger className="w-full"><SelectValue placeholder="Pilih kelas" /></SelectTrigger>
+                  <SelectTrigger className="w-full">
+                    <SelectValue>{className || <span className="text-muted-foreground">Pilih kelas</span>}</SelectValue>
+                  </SelectTrigger>
                   <SelectContent>
                     {classOptions.map((c) => (<SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>))}
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid gap-1.5"><Label>Wali / Guardian</Label><Input placeholder="Nama wali" value={f.guardian_name} onChange={(e) => set("guardian_name", e.target.value)} /></div>
+              <div className="grid gap-1.5"><Label>Wali</Label><Input placeholder="Nama wali" value={f.guardian_name} onChange={(e) => set("guardian_name", e.target.value)} /></div>
             </>
           ) : (
             <div className="grid grid-cols-2 gap-3">
