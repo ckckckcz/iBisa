@@ -36,7 +36,7 @@ function Row({
       type="button"
       title={title ?? label}
       onClick={onClick}
-      className={`group/row relative z-10 mx-2 flex h-8 items-center rounded-lg px-2 text-left transition-colors duration-150 active:scale-[0.98] ${
+      className={`group/row relative z-10 mx-2 flex h-8 max-w-full items-center overflow-hidden rounded-lg px-2 text-left transition-colors duration-150 active:scale-[0.98] ${
         active ? "bg-neutral-100" : "hover:bg-neutral-100"
       }`}
     >
@@ -70,6 +70,7 @@ export default function ChatSidebar({
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
+  const dragRef = useRef<{ x: number; scroll: number; active: boolean } | null>(null);
 
   const visible = recents.filter((item) => item.label.toLowerCase().includes(query.trim().toLowerCase()));
 
@@ -167,6 +168,7 @@ export default function ChatSidebar({
                 <input
                   ref={searchRef}
                   value={query}
+                  title={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Escape") {
@@ -174,9 +176,26 @@ export default function ChatSidebar({
                       setQuery("");
                     }
                   }}
+                  onPointerDown={(e) => {
+                    dragRef.current = { x: e.clientX, scroll: e.currentTarget.scrollLeft, active: false };
+                  }}
+                  onPointerMove={(e) => {
+                    const d = dragRef.current;
+                    const el = e.currentTarget;
+                    if (!d) return;
+                    if (!d.active && Math.abs(e.clientX - d.x) > 6) {
+                      d.active = true;
+                      const pos = el.selectionStart ?? 0;
+                      el.setSelectionRange(pos, pos);
+                      try { el.setPointerCapture(e.pointerId); } catch { /* abaikan */ }
+                    }
+                    if (d.active) el.scrollLeft = d.scroll - (e.clientX - d.x);
+                  }}
+                  onPointerUp={() => { dragRef.current = null; }}
+                  onPointerCancel={() => { dragRef.current = null; }}
                   placeholder="Cari chat"
                   aria-label="Cari riwayat chat"
-                  className="ml-1.5 min-w-0 flex-1 bg-transparent text-[13px] text-neutral-900 outline-none placeholder:text-neutral-400"
+                  className="ml-1.5 min-w-0 flex-1 touch-pan-x bg-transparent text-[13px] text-neutral-900 outline-none placeholder:text-neutral-400"
                 />
                 <button
                   type="button"
