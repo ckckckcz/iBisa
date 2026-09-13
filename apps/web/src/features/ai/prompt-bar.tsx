@@ -196,7 +196,6 @@ export default function PromptBar({
   useEffect(() => {
     shaderRef.current = makeShader();
     return () => { shaderRef.current?.destroy(); shaderRef.current = null; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const celebrate = () => {
@@ -350,7 +349,7 @@ export default function PromptBar({
 
         <div className="relative isolate flex flex-col gap-1.5 overflow-hidden rounded-[14px] border bg-white p-1.5 shadow-sm transition-[border-color,border-radius] duration-150 focus-within:border-neutral-400">
           <canvas ref={glimmRef} aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 h-full w-full" style={{ borderRadius: 'inherit' }} />
-          <span ref={measureRef} aria-hidden="true" className="pointer-events-none absolute invisible whitespace-pre text-[13px] leading-[18px]">{draft}</span>
+          <span ref={measureRef} aria-hidden="true" className="pointer-events-none absolute invisible whitespace-pre text-[13px] leading-4.5">{draft}</span>
 
           {picked.length > 0 && (
             <div className="flex flex-wrap gap-1.5 px-0.5 pt-1">
@@ -362,7 +361,7 @@ export default function PromptBar({
                       <span className="size-3.5 animate-spin rounded-full border-[1.5px] border-neutral-300 border-t-neutral-600" />
                     ) : p.attachment?.kind === 'image' ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={`data:${p.attachment.mimeType};base64,${p.attachment.data}`} alt="" className="size-4 rounded-[4px] object-cover" />
+                      <img src={`data:${p.attachment.mimeType};base64,${p.attachment.data}`} alt="" className="size-4 rounded-lg object-cover" />
                     ) : (
                       <span className={`rounded px-1 text-[9px] font-bold ${badge.className}`}>{badge.label}</span>
                     )}
@@ -417,7 +416,7 @@ export default function PromptBar({
               }}
               placeholder={listening ? 'Mendengarkan…' : placeholder ?? 'Tanya AI...'}
               aria-label="Prompt"
-              className={`min-h-7 w-full min-w-0 resize-none bg-transparent px-1 py-[5px] text-[13px] leading-[18px] outline-none placeholder:text-neutral-400 ${wide ? 'col-span-full col-start-1 row-start-1' : 'col-start-2 row-start-1'}`}
+              className={`min-h-7 w-full min-w-0 resize-none bg-transparent px-1 py-1.25 text-[13px] leading-4.5 outline-none placeholder:text-neutral-400 ${wide ? 'col-span-full col-start-1 row-start-1' : 'col-start-2 row-start-1'}`}
             />
 
             <button
