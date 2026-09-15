@@ -77,6 +77,109 @@ function toGeminiParts(m: ChatMessage): unknown[] {
   return parts;
 }
 
+export type QuizDraftQuestion = {
+  question: string;
+  options: [string, string, string, string];
+  answerIndex: number;
+  explanation: string;
+};
+
+function quizSystemPrompt(count: number, subject: string): string {
+  const mapel = subject.trim() ? ` untuk mapel ${subject.trim()}` : "";
+  return `Kamu generator soal pilihan ganda Bahasa Indonesia untuk siswa. Berdasarkan MATERI pada lampiran/pesan berikut, buatkan TEPAT ${count} soal pilihan ganda${mapel}.
+Aturan:
+- Setiap soal punya tepat 4 opsi jawaban yang masuk akal.
+- Tepat satu jawaban benar (answerIndex 0-3). Sebar posisi kunci jawaban, jangan selalu sama.
+- explanation: 1-2 kalimat penjelasan jawaban benar, bahasa sederhana untuk anak.
+- Kembalikan HANYA JSON valid tanpa teks lain, format:
+{"questions":[{"question":"...","options":["...","...","...","..."],"answerIndex":0,"explanation":"..."}]}`;
+}
+
+function parseQuizDraft(text: string, count: number): QuizDraftQuestion[] | null {
+  const m = text.match(/\{[\s\S]*"questions"[\s\S]*\}/);
+  if (!m) return null;
+  try {
+    const j = JSON.parse(m[0]);
+    if (!Array.isArray(j.questions)) return null;
+    const out: QuizDraftQuestion[] = [];
+    for (const x of j.questions) {
+      if (typeof x?.question !== "string" || !x.question.trim()) continue;
+      if (!Array.isArray(x?.options) || x.options.length !== 4) continue;
+      const options = x.options.map((o: unknown) => String(o ?? "").trim());
+      if (options.some((o: string) => !o)) continue;
+      if (!Number.isInteger(x?.answerIndex) || x.answerIndex < 0 || x.answerIndex > 3) continue;
+      out.push({
+        question: x.question.trim(),
+        options: options as [string, string, string, string],
+        answerIndex: x.answerIndex,
+        explanation: typeof x?.explanation === "string" ? x.explanation.trim() : "",
+      });
+      if (out.length >= count) break;
+    }
+    return out.length ? out : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function generateQuizDraft(
+  schoolId: string,
+  count: number,
+  subject: string,
+  messages: ChatMessage[]
+): Promise<QuizDraftQuestion[]> {
+  const config = await getAiConfig(schoolId);
+  if (!config.model.startsWith("gemini")) {
+    throw new Error("Model tidak mendukung baca file. Pakai model Gemini di Konfigurasi AI.");
+  }
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) throw new Error("GEMINI_API_KEY belum dikonfigurasi.");
+  const n = Math.min(Math.max(Math.floor(count) || 5, 1), 20);
+  const body = JSON.stringify({
+    system_instruction: { parts: [{ text: quizSystemPrompt(n, subject) }] },
+    contents: messages.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: toGeminiParts(m) })),
+  });
+  const post = () =>
+    fetch(`https://generativelanguage.googleapis.com/v1beta/models/${config.model}:generateContent`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+      body,
+    });
+  let lastError = "AI error";
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) await sleep(2000 * attempt);
+    let res: Response;
+    try {
+      res = await post();
+    } catch {
+      lastError = "Koneksi ke AI terputus.";
+      continue;
+    }
+    const data = (await res.json()) as GeminiResponse;
+    if (res.ok) {
+      const text = (data.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? "").join("");
+      const parsed = parseQuizDraft(text, n);
+      if (parsed) return parsed;
+      lastError = "AI tidak mengembalikan soal valid. Coba lagi.";
+      break;
+    }
+    lastError = data.error?.message ?? "AI error";
+    if (!isOverloaded(res.status, lastError)) break;
+  }
+  if (isOverloaded(0, lastError)) {
+    throw new Error("Model AI sedang sibuk (permintaan membludak). Tunggu sebentar lalu coba lagi.");
+  }
+  throw new Error(lastError);
+}
+
+function isOverloaded(status: number, message: string): boolean {
+  return status === 429 || status === 503 || /overload|high demand|try again later|rate limit|quota/i.test(message);
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
 export async function chatWithAi(schoolId: string, messages: ChatMessage[]): Promise<ChatReply> {
   const config = await getAiConfig(schoolId);
   if (config.model.startsWith("gemini")) return chatWithGemini(config, messages);

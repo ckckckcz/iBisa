@@ -4,4 +4,5 @@ export * from "./auth/index.js";
 export * from "./school/index.js";
 export * from "./classes/index.js";
 export * from "./ai/index.js";
+export * from "./quiz/index.js";
 export * from "./storage/index.js";
