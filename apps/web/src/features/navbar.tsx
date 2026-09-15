@@ -82,15 +82,32 @@ export function Navbar({ onConsultClick }: NavbarProps) {
           )}
         </nav>
 
-        {/* Mobile Hamburger Toggle Button */}
-        <button
-          type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          className="md:hidden flex items-center justify-center p-2 text-neutral-700 hover:text-black hover:bg-neutral-100 rounded-md transition-colors"
-          aria-label={isOpen ? "Tutup menu" : "Buka menu navigasi"}
-        >
-          <HugeiconsIcon icon={isOpen ? Cancel01Icon : Menu01Icon} size={22} />
-        </button>
+        {/* Mobile Actions & Hamburger Toggle */}
+        <div className="md:hidden flex items-center gap-2">
+          {dashboardUrl ? (
+            <Link href={dashboardUrl}>
+              <Button size="sm" className="gap-1 bg-blue-700 hover:bg-blue-800 text-white text-xs px-2.5 h-8">
+                <HugeiconsIcon icon={DashboardSquare01Icon} size={14} />
+                Dashboard
+              </Button>
+            </Link>
+          ) : (
+            <Link href="/login">
+              <Button size="sm" variant="outline" className="text-xs px-2.5 h-8">
+                Masuk
+              </Button>
+            </Link>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setIsOpen(!isOpen)}
+            className="flex items-center justify-center p-1.5 text-neutral-700 hover:text-black hover:bg-neutral-100 rounded-md transition-colors"
+            aria-label={isOpen ? "Tutup menu" : "Buka menu navigasi"}
+          >
+            <HugeiconsIcon icon={isOpen ? Cancel01Icon : Menu01Icon} size={22} />
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu Drawer */}
@@ -115,18 +132,11 @@ export function Navbar({ onConsultClick }: NavbarProps) {
                 </Button>
               </Link>
             ) : (
-              <>
-                <Link href="/login" onClick={() => setIsOpen(false)}>
-                  <Button size="sm" variant="outline" className="w-full">
-                    Masuk
-                  </Button>
-                </Link>
-                <Link href="/login" onClick={() => setIsOpen(false)}>
-                  <Button size="sm" onClick={onConsultClick} className="w-full bg-blue-700 hover:bg-blue-800 text-white">
-                    Konsultasi
-                  </Button>
-                </Link>
-              </>
+              <Link href="/login" onClick={() => setIsOpen(false)}>
+                <Button size="sm" onClick={onConsultClick} className="w-full bg-blue-700 hover:bg-blue-800 text-white">
+                  Konsultasi Gratis
+                </Button>
+              </Link>
             )}
           </div>
         </div>
