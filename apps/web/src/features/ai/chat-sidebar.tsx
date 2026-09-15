@@ -125,7 +125,7 @@ export default function ChatSidebar({
         </button>
       </div>
 
-      <div className={`min-h-0 w-[224px] shrink-0 flex-col py-2 transition-opacity duration-150 ${collapsed ? "pointer-events-none flex opacity-0" : "flex opacity-100"}`}>
+      <div className={`min-h-0 w-56 shrink-0 flex-col py-2 transition-opacity duration-150 ${collapsed ? "pointer-events-none flex opacity-0" : "flex opacity-100"}`}>
         <div className="relative mb-2 h-10 shrink-0">
           <span className="absolute top-1 left-2 flex h-8 items-center px-2 text-[14px] font-semibold text-neutral-900">
             Riwayat Chat
@@ -254,7 +254,7 @@ export default function ChatSidebar({
           </div>
         </div>
 
-        <div className="mx-2 mt-3 w-[208px] shrink-0 border-t border-neutral-200 pt-3">
+        <div className="mx-2 mt-3 w-52 shrink-0 border-t border-neutral-200 pt-3">
           <button
             type="button"
             onClick={onContactAdmin}
