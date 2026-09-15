@@ -15,9 +15,10 @@ export type UseChatOptions = {
   onMessageSent: (sid: string, messages: ChatMsg[], firstText?: string) => void;
   getActiveId: () => string | null;
   setActiveId: (id: string) => void;
+  apiBase?: string;
 };
 
-export function useChat({ onMessageSent, getActiveId, setActiveId }: UseChatOptions) {
+export function useChat({ onMessageSent, getActiveId, setActiveId, apiBase = '/school/ai' }: UseChatOptions) {
   const [chat, setChat] = useState<ChatMsg[]>([]);
   const [thinking, setThinking] = useState(false);
   const [streaming, setStreaming] = useState('');
@@ -40,7 +41,7 @@ export function useChat({ onMessageSent, getActiveId, setActiveId }: UseChatOpti
         setActiveQuery(lastUser?.content ?? '');
         setThinking(true);
         setStreaming('');
-        const res = await fetch(`${apiUrl}/school/ai/chat`, {
+        const res = await fetch(`${apiUrl}${apiBase}/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
           body: JSON.stringify({ messages: history.map(({ role, content, attachments }) => ({ role, content, attachments })) }),

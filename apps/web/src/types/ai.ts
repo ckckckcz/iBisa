@@ -22,6 +22,12 @@ export type Attachment =
   | { kind: 'image'; name: string; mimeType: string; data: string }
   | { kind: 'text'; name: string; text: string };
 export type AttachmentMeta = { kind: 'image' | 'text'; name: string };
+export type QuizDraftQuestion = {
+  question: string;
+  options: [string, string, string, string];
+  answerIndex: number;
+  explanation: string;
+};
 export type ChatMsg = {
   role: string;
   content: string;
@@ -29,6 +35,8 @@ export type ChatMsg = {
   thoughts?: string[];
   attachments?: Attachment[];
   attachmentMeta?: AttachmentMeta[];
+  quizDraft?: QuizDraftQuestion[];
+  quizCode?: string;
 };
 export type Session = { id: string; title: string; messages: ChatMsg[] };
 export type ModelItem = { key: string; name: string; tag: string };

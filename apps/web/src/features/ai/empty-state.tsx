@@ -2,18 +2,20 @@
 
 import Image from "next/image";
 import { AI_CHAT_EXAMPLES } from "@/lib/constants";
-import PromptBar from "@/features/ai/prompt-bar";
+import PromptBar, { type SlashMode } from "@/features/ai/prompt-bar";
 
 export default function EmptyState({
   onSend,
   model,
   onModelChange,
   models,
+  modes,
 }: {
   onSend: (text: string) => void;
   model: string;
   onModelChange: (model: string) => void;
   models: { key: string; name: string; tag: string }[];
+  modes?: SlashMode[];
 }) {
   return (
     <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden px-4 py-16">
@@ -47,6 +49,7 @@ export default function EmptyState({
             currentModel={model}
             onModelChange={onModelChange}
             models={models}
+            modes={modes}
           />
         </div>
 
@@ -54,6 +57,22 @@ export default function EmptyState({
           Contoh pertanyaan:
         </p>
         <div className="mt-2 flex flex-col items-start gap-1.5">
+          {modes?.map((m) => (
+            <button
+              key={m.prefix}
+              type="button"
+              onClick={() => onSend(`${m.prefix} `)}
+              className="group flex max-w-full items-center gap-1 rounded-full border border-blue-200 bg-blue-50/80 px-3 py-1.5 text-xs font-medium text-blue-700 shadow-sm transition-colors hover:border-blue-300"
+            >
+              <span className="truncate">{m.prefix} — {m.label.toLowerCase()}</span>
+              <span
+                aria-hidden="true"
+                className="shrink-0 text-blue-400 transition-transform group-hover:translate-x-0.5"
+              >
+                ›
+              </span>
+            </button>
+          ))}
           {AI_CHAT_EXAMPLES.map((example) => (
             <button
               key={example}

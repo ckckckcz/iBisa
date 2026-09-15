@@ -6,14 +6,14 @@ import { getToken } from '@/lib/ai-helpers';
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000';
 
-export function useAiConfig() {
+export function useAiConfig(apiBase = '/school/ai') {
   const [prompt, setPrompt] = useState('');
   const [model, setModel] = useState(AI_MODELS[0].key);
   const [error, setError] = useState('');
 
   useEffect(() => {
     async function loadConfig() {
-      const res = await fetch(`${apiUrl}/school/ai/config`, {
+      const res = await fetch(`${apiUrl}${apiBase}/config`, {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
       const data = await res.json();
@@ -25,11 +25,11 @@ export function useAiConfig() {
       }
     }
     loadConfig();
-  }, []);
+  }, [apiBase]);
 
   async function save(): Promise<void> {
     setError('');
-    const res = await fetch(`${apiUrl}/school/ai/config`, {
+    const res = await fetch(`${apiUrl}${apiBase}/config`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
       body: JSON.stringify({ system_prompt: prompt, model }),

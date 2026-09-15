@@ -24,6 +24,7 @@ const GLYPHS: Record<string, React.ReactNode> = {
 
 type Source = { key: string; name: string; desc: string; glyph?: string; attach?: boolean; template?: string };
 type Command = { key: string; name: string; desc: string; template: string };
+export type SlashMode = { prefix: string; label: string; placeholder: string; needFiles?: boolean; filesHint?: string };
 
 const SOURCES: Source[] = [
   { key: 'attach', name: 'Tambah foto & file', desc: 'Gambar, PDF, DOCX dari perangkat', glyph: 'clip', attach: true },
@@ -33,8 +34,7 @@ const SOURCES: Source[] = [
 ];
 
 const COMMANDS: Command[] = [
-  { key: 'jadwal', name: '/jadwal', desc: 'Minta jadwal piket kelas', template: 'Buatkan jadwal piket kelas 5 minggu ini' },
-  { key: 'materi', name: '/materi', desc: 'Rangkum materi untuk siswa', template: 'Rangkum materi pecahan untuk siswa kelas 4' },
+  { key: 'soal', name: '/soal', desc: 'Buat kuis dari materi (ganti konteks AI)', template: '/soal ' },
   { key: 'surat', name: '/surat', desc: 'Buatkan draf surat sekolah', template: 'Buatkan draft surat undangan rapat orang tua' },
   { key: 'ringkas', name: '/ringkas', desc: 'Ringkas teks di bawah ini', template: 'Ringkas teks berikut:\n' },
 ];
@@ -69,12 +69,14 @@ export default function PromptBar({
   models,
   currentModel,
   onModelChange,
+  modes,
 }: {
   placeholder?: string;
   onSend?: (text: string, files?: Attachment[]) => void;
   models?: { key: string; name: string; tag: string }[];
   currentModel?: string;
   onModelChange?: (model: string) => void;
+  modes?: SlashMode[];
 }) {
   const MODELS = models ?? AI_MODELS;
   const [draft, setDraft] = useState('');
@@ -144,6 +146,7 @@ export default function PromptBar({
   const token = dismissed ? null : parseToken(draft);
   const menu: 'at' | 'slash' | null = plusOpen ? 'at' : token?.kind ?? null;
   const query = plusOpen ? '' : token?.query ?? '';
+  const activeMode = (modes ?? []).find((m) => draft.toLowerCase().startsWith(m.prefix.toLowerCase()));
   const rows: (Source | Command)[] =
     menu === 'at'
       ? SOURCES.filter((s) => s.name.toLowerCase().includes(query))
@@ -287,6 +290,11 @@ export default function PromptBar({
 
   const send = () => {
     if (!canSend || extracting) return;
+    if (activeMode?.needFiles && readyFiles.length === 0) {
+      setAttachError(activeMode.filesHint ?? 'Lampirkan file dulu ya.');
+      inputRef.current?.focus();
+      return;
+    }
     onSend?.(draft.trim(), readyFiles.length ? readyFiles : undefined);
     setDraft('');
     setPicked((c) => c.filter((p) => p.status === 'error'));
@@ -349,6 +357,22 @@ export default function PromptBar({
         <div className="relative isolate flex flex-col gap-1.5 overflow-hidden rounded-[14px] border bg-white p-1.5 shadow-sm transition-[border-color,border-radius] duration-150 focus-within:border-neutral-400">
           <canvas ref={glimmRef} aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 h-full w-full" style={{ borderRadius: 'inherit' }} />
           <span ref={measureRef} aria-hidden="true" className="pointer-events-none absolute invisible whitespace-pre text-[13px] leading-4.5">{draft}</span>
+
+          {activeMode && (
+            <div className="flex items-center gap-1.5 px-0.5 pt-1">
+              <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-1 text-[11px] font-bold text-blue-700">
+                {activeMode.prefix} • {activeMode.label}
+              </span>
+              <button
+                type="button"
+                aria-label="Keluar dari mode"
+                onClick={() => { setDraft(''); inputRef.current?.focus(); }}
+                className="flex size-5 items-center justify-center rounded-[5px] text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700"
+              >
+                <HugeiconsIcon icon={Cancel01Icon} size={12} strokeWidth={2} />
+              </button>
+            </div>
+          )}
 
           {picked.length > 0 && (
             <div className="flex flex-wrap gap-1.5 px-0.5 pt-1">
@@ -413,7 +437,7 @@ export default function PromptBar({
                 if (e.key === 'Escape') { setDismissed(true); closeMenus(); return; }
                 if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(); }
               }}
-              placeholder={listening ? 'Mendengarkan…' : placeholder ?? 'Tanya AI...'}
+              placeholder={listening ? 'Mendengarkan…' : activeMode?.placeholder ?? placeholder ?? 'Tanya AI...'}
               aria-label="Prompt"
               className={`min-h-7 w-full min-w-0 resize-none bg-transparent px-1 py-1.25 text-[13px] leading-4.5 outline-none placeholder:text-neutral-400 ${wide ? 'col-span-full col-start-1 row-start-1' : 'col-start-2 row-start-1'}`}
             />
