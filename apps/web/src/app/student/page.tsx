@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -9,7 +9,8 @@ import {
   MinimizeScreenIcon,
   Logout01Icon,
 } from "@hugeicons/core-free-icons";
-import { QUIZZES } from "@/types/questions";
+import { QUIZZES, type Quiz } from "@/types/questions";
+import { fetchLobbyQuizzes } from "@/lib/quizzes";
 import {
   AvatarChip,
   useFullscreen,
@@ -33,7 +34,19 @@ export default function StudentLobbyPage() {
     router.push("/login");
   }
 
-  const grouped = useMemo(() => groupBySubject(QUIZZES), []);
+  const [quizzes, setQuizzes] = useState<Quiz[]>(QUIZZES);
+
+  useEffect(() => {
+    let live = true;
+    void fetchLobbyQuizzes().then((list) => {
+      if (live) setQuizzes(list);
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
+
+  const grouped = useMemo(() => groupBySubject(quizzes), [quizzes]);
   const [selectedSubject, setSelectedSubject] = useState<string>(
     () => grouped[0]?.[0] || "IPA"
   );
@@ -114,7 +127,7 @@ export default function StudentLobbyPage() {
               Pilih Kuis
             </h2>
             <span className="text-xs font-semibold text-slate-400">
-              {QUIZZES.length} kuis total
+              {quizzes.length} kuis total
             </span>
           </div>
 
