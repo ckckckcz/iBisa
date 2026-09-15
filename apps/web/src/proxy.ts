@@ -16,14 +16,39 @@ function getRoleForPath(path: string) {
 export async function proxy(req: NextRequest) {
   const path = req.nextUrl.pathname;
   const token = req.cookies.get("token")?.value;
+  const isAuthPage = path === "/login" || path === "/register";
   const requiredRole = getRoleForPath(path);
+
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
+
+  // Handle /login and /register pages for already authenticated users
+  if (isAuthPage) {
+    if (!token) return NextResponse.next();
+    try {
+      const res = await fetch(`${apiUrl}/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      });
+      if (!res.ok) throw new Error("unauthorized");
+      const data = await res.json();
+      const role = (data.profile?.role as string | undefined) ?? "school";
+      const target = role === "teacher" ? "/teacher" : role === "student" ? "/student" : "/school";
+      return NextResponse.redirect(new URL(target, req.url));
+    } catch {
+      // Token is invalid or expired: clear token cookie and allow user to view login/register
+      const resp = NextResponse.next();
+      resp.cookies.delete("token");
+      return resp;
+    }
+  }
+
+  // Handle protected dashboard routes
   if (!requiredRole) return NextResponse.next();
 
   if (!token) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
   try {
     const res = await fetch(`${apiUrl}/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -53,5 +78,12 @@ export async function proxy(req: NextRequest) {
 export default proxy;
 
 export const config = {
-  matcher: ["/school/:path*", "/teacher/:path*", "/student/:path*", "/dashboard/:path*"],
+  matcher: [
+    "/school/:path*",
+    "/teacher/:path*",
+    "/student/:path*",
+    "/dashboard/:path*",
+    "/login",
+    "/register",
+  ],
 };

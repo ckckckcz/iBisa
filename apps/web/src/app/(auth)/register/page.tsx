@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -16,6 +16,21 @@ export default function Register() {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const profileRaw = localStorage.getItem("profile");
+        const profile = profileRaw ? JSON.parse(profileRaw) : null;
+        const role = profile?.role;
+        const target = role === "teacher" ? "/teacher" : role === "student" ? "/student" : "/school";
+        router.replace(target);
+      } catch {
+        // skip
+      }
+    }
+  }, [router]);
   const [form, setForm] = useState({
     school_name: "",
     npsn: "",
