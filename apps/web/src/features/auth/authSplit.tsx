@@ -1,5 +1,7 @@
 import * as React from "react";
 import Link from "next/link";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
 
 export type AuthMode = "login" | "register";
 
@@ -13,16 +15,26 @@ interface AuthSplitProps {
 export function AuthSplit({ mode, title, subtitle, children }: AuthSplitProps) {
   const isLogin = mode === "login";
   const nextVerb = isLogin ? "register" : "login";
-  const nextLabel = isLogin ? "Sign up" : "Sign in";
+  const nextLabel = isLogin ? "Daftar" : "Masuk";
 
   return (
     <div className="flex h-screen bg-white text-neutral-900 font-sans overflow-hidden">
       <div className="w-full lg:w-120 h-full overflow-y-auto">
         <div className="mx-auto flex min-h-full flex-col px-6 py-10 sm:px-8">
           <header className="mb-10 flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2 text-neutral-900 font-bold">
-              <span>BISA</span>
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link
+                href="/"
+                aria-label="Kembali ke Beranda"
+                title="Kembali ke Beranda"
+                className="p-1 -ml-1 text-neutral-500 hover:text-neutral-900 transition-colors"
+              >
+                <HugeiconsIcon icon={ArrowLeft01Icon} size={22} />
+              </Link>
+              <Link href="/" className="flex items-center gap-2 text-neutral-900 font-bold">
+                <span>BISA</span>
+              </Link>
+            </div>
             <Link
               href={`/${nextVerb}`}
               className="text-sm text-neutral-600 hover:text-neutral-900"

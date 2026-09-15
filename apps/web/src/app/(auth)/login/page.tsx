@@ -56,19 +56,21 @@ export default function Login() {
       else localStorage.removeItem("profile");
 
       const role = data.profile?.role;
-      if (role === "school") router.push("/school");
-      else if (role === "teacher") router.push("/teacher");
-      else if (role === "student") router.push("/student");
-      else router.push("/school");
+      const target = role === "teacher" ? "/teacher" : role === "student" ? "/student" : "/school";
+      // Keep loading = true during navigation so the spinner/loading text stays visible until dashboard loads
+      router.push(target);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
-    } finally {
       setLoading(false);
     }
   }
 
   return (
-    <AuthSplit mode="login" title="WELCOME BACK" subtitle="Enter your credentials to access your account.">
+    <AuthSplit
+      mode="login"
+      title="SELAMAT DATANG KEMBALI"
+      subtitle="Masukkan email dan password Anda untuk mengakses akun."
+    >
       <form onSubmit={submit} className="space-y-5" noValidate>
         {error ? <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div> : null}
         <div>
@@ -106,7 +108,7 @@ export default function Login() {
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               aria-label="Toggle password"
-              className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-neutral-400 hover:text-neutral-700"
+              className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-neutral-400 hover:text-neutral-700 cursor-pointer"
             >
               <HugeiconsIcon icon={showPassword ? ViewOffSlashIcon : ViewIcon} size={20} />
             </button>
@@ -120,10 +122,10 @@ export default function Login() {
               onChange={(e) => setRememberMe(e.target.checked)}
               className="h-4 w-4 rounded border-neutral-300 accent-blue-700 cursor-pointer"
             />
-            Remember me
+            Ingat saya
           </label>
           <Link href="/forgot-password" className="text-sm font-medium text-blue-700 hover:text-blue-800">
-            Forgot password?
+            Lupa password?
           </Link>
         </div>
         <button
@@ -131,16 +133,16 @@ export default function Login() {
           disabled={loading}
           className="mt-2 w-full rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-40 cursor-pointer"
         >
-          {loading ? "Signing in..." : "Sign in"}
+          {loading ? "Memproses masuk..." : "Masuk"}
         </button>
         <p className="mt-4 text-center text-xs text-neutral-500">
-          By continuing, you agree to our{" "}
+          Dengan melanjutkan, Anda menyetujui{" "}
           <Link href="/terms" className="font-medium text-blue-700">
-            Terms
+            Syarat & Ketentuan
           </Link>{" "}
-          and{" "}
+          serta{" "}
           <Link href="/privacy" className="font-medium text-blue-700">
-            Privacy
+            Kebijakan Privasi
           </Link>
           .
         </p>
