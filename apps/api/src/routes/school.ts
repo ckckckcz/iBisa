@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import multer from "multer";
 import { authenticate, authorize, type AuthenticatedRequest } from "../middlewares/auth.js";
-import { listMembers, createMember, deleteMember, updateMember } from "@bisa/infrastructure";
+import { listMembers, createMember, deleteMember, updateMember, createMembersBatch } from "@bisa/infrastructure";
 import { uploadAvatar } from "@bisa/infrastructure";
 import type { MemberCreateBody, MemberUpdateBody } from "@bisa/types";
 import { listClasses, createClass, updateClass, deleteClass } from "@bisa/infrastructure";
@@ -29,10 +29,23 @@ router.post("/teachers", async (req, res) => {
   const sid = schoolId(req);
   if (!sid) return err(res, 400, "Akun belum terhubung sekolah");
   const { full_name, email, password, whatsapp, number, gender, status, avatar_url, subject, grade, class_id, attendance_pct } = (req.body ?? {}) as MemberCreateBody;
-  if (!full_name || !email || !password) return err(res, 400, "Field wajib");
+  if (!full_name || !email) return err(res, 400, "Nama dan email wajib diisi");
   try {
     const r = await createMember(sid, "teacher", { fullName: full_name, email, password, whatsapp, number, gender, status, avatar_url, subject, grade, class_id, attendance_pct });
     return res.status(201).json({ success: true, ...r });
+  } catch (e) {
+    return err(res, 400, e instanceof Error ? e.message : String(e));
+  }
+});
+
+router.post("/teachers/batch", async (req, res) => {
+  const sid = schoolId(req);
+  if (!sid) return err(res, 400, "Akun belum terhubung sekolah");
+  const { items } = req.body ?? {};
+  if (!Array.isArray(items) || items.length === 0) return err(res, 400, "Items wajib berupa array non-kosong");
+  try {
+    const summary = await createMembersBatch(sid, "teacher", items);
+    return res.status(201).json({ success: true, data: summary });
   } catch (e) {
     return err(res, 400, e instanceof Error ? e.message : String(e));
   }
@@ -49,10 +62,23 @@ router.post("/students", async (req, res) => {
   const sid = schoolId(req);
   if (!sid) return err(res, 400, "Akun belum terhubung sekolah");
   const { full_name, email, password, whatsapp, number, gender, status, avatar_url, guardian_name, grade, class_id, attendance_pct } = (req.body ?? {}) as MemberCreateBody;
-  if (!full_name || !email || !password) return err(res, 400, "Field wajib");
+  if (!full_name || !email) return err(res, 400, "Nama dan email wajib diisi");
   try {
     const r = await createMember(sid, "student", { fullName: full_name, email, password, whatsapp, number, gender, status, avatar_url, guardian_name, grade, class_id, attendance_pct });
     return res.status(201).json({ success: true, ...r });
+  } catch (e) {
+    return err(res, 400, e instanceof Error ? e.message : String(e));
+  }
+});
+
+router.post("/students/batch", async (req, res) => {
+  const sid = schoolId(req);
+  if (!sid) return err(res, 400, "Akun belum terhubung sekolah");
+  const { items } = req.body ?? {};
+  if (!Array.isArray(items) || items.length === 0) return err(res, 400, "Items wajib berupa array non-kosong");
+  try {
+    const summary = await createMembersBatch(sid, "student", items);
+    return res.status(201).json({ success: true, data: summary });
   } catch (e) {
     return err(res, 400, e instanceof Error ? e.message : String(e));
   }
@@ -94,9 +120,9 @@ router.put("/users/:id", async (req, res) => {
   const sid = schoolId(req);
   if (!sid) return err(res, 400, "Akun belum terhubung sekolah");
   const { id } = req.params;
-  const { full_name, whatsapp, number, gender, status, avatar_url, guardian_name, grade, subject, class_id, attendance_pct } = (req.body ?? {}) as MemberUpdateBody;
+  const { full_name, whatsapp, number, gender, status, avatar_url, guardian_name, grade, subject, class_id, attendance_pct, password } = (req.body ?? {}) as MemberUpdateBody & { password?: string };
   try {
-    const data = await updateMember(id, sid, { full_name, whatsapp, number, gender, status, avatar_url, guardian_name, grade, subject, class_id, attendance_pct });
+    const data = await updateMember(id, sid, { full_name, whatsapp, number, gender, status, avatar_url, guardian_name, grade, subject, class_id, attendance_pct, password });
     return res.json({ success: true, data });
   } catch (e) {
     return err(res, 400, e instanceof Error ? e.message : String(e));

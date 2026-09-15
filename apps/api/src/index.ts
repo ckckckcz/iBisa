@@ -20,6 +20,8 @@ import {
 import healthRouter from './routes/health.js';
 import authRouter from './routes/auth.js';
 import schoolRouter from './routes/school.js';
+import teacherRouter from './routes/teacher.js';
+import studentRouter from './routes/student.js';
 import { authenticate, authorize, type AuthenticatedRequest } from './middlewares/auth.js';
 
 const app: Application = express();
@@ -57,6 +59,8 @@ app.get('/health', (_req: Request, res: Response) => {
 });
 app.use('/auth', authRouter);
 app.use('/school', schoolRouter);
+app.use('/teacher', teacherRouter);
+app.use('/student', studentRouter);
 app.get('/school/me', authenticate, authorize('school'), (req: Request, res: Response) => res.json({ success: true, profile: (req as AuthenticatedRequest).profile }));
 app.get('/teacher/me', authenticate, authorize('teacher'), (req: Request, res: Response) => res.json({ success: true, profile: (req as AuthenticatedRequest).profile }));
 app.get('/student/me', authenticate, authorize('student'), (req: Request, res: Response) => res.json({ success: true, profile: (req as AuthenticatedRequest).profile }));
