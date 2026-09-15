@@ -58,7 +58,6 @@ export default function StreamingText({
   sources?: StreamingSource[];
   followUps?: string[];
   loop?: boolean;
-  /** false = tampil final instan, untuk pesan historis biar gak replay animasi */
   animate?: boolean;
   onDone?: () => void;
   onFollowUp?: (text: string, index: number) => void;

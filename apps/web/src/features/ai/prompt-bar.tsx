@@ -92,7 +92,6 @@ export default function PromptBar({
   const [attachError, setAttachError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
-  /** potong tengah biar ekstensi selalu kelihatan: 23417202…Fahmi.pdf */
   function shortName(name: string): string {
     if (name.length <= 28) return name;
     return `${name.slice(0, 12)}…${name.slice(-12)}`;

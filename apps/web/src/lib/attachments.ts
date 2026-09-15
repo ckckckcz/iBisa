@@ -101,7 +101,6 @@ export async function extractFile(file: File): Promise<Attachment> {
   throw new Error(`"${file.name}" format tidak didukung. Pakai gambar, txt, csv, md, pdf, atau docx.`);
 }
 
-/** buang bytes sebelum simpan sesi (localStorage jebol kalau ikut base64) */
 export function stripAttachments<T extends { attachments?: Attachment[] }>(m: T): Omit<T, 'attachments'> & { attachmentMeta?: AttachmentMeta[] } {
   if (!m.attachments?.length) return m;
   const { attachments, ...rest } = m;
