@@ -7,6 +7,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import {
   FullScreenIcon,
   MinimizeScreenIcon,
+  Logout01Icon,
 } from "@hugeicons/core-free-icons";
 import { QUIZZES } from "@/types/questions";
 import {
@@ -24,6 +25,13 @@ export default function StudentLobbyPage() {
   const { identity } = useStudentIdentity();
   const [copied, setCopied] = useState<string | null>(null);
   const { isFullscreen, toggleFullscreen } = useFullscreen();
+
+  function handleLogout() {
+    document.cookie = "token=; path=/; max-age=0; SameSite=Lax";
+    localStorage.removeItem("token");
+    localStorage.removeItem("profile");
+    router.push("/login");
+  }
 
   const grouped = useMemo(() => groupBySubject(QUIZZES), []);
   const [selectedSubject, setSelectedSubject] = useState<string>(
@@ -64,9 +72,23 @@ export default function StudentLobbyPage() {
               onClick={toggleFullscreen}
               aria-label={isFullscreen ? "Keluar layar penuh" : "Layar penuh"}
               className="flex size-9 items-center justify-center rounded-xl bg-slate-100 text-slate-600 ring-1 ring-slate-200 transition-colors hover:bg-slate-200"
+              title={isFullscreen ? "Keluar Layar Penuh" : "Layar Penuh"}
             >
               <HugeiconsIcon
                 icon={isFullscreen ? MinimizeScreenIcon : FullScreenIcon}
+                size={18}
+                strokeWidth={2}
+              />
+            </button>
+            <button
+              type="button"
+              onClick={handleLogout}
+              aria-label="Keluar akun"
+              title="Keluar"
+              className="flex size-9 items-center justify-center rounded-xl bg-slate-100 text-slate-600 ring-1 ring-slate-200 transition-colors hover:bg-rose-50 hover:text-rose-600 hover:ring-rose-200 cursor-pointer"
+            >
+              <HugeiconsIcon
+                icon={Logout01Icon}
                 size={18}
                 strokeWidth={2}
               />
