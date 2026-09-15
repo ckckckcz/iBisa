@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   BookOpen02Icon,
@@ -37,10 +38,12 @@ export function HeroSection({ onConsultClick }: HeroSectionProps) {
         </p>
 
         <div className="mt-5 sm:mt-6">
-          <Button onClick={onConsultClick} size="default" className="bg-blue-700 text-white hover:bg-blue-800">
-            <span aria-hidden="true">✦</span>
-            <span>Jadwalkan Konsultasi</span>
-          </Button>
+          <Link href="/register">
+            <Button size="default" className="bg-blue-700 text-white hover:bg-blue-800">
+              <span aria-hidden="true">✦</span>
+              <span>Daftarkan Sekolah Sekarang</span>
+            </Button>
+          </Link>
         </div>
         </Reveal>
 

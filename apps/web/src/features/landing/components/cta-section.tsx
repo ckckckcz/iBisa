@@ -1,10 +1,11 @@
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/ui/reveal";
 import { CtaSectionProps } from "@/lib/types";
 
 export function CtaSection({ onConsultClick }: CtaSectionProps) {
   return (
-    <section id="konsultasi" className="relative w-full scroll-mt-28 overflow-hidden bg-blue-700 px-6 py-20 sm:py-24">
+    <section id="pendaftaran" className="relative w-full scroll-mt-28 overflow-hidden bg-blue-700 px-6 py-20 sm:py-24">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 z-0"
@@ -15,19 +16,20 @@ export function CtaSection({ onConsultClick }: CtaSectionProps) {
       />
       <div className="relative z-10 mx-auto flex max-w-7xl flex-col items-center gap-5 text-center">
         <Reveal y={16} className="flex flex-col items-center gap-5">
-        <p className="text-black font-semibold text-xs tracking-widest uppercase">Konsultasi Gratis</p>
+        <p className="text-black font-semibold text-xs tracking-widest uppercase">Pendaftaran Sekolah</p>
         <h2 className="max-w-2xl font-sans text-3xl font-bold tracking-tight text-balance text-black sm:text-4xl md:text-[44px] md:leading-tight">
           Siap lihat anak berkembang di kelas yang ngerti dia?
         </h2>
 
         <p className="max-w-xl font-sans text-base leading-relaxed font-medium text-black md:text-[17px]">
-          Ceritain kebutuhan siswa SLB kamu, kita petakan bareng jalur inklusifnya — gratis, tanpa
-          komitmen. Ketemu guru pendamping yang pas, bukan coba-coba.
+          Daftarkan sekolah inklusif atau SLB Anda sekarang untuk mulai mengintegrasikan sistem pembelajaran adaptif terpadu BISA.
         </p>
 
-        <Button onClick={onConsultClick} size="lg">
-          Jadwalkan Konsultasi Gratis
-        </Button>
+        <Link href="/register">
+          <Button size="lg">
+            Daftarkan Sekolahmu Sekarang
+          </Button>
+        </Link>
         </Reveal>
       </div>
     </section>
