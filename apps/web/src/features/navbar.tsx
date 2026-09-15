@@ -73,9 +73,9 @@ export function Navbar({ onConsultClick }: NavbarProps) {
                   Masuk
                 </Button>
               </Link>
-              <Link href="/login">
-                <Button size="sm" onClick={onConsultClick} className="bg-blue-700 hover:bg-blue-800 text-white text-xs">
-                  Konsultasi
+              <Link href="/register">
+                <Button size="sm" className="bg-blue-700 hover:bg-blue-800 text-white text-xs">
+                  Daftar
                 </Button>
               </Link>
             </div>
@@ -132,9 +132,9 @@ export function Navbar({ onConsultClick }: NavbarProps) {
                 </Button>
               </Link>
             ) : (
-              <Link href="/login" onClick={() => setIsOpen(false)}>
-                <Button size="sm" onClick={onConsultClick} className="w-full bg-blue-700 hover:bg-blue-800 text-white">
-                  Konsultasi Gratis
+              <Link href="/register" onClick={() => setIsOpen(false)}>
+                <Button size="sm" className="w-full bg-blue-700 hover:bg-blue-800 text-white">
+                  Daftarkan Sekolah Sekarang
                 </Button>
               </Link>
             )}
