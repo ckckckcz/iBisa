@@ -26,7 +26,7 @@ export function MemberForm({
   const className = classOptions.find((c) => c.id === f.class_id)?.name ?? "";
   const grade = mode === "student" ? className || f.grade : f.grade;
   const needClass = mode === "student" && !f.class_id;
-  const invalid = saving || uploading || !f.full_name || needClass || (!isEdit && (!f.email || !f.password));
+  const invalid = saving || uploading || !f.full_name || needClass || (!isEdit && !f.email);
 
   async function pickFile(file: File | undefined) {
     if (!file) return;
@@ -80,11 +80,13 @@ export function MemberForm({
 
           <div className="grid gap-1.5"><Label>Nama lengkap</Label><Input placeholder="Nama" value={f.full_name} onChange={(e) => set("full_name", e.target.value)} /></div>
 
-          {!isEdit && (
+          {!isEdit ? (
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5"><Label>Email</Label><Input placeholder="nama@sekolah.id" value={f.email} onChange={(e) => set("email", e.target.value)} /></div>
-              <div className="grid gap-1.5"><Label>Password</Label><Input type="password" value={f.password} onChange={(e) => set("password", e.target.value)} /></div>
+              <div className="grid gap-1.5"><Label>Password</Label><Input type="password" placeholder="Default: NIP / NISN" value={f.password} onChange={(e) => set("password", e.target.value)} /></div>
             </div>
+          ) : (
+            <div className="grid gap-1.5"><Label>Password Baru (opsional)</Label><Input type="password" placeholder="Kosongkan jika tidak diubah" value={f.password} onChange={(e) => set("password", e.target.value)} /></div>
           )}
 
           <div className="grid gap-1.5">

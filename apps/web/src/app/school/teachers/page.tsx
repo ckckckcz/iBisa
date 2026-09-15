@@ -13,12 +13,20 @@ import { getToken } from "@/lib/ai-helpers";
 import { fetchSchoolList } from "@/lib/school-api";
 import { BookOpen01Icon, CalendarOffIcon, CheckmarkCircle01Icon, TeacherIcon } from "@hugeicons/core-free-icons";
 
+import { parseExcelOrCsvFile, downloadExcelTemplate, type ExcelMemberRow } from "@/lib/excel-import";
+import { CsvPreviewModal } from "@/features/school/csv-preview-modal";
+
 export default function TeachersPage() {
   const [rows, setRows] = useState<Member[]>([]);
   const [waliCount, setWaliCount] = useState(0);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Member | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const [previewItems, setPreviewItems] = useState<ExcelMemberRow[]>([]);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [batchSubmitting, setBatchSubmitting] = useState(false);
+
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
   function applyTeacherData(t: { success: boolean; data: Member[] }, c: { success: boolean; data: { wali_guru_id: string | null }[] } | null) {
@@ -108,6 +116,58 @@ export default function TeachersPage() {
     void load();
   }
 
+  async function handleExcelFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const items = await parseExcelOrCsvFile(file);
+      if (items.length === 0) {
+        alert("File Excel/CSV tidak valid atau kosong. Pastikan memuat kolom: nama_lengkap, email");
+        return;
+      }
+      setPreviewItems(items);
+      setPreviewOpen(true);
+    } catch {
+      alert("Gagal membaca file Excel/CSV.");
+    } finally {
+      e.target.value = "";
+    }
+  }
+
+  async function confirmBatchImport() {
+    setBatchSubmitting(true);
+    try {
+      const token = getToken();
+      const res = await fetch(`${apiUrl}/school/teachers/batch`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ items: previewItems }),
+      });
+      const data = await res.json().catch(() => null);
+      if (data?.success) {
+        const created = data.data?.createdCount ?? 0;
+        const failed = data.data?.failedCount ?? 0;
+        if (failed > 0) {
+          const firstErr = data.data?.results?.find((r: any) => !r.success)?.error || "Email/User sudah terdaftar";
+          alert(`Berhasil mengimpor ${created} guru. Gagal: ${failed} guru (${firstErr})`);
+        } else {
+          alert(`Berhasil mengimpor ${created} guru.`);
+        }
+        setPreviewOpen(false);
+        setPreviewItems([]);
+        void load();
+      } else {
+        alert(data?.message ?? "Gagal mengimpor data");
+      }
+    } finally {
+      setBatchSubmitting(false);
+    }
+  }
+
+  function downloadTemplate() {
+    downloadExcelTemplate("teacher");
+  }
+
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
       <div>
@@ -122,9 +182,11 @@ export default function TeachersPage() {
             <DropdownMenuTrigger render={<Button className="rounded-l-none border-l border-white/20 px-2">▾</Button>} />
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => { setEditing(null); setOpen(true); }}>Tambah manual</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => alert("Import CSV segera hadir")}>Import CSV</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => document.getElementById("excel-teacher-input")?.click()}>Import Excel / CSV</DropdownMenuItem>
+              <DropdownMenuItem onClick={downloadTemplate}>Download Template Excel</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          <input id="excel-teacher-input" type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleExcelFileSelect} />
         </div>
       </div>
       <MemberTable
@@ -138,6 +200,14 @@ export default function TeachersPage() {
         exportName="teachers" onEdit={(m) => { setEditing(m); setOpen(true); }} onDelete={remove}
       />
       <MemberForm open={open} onOpenChange={setOpen} mode="teacher" initial={editing} classOptions={[]} saving={saving} apiUrl={apiUrl} onSubmit={submit} />
+      <CsvPreviewModal
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        items={previewItems}
+        mode="teacher"
+        submitting={batchSubmitting}
+        onConfirm={confirmBatchImport}
+      />
     </div>
   );
 }
