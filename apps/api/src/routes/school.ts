@@ -5,7 +5,6 @@ import { listMembers, createMember, deleteMember, updateMember, createMembersBat
 import { uploadAvatar } from "@bisa/infrastructure";
 import type { MemberCreateBody, MemberUpdateBody } from "@bisa/types";
 import { listClasses, createClass, updateClass, deleteClass } from "@bisa/infrastructure";
-import { getAiConfig, upsertAiConfig, chatWithAi } from "@bisa/infrastructure";
 
 const router = Router();
 router.use(authenticate, authorize("school"));
@@ -168,35 +167,6 @@ router.delete("/classes/:id", async (req, res) => {
     return res.json({ success: true });
   } catch (e) {
     return err(res, 400, e instanceof Error ? e.message : String(e));
-  }
-});
-
-router.get("/ai/config", async (req, res) => {
-  const sid = schoolId(req);
-  if (!sid) return err(res, 400, "Akun belum terhubung sekolah");
-  const data = await getAiConfig(sid);
-  return res.json({ success: true, data });
-});
-
-router.put("/ai/config", async (req, res) => {
-  const sid = schoolId(req);
-  if (!sid) return err(res, 400, "Akun belum terhubung sekolah");
-  const { system_prompt, model } = req.body ?? {};
-  if (!system_prompt || !model) return err(res, 400, "Prompt dan model wajib");
-  const data = await upsertAiConfig(sid, { system_prompt, model });
-  return res.json({ success: true, data });
-});
-
-router.post("/ai/chat", async (req, res) => {
-  const sid = schoolId(req);
-  if (!sid) return err(res, 400, "Akun belum terhubung sekolah");
-  const { messages } = req.body ?? {};
-  if (!Array.isArray(messages) || messages.length === 0) return err(res, 400, "Messages wajib");
-  try {
-    const reply = await chatWithAi(sid, messages);
-    return res.json({ success: true, data: reply });
-  } catch (e) {
-    return err(res, 500, e instanceof Error ? e.message : String(e));
   }
 });
 
