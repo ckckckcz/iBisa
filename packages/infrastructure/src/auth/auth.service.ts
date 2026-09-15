@@ -65,6 +65,6 @@ export async function signInWithPassword(email: string, password: string) {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error || !data.session) throw new Error(error?.message ?? "Invalid credentials");
   const { data: profile } = await admin
-    .from("users_with_role").select("id,email,full_name,role,school_id").eq("id", data.user.id).single();
+    .from("users_with_role").select("id,email,full_name,role,school_id,avatar_url").eq("id", data.user.id).single();
   return { session: data.session, user: data.user, profile: profile ?? null };
 }
