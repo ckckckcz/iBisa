@@ -8,10 +8,13 @@ export type QuizQuestion = {
 
 export type Quiz = {
   id: string;
+  code: string;
   title: string;
   description: string;
   subject: string;
   questionCount: number;
+  timeLimit: number;
+  basePoints: number;
   cover: string;
   accent: string;
   questions: QuizQuestion[];
@@ -20,10 +23,13 @@ export type Quiz = {
 export const QUIZZES: Quiz[] = [
   {
     id: "ipa-kelas-5",
+    code: "241356",
     title: "IPA: Panca Indera",
     description: "Kenali fungsi mata, telinga, hidung, lidah, dan kulit.",
     subject: "IPA",
     questionCount: 5,
+    timeLimit: 60,
+    basePoints: 1000,
     cover: "from-blue-700 to-blue-900",
     accent: "bg-blue-700",
     questions: [
@@ -71,10 +77,13 @@ export const QUIZZES: Quiz[] = [
   },
   {
     id: "matematika-kelas-4",
+    code: "782901",
     title: "Matematika: Berhitung Seru",
     description: "Penjumlahan, pengurangan, dan perkalian dasar.",
     subject: "Matematika",
     questionCount: 5,
+    timeLimit: 60,
+    basePoints: 1000,
     cover: "from-emerald-600 to-teal-800",
     accent: "bg-emerald-600",
     questions: [
@@ -117,10 +126,13 @@ export const QUIZZES: Quiz[] = [
   },
   {
     id: "bindo-kelas-3",
+    code: "530487",
     title: "B. Indonesia: Kata & Kalimat",
     description: "Huruf kapital, tanda baca, dan lawan kata.",
     subject: "Bahasa Indonesia",
     questionCount: 4,
+    timeLimit: 60,
+    basePoints: 1000,
     cover: "from-amber-500 to-orange-700",
     accent: "bg-amber-600",
     questions: [
@@ -160,3 +172,8 @@ export const QUIZZES: Quiz[] = [
     ],
   },
 ];
+
+export function getQuizByCode(code: string): Quiz | null {
+  const norm = code.trim();
+  return QUIZZES.find((q) => q.code === norm) ?? null;
+}
