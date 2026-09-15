@@ -63,6 +63,7 @@ const navSchool = [
 const navTeacher = [
   { title: "Beranda", url: "/teacher", icon: <HugeiconsIcon icon={DashboardSquare01Icon} strokeWidth={2} />, isActive: true, items: [{ title: "Progres Belajar", url: "/teacher" }, { title: "Modul Rekomendasi", url: "#" }] },
   { title: "Sesi Pembelajaran", url: "#", icon: <HugeiconsIcon icon={BookOpen02Icon} strokeWidth={2} />, items: [{ title: "Materi Pembelajaran", url: "#" }] },
+  { title: "Chat AI", url: "/teacher/ai", icon: <HugeiconsIcon icon={Idea01Icon} strokeWidth={2} />, items: [{ title: "Tanya AI", url: "/teacher/ai" }] },
 ];
 
 const navStudent = [
