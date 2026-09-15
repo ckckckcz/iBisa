@@ -2,7 +2,7 @@
   <img src="docs/banner.png" alt="BISA Banner" width="100%" />
 </p>
 
-# BISA — Belajar Inklusif Sekolah Adaptif
+# BISA - Belajar Inklusif Sekolah Adaptif
 
 [![Lisensi: MIT](https://img.shields.io/badge/Lisensi-MIT-blue.svg)](LICENSE)
 [![Kerangka Kerja: Next.js 16](https://img.shields.io/badge/Next.js-16.3-black.svg?logo=next.js)](https://nextjs.org/)
@@ -138,6 +138,22 @@ pnpm --filter @bisa/infrastructure build
 pnpm --filter api build
 pnpm --filter web build
 ```
+
+---
+
+## Tim Kami
+
+<p align="center">
+  <img src="docs/team-banner.png" alt="Tim Kami - BISA" width="100%" />
+</p>
+
+Proyek BISA dikembangkan dan didesain dengan dedikasi tinggi untuk menghadirkan solusi teknologi inklusif yang berdampak nyata bagi dunia pendidikan anak berkebutuhan khusus.
+
+| Peran / Kontribusi | Detail Fokus |
+| :--- | :--- |
+| **Rekayasa Perangkat Lunak & Sistem** | Penggantian sistem LMS, integrasi API, dan manajemen basis data |
+| **Desain Aksesibilitas & UI/UX** | Desain antarmuka ramah disabilitas, kontras tinggi, dan alur tanpa sentuh |
+| **Riset Inklusi & Pembelajaran Suara** | Pengembangan interaksi suara (*Speech Recognition* & *Text-to-Speech*) untuk Tunanetra |
 
 ---
 
