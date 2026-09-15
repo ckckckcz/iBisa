@@ -9,7 +9,7 @@
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["node", "ws"],
+    "types": ["node"],
     "rootDir": "./src",
     "outDir": "./dist",
     "declaration": true

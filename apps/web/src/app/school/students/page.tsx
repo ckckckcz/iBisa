@@ -8,8 +8,8 @@ import { MemberTable } from "@/features/school/member-table";
 import { MemberForm } from "@/features/school/member-form";
 import { studentColumns } from "@/features/school/student-columns";
 import { type ClassOption, type FormPayload, type Member } from "@/types/school";
-import { getToken } from "@/lib/ai-helpers";
-import { fetchSchoolList } from "@/lib/school-api";
+import { getValidToken } from "@/lib/ai-helpers";
+import { fetchSchoolList, type BatchItemResult } from "@/lib/school-api";
 import { CalendarOffIcon, Chart01Icon, CheckmarkCircle01Icon, StudentsIcon, UnfoldMoreIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 
@@ -30,10 +30,10 @@ export default function StudentsPage() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
   async function load() {
-    const token = getToken();
+    const token = await getValidToken();
     const [s, c] = await Promise.all([
-      fetchSchoolList(apiUrl, token, "students"),
-      fetchSchoolList(apiUrl, token, "classes").catch(() => null),
+      fetchSchoolList<Member[]>(apiUrl, token, "students"),
+      fetchSchoolList<ClassOption[]>(apiUrl, token, "classes").catch(() => null),
     ]);
     if (s.success) setRows(s.data);
     if (c?.success) setClasses(c.data);
@@ -41,17 +41,18 @@ export default function StudentsPage() {
 
   useEffect(() => {
     let cancelled = false;
-    const token = getToken();
-    Promise.all([
-      fetchSchoolList(apiUrl, token, "students"),
-      fetchSchoolList(apiUrl, token, "classes").catch(() => null),
-    ])
-      .then(([s, c]) => {
+    void (async () => {
+      const token = await getValidToken();
+      try {
+        const [s, c] = await Promise.all([
+          fetchSchoolList<Member[]>(apiUrl, token, "students"),
+          fetchSchoolList<ClassOption[]>(apiUrl, token, "classes").catch(() => null),
+        ]);
         if (cancelled) return;
         if (s.success) setRows(s.data);
         if (c?.success) setClasses(c.data);
-      })
-      .catch(() => {});
+      } catch {}
+    })();
     return () => { cancelled = true; };
   }, [apiUrl]);
 
@@ -77,7 +78,7 @@ export default function StudentsPage() {
 
   async function submit(p: FormPayload) {
     setSaving(true);
-    const token = getToken();
+    const token = await getValidToken();
     const body = {
       number: p.number || null, full_name: p.full_name, email: p.email || undefined,
       password: p.password || undefined, whatsapp: p.whatsapp || null,
@@ -95,7 +96,7 @@ export default function StudentsPage() {
 
   async function remove(m: Member) {
     if (!confirm(`Hapus ${m.full_name}?`)) return;
-    await fetch(`${apiUrl}/school/users/${m.id}`, { method: "DELETE", headers: { Authorization: `Bearer ${getToken()}` } });
+    await fetch(`${apiUrl}/school/users/${m.id}`, { method: "DELETE", headers: { Authorization: `Bearer ${await getValidToken()}` } });
     void load();
   }
 
@@ -120,7 +121,7 @@ export default function StudentsPage() {
   async function confirmBatchImport() {
     setBatchSubmitting(true);
     try {
-      const token = getToken();
+      const token = await getValidToken();
       const res = await fetch(`${apiUrl}/school/students/batch`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -128,10 +129,11 @@ export default function StudentsPage() {
       });
       const data = await res.json().catch(() => null);
       if (data?.success) {
-        const created = data.data?.createdCount ?? 0;
-        const failed = data.data?.failedCount ?? 0;
+        const created = (data.data?.createdCount as number | undefined) ?? 0;
+        const failed = (data.data?.failedCount as number | undefined) ?? 0;
         if (failed > 0) {
-          const firstErr = data.data?.results?.find((r: any) => !r.success)?.error || "Email/User sudah terdaftar";
+          const results = (data.data?.results as BatchItemResult[] | undefined) ?? [];
+          const firstErr = results.find((r) => !r.success)?.error || "Email/User sudah terdaftar";
           alert(`Berhasil mengimpor ${created} siswa. Gagal: ${failed} siswa (${firstErr})`);
         } else {
           alert(`Berhasil mengimpor ${created} siswa.`);

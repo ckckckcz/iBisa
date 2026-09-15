@@ -6,6 +6,7 @@ import { Add01Icon, ArrowDown01Icon, ArrowUp01Icon, Cancel01Icon, Refresh01Icon,
 import { createShader, playSweep, accentChain, ACCENTS } from 'glimm';
 import { AI_MODELS } from '@/lib/constants';
 import { ATTACH_ACCEPT, ATTACH_LIMITS, extractFile, type Attachment } from '@/lib/attachments';
+import type { DbQuiz } from '@/lib/quizzes';
 
 const RAINBOW = accentChain([ACCENTS.red, ACCENTS.orange, ACCENTS.yellow, ACCENTS.green, ACCENTS.cyan, ACCENTS.blue, ACCENTS.purple]);
 
@@ -70,6 +71,7 @@ export default function PromptBar({
   currentModel,
   onModelChange,
   modes,
+  quizzes,
 }: {
   placeholder?: string;
   onSend?: (text: string, files?: Attachment[]) => void;
@@ -77,6 +79,7 @@ export default function PromptBar({
   currentModel?: string;
   onModelChange?: (model: string) => void;
   modes?: SlashMode[];
+  quizzes?: DbQuiz[];
 }) {
   const MODELS = models ?? AI_MODELS;
   const [draft, setDraft] = useState('');
@@ -147,9 +150,23 @@ export default function PromptBar({
   const menu: 'at' | 'slash' | null = plusOpen ? 'at' : token?.kind ?? null;
   const query = plusOpen ? '' : token?.query ?? '';
   const activeMode = (modes ?? []).find((m) => draft.toLowerCase().startsWith(m.prefix.toLowerCase()));
+  const quizSources: Source[] = (quizzes ?? [])
+    .filter((q) => {
+      if (!query) return true;
+      const qq = query.toLowerCase();
+      return q.code.toLowerCase().includes(qq) || q.title.toLowerCase().includes(qq) || (q.subject ?? "").toLowerCase().includes(qq);
+    })
+    .slice(0, 5)
+    .map((q) => ({
+      key: `quiz-${q.code}`,
+      name: `@${q.code} — ${q.title.slice(0, 32)}`,
+      desc: `${q.subject || "Umum"} • ${q.questions.length} soal • mention untuk revisi`,
+      template: `@${q.code} `,
+    }));
+
   const rows: (Source | Command)[] =
     menu === 'at'
-      ? SOURCES.filter((s) => s.name.toLowerCase().includes(query))
+      ? [...quizSources, ...SOURCES.filter((s) => s.name.toLowerCase().includes(query) || s.desc.toLowerCase().includes(query))]
       : menu === 'slash'
         ? COMMANDS.filter((c) => c.name.slice(1).startsWith(query))
         : [];
@@ -244,7 +261,7 @@ export default function PromptBar({
     if (room <= 0) { setAttachError(`Maksimal ${ATTACH_LIMITS.maxFiles} file.`); return; }
     const batch = [...list].slice(0, room);
     if (list.length > room) setAttachError(`Maksimal ${ATTACH_LIMITS.maxFiles} file, sisanya diabaikan.`);
-    const entries: Picked[] = batch.map((f) => ({ id: `${Date.now()}-${f.name}`, fileName: f.name, file: f, status: 'loading' as const }));
+    const entries: Picked[] = batch.map((f) => ({ id: `${crypto.randomUUID()}-${f.name}`, fileName: f.name, file: f, status: 'loading' as const }));
     setPicked((c) => [...c, ...entries]);
     await Promise.all(batch.map((f, i) => runExtract(entries[i].id, f)));
   }

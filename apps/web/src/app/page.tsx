@@ -20,11 +20,9 @@ export default function Home() {
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollPos = window.scrollY;
-      // Always show navbar near the top of the page (< 50px)
       if (currentScrollPos < 50) {
         setIsVisible(true);
       } else {
-        // Show navbar when scrolling UP, hide when scrolling DOWN
         setIsVisible(prevScrollPos > currentScrollPos);
       }
       setPrevScrollPos(currentScrollPos);

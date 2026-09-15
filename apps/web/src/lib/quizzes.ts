@@ -1,9 +1,9 @@
 import { QUIZZES, getQuizByCode, type Quiz, type QuizQuestion } from "@/types/questions";
-import { getToken } from "@/lib/ai-helpers";
+import { getValidToken } from "@/lib/ai-helpers";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
-type DbQuiz = {
+export type DbQuiz = {
   id: string;
   code: string;
   title: string;
@@ -11,6 +11,7 @@ type DbQuiz = {
   time_limit: number;
   base_points: number;
   questions: { question: string; options: [string, string, string, string]; answerIndex: number; explanation: string }[];
+  created_at?: string;
 };
 
 const COVERS: Record<string, { cover: string; accent: string }> = {
@@ -19,6 +20,19 @@ const COVERS: Record<string, { cover: string; accent: string }> = {
   "Bahasa Indonesia": { cover: "from-amber-500 to-orange-700", accent: "bg-amber-600" },
 };
 const FALLBACK_COVER = { cover: "from-slate-600 to-slate-800", accent: "bg-slate-600" };
+
+const SOFT_THEMES: Record<string, { softBg: string; softRing: string; solidBg: string; softText: string; codeBg: string }> = {
+  IPA: { softBg: "bg-blue-50", softRing: "ring-blue-200", solidBg: "bg-blue-600", softText: "text-blue-800", codeBg: "bg-blue-600" },
+  Matematika: { softBg: "bg-emerald-50", softRing: "ring-emerald-200", solidBg: "bg-emerald-600", softText: "text-emerald-800", codeBg: "bg-emerald-600" },
+  "Bahasa Indonesia": { softBg: "bg-amber-50", softRing: "ring-amber-200", solidBg: "bg-amber-600", softText: "text-amber-800", codeBg: "bg-amber-600" },
+};
+const FALLBACK_SOFT = { softBg: "bg-slate-50", softRing: "ring-slate-200", solidBg: "bg-slate-700", softText: "text-slate-700", codeBg: "bg-slate-700" };
+
+export function getQuizTheme(subject?: string | null) {
+  const cover = COVERS[subject ?? ""] ?? FALLBACK_COVER;
+  const soft = SOFT_THEMES[subject ?? ""] ?? FALLBACK_SOFT;
+  return { ...cover, ...soft };
+}
 
 export function toPlayerQuiz(r: DbQuiz): Quiz {
   const questions: QuizQuestion[] = r.questions.map((q, i) => ({
@@ -46,7 +60,7 @@ export function toPlayerQuiz(r: DbQuiz): Quiz {
 
 async function fetchDb(path: string) {
   const res = await fetch(`${apiUrl}${path}`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
+    headers: { Authorization: `Bearer ${await getValidToken()}` },
   });
   const data = await res.json();
   return res.ok && data.success ? data.data : null;
@@ -74,4 +88,13 @@ export async function fetchLobbyQuizzes(): Promise<Quiz[]> {
   }
   const seen = new Set(remote.map((q) => q.code));
   return [...remote, ...QUIZZES.filter((q) => !seen.has(q.code))];
+}
+
+export async function fetchTeacherQuizzes(): Promise<DbQuiz[]> {
+  try {
+    const data = await fetchDb("/quizzes");
+    return Array.isArray(data) ? (data as DbQuiz[]) : [];
+  } catch {
+    return [];
+  }
 }

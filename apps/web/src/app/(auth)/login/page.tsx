@@ -50,8 +50,14 @@ export default function Login() {
       if (!res.ok || !data.success) throw new Error(data.message ?? "Login gagal");
 
       const maxAge = rememberMe ? 604800 : 3600; // 7 days vs 1 hour
-      document.cookie = `token=${data.token}; path=/; max-age=${maxAge}; SameSite=Lax`;
+      const enc = (v: string) => encodeURIComponent(v);
+      document.cookie = `token=${enc(data.token)}; path=/; max-age=${maxAge}; SameSite=Lax`;
       localStorage.setItem("token", data.token);
+      if (data.refresh_token) {
+        document.cookie = `refresh_token=${enc(data.refresh_token)}; path=/; max-age=604800; SameSite=Lax`;
+        localStorage.setItem("refresh_token", data.refresh_token);
+      }
+      if (data.expires_at) localStorage.setItem("expires_at", String(data.expires_at));
       if (data.profile) localStorage.setItem("profile", JSON.stringify(data.profile));
       else localStorage.removeItem("profile");
 

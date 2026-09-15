@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { getToken } from '@/lib/ai-helpers';
+import { getValidToken } from '@/lib/ai-helpers';
 import { STREAMING_TIMING } from '@/lib/constants';
 import type { ApprovalQuestion, Attachment, ChatMsg } from '@/types/ai';
 
@@ -43,7 +43,7 @@ export function useChat({ onMessageSent, getActiveId, setActiveId, apiBase = '/s
         setStreaming('');
         const res = await fetch(`${apiUrl}${apiBase}/chat`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${await getValidToken()}` },
           body: JSON.stringify({ messages: history.map(({ role, content, attachments }) => ({ role, content, attachments })) }),
         });
         const data = await res.json();

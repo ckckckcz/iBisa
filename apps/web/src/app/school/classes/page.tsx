@@ -11,7 +11,7 @@ import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/com
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { StatCards } from "@/features/school/stat-cards";
 import type { Member } from "@/types/school";
-import { getToken } from "@/lib/ai-helpers";
+import { getValidToken } from "@/lib/ai-helpers";
 import { fetchSchoolList } from "@/lib/school-api";
 import { BookOpen01Icon, Chart01Icon, StudentsIcon, TeacherIcon, ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -32,11 +32,11 @@ export default function ClassesPage() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
   async function load() {
-    const token = getToken();
+    const token = await getValidToken();
     const [c, g, s] = await Promise.all([
-      fetchSchoolList(apiUrl, token, "classes"),
-      fetchSchoolList(apiUrl, token, "teachers"),
-      fetchSchoolList(apiUrl, token, "students"),
+      fetchSchoolList<Kelas[]>(apiUrl, token, "classes"),
+      fetchSchoolList<Guru[]>(apiUrl, token, "teachers"),
+      fetchSchoolList<Member[]>(apiUrl, token, "students"),
     ]);
     if (c.success) setRows(c.data);
     if (g.success) setGurus(g.data);
@@ -45,19 +45,20 @@ export default function ClassesPage() {
 
   useEffect(() => {
     let cancelled = false;
-    const token = getToken();
-    Promise.all([
-      fetchSchoolList(apiUrl, token, "classes"),
-      fetchSchoolList(apiUrl, token, "teachers"),
-      fetchSchoolList(apiUrl, token, "students"),
-    ])
-      .then(([c, g, s]) => {
+    void (async () => {
+      const token = await getValidToken();
+      try {
+        const [c, g, s] = await Promise.all([
+          fetchSchoolList<Kelas[]>(apiUrl, token, "classes"),
+          fetchSchoolList<Guru[]>(apiUrl, token, "teachers"),
+          fetchSchoolList<Member[]>(apiUrl, token, "students"),
+        ]);
         if (cancelled) return;
         if (c.success) setRows(c.data);
         if (g.success) setGurus(g.data);
         if (s.success) setStudents(s.data);
-      })
-      .catch(() => {});
+      } catch {}
+    })();
     return () => { cancelled = true; };
   }, [apiUrl]);
 
@@ -104,7 +105,7 @@ export default function ClassesPage() {
   async function submit() {
     if (!form.name.trim()) { alert("Nama kelas wajib"); return; }
     setSaving(true);
-    const token = getToken();
+    const token = await getValidToken();
     const body = { name: form.name.trim(), tingkat: form.tingkat, wali_guru_id: form.wali_guru_id || null };
     const url = editing ? `${apiUrl}/school/classes/${editing.id}` : `${apiUrl}/school/classes`;
     const res = await fetch(url, {
@@ -121,7 +122,7 @@ export default function ClassesPage() {
   async function remove(k: Kelas) {
     const n = countByClass.get(k.id) ?? 0;
     if (!confirm(`Hapus kelas ${k.name}?${n > 0 ? ` ${n} murid jadi tanpa kelas.` : ""}`)) return;
-    const token = getToken();
+    const token = await getValidToken();
     await fetch(`${apiUrl}/school/classes/${k.id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
     void load();
   }

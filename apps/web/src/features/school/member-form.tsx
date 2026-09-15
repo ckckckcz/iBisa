@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { initials, type ClassOption, type FormPayload, type Member } from "@/types/school";
 import { useMemberForm } from "@/hooks/use-member-form";
-import { getToken } from "@/lib/ai-helpers";
+import { getValidToken } from "@/lib/ai-helpers";
 
 export function MemberForm({
   open, onOpenChange, mode, initial, classOptions, saving, apiUrl, onSubmit,
@@ -38,7 +38,7 @@ export function MemberForm({
       fd.append("avatar", file);
       const res = await fetch(`${apiUrl}/school/uploads/avatar`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${getToken()}` },
+        headers: { Authorization: `Bearer ${await getValidToken()}` },
         body: fd,
       });
       const data = await res.json().catch(() => null);

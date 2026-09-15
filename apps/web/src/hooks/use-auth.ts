@@ -47,12 +47,11 @@ async function fetchFreshProfile(token: string): Promise<AuthProfile | null> {
 }
 
 export function useAuth() {
-  const [profile, setProfile] = useState<AuthProfile | null>(() =>
-    typeof window === "undefined" ? null : readCachedProfile()
-  );
+  const [profile, setProfile] = useState<AuthProfile | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+    setProfile(readCachedProfile());
     const token = readToken();
     if (token) {
       void fetchFreshProfile(token).then((fresh) => {

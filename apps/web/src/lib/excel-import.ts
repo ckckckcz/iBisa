@@ -19,12 +19,11 @@ export async function parseExcelOrCsvFile(file: File): Promise<ExcelMemberRow[]>
   if (!firstSheetName) return [];
 
   const worksheet = workbook.Sheets[firstSheetName];
-  const rawRows = XLSX.utils.sheet_to_json<Record<string, any>>(worksheet, { defval: "" });
+  const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(worksheet, { defval: "" });
 
   const rows: ExcelMemberRow[] = [];
 
   for (const raw of rawRows) {
-    // Normalize keys to lowercase string
     const row: Record<string, string> = {};
     Object.keys(raw).forEach((key) => {
       row[key.trim().toLowerCase()] = String(raw[key] ?? "").trim();

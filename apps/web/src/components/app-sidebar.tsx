@@ -17,12 +17,11 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import {
   DashboardSquare01Icon,
   BookOpen02Icon,
-  Analytics01Icon,
-  GameController01Icon,
   UserGroupIcon,
   AccessibilityIcon,
   Idea01Icon,
-  Settings05Icon,
+  Quiz02Icon,
+  CourseIcon,
 } from "@hugeicons/core-free-icons"
 import Image from "next/image"
 
@@ -62,7 +61,8 @@ const navSchool = [
 
 const navTeacher = [
   { title: "Beranda", url: "/teacher", icon: <HugeiconsIcon icon={DashboardSquare01Icon} strokeWidth={2} />, isActive: true, items: [{ title: "Progres Belajar", url: "/teacher" }, { title: "Modul Rekomendasi", url: "#" }] },
-  { title: "Sesi Pembelajaran", url: "#", icon: <HugeiconsIcon icon={BookOpen02Icon} strokeWidth={2} />, items: [{ title: "Materi Pembelajaran", url: "#" }] },
+  { title: "Bank Soal", url: "/teacher/quizzes", icon: <HugeiconsIcon icon={Quiz02Icon} strokeWidth={2} />, items: [{ title: "Daftar Soal", url: "/teacher/quizzes" }] },
+  { title: "Sesi Pembelajaran", url: "#", icon: <HugeiconsIcon icon={CourseIcon} strokeWidth={2} />, items: [{ title: "Materi Pembelajaran", url: "#" }] },
   { title: "Chat AI", url: "/teacher/ai", icon: <HugeiconsIcon icon={Idea01Icon} strokeWidth={2} />, items: [{ title: "Tanya AI", url: "/teacher/ai" }] },
 ];
 
@@ -76,13 +76,11 @@ const navMainByRole: Record<string, typeof navSchool> = {
   student: navStudent,
 };
 
-const navMain = navSchool;
-
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { profile } = useAuth();
   const router = useRouter();
-  const roleNav = navMainByRole[profile?.role ?? "school"] ?? navSchool;
-  const homeByRole = profile?.role === "teacher" ? "/teacher" : profile?.role === "student" ? "/student" : "/school";
+  const role = profile?.role ?? "school";
+  const roleNav = navMainByRole[role] ?? navSchool;
   const displayName = profile?.full_name?.trim() || profile?.email?.split("@")[0] || "Pengguna BISA";
   const user = {
     name: displayName,
@@ -90,8 +88,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     avatar: "/avatars/shadcn.jpg",
   };
   function handleLogout() {
-    document.cookie = "token=; path=/; max-age=0";
+    document.cookie = "token=; path=/; max-age=0; SameSite=Lax";
+    document.cookie = "refresh_token=; path=/; max-age=0; SameSite=Lax";
     localStorage.removeItem("token");
+    localStorage.removeItem("refresh_token");
+    localStorage.removeItem("expires_at");
     localStorage.removeItem("profile");
     router.push("/login");
   }

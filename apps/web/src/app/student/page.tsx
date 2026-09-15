@@ -29,7 +29,10 @@ export default function StudentLobbyPage() {
 
   function handleLogout() {
     document.cookie = "token=; path=/; max-age=0; SameSite=Lax";
+    document.cookie = "refresh_token=; path=/; max-age=0; SameSite=Lax";
     localStorage.removeItem("token");
+    localStorage.removeItem("refresh_token");
+    localStorage.removeItem("expires_at");
     localStorage.removeItem("profile");
     router.push("/login");
   }

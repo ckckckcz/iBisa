@@ -4,9 +4,8 @@ import { useEffect, useState } from "react";
 import { ChartAreaInteractive } from "@/components/chart-area-interactive";
 import { DataTable } from "@/components/data-table";
 import { SectionCards } from "@/components/section-cards";
-import { getToken } from "@/lib/ai-helpers";
+import { getValidToken } from "@/lib/ai-helpers";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 
 type TeacherDashboard = {
   profile?: { id: string; full_name: string; subject?: string };
@@ -28,16 +27,17 @@ export default function TeacherPage() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
   useEffect(() => {
-    const token = getToken();
-    if (!token) return;
-    fetch(`${apiUrl}/teacher/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then((res) => {
-        if (res.success) setData(res);
-      })
-      .catch(() => {});
+    void (async () => {
+      const token = await getValidToken();
+      if (!token) return;
+      try {
+        const res = await fetch(`${apiUrl}/teacher/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (data.success) setData(data);
+      } catch {}
+    })();
   }, [apiUrl]);
 
   return (

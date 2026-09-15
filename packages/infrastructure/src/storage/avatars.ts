@@ -15,7 +15,7 @@ export async function uploadAvatar(schoolId: string, buf: Buffer, mime: string):
   if (buf.length > MAX_BYTES) throw new Error("Maksimal 2MB");
   const admin = getSupabaseAdmin();
   if (!admin) throw new Error("Supabase not configured");
-  const path = `${schoolId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${extOf(mime)}`;
+  const path = `${schoolId}/${crypto.randomUUID()}.${extOf(mime)}`;
   const { error } = await admin.storage.from(BUCKET).upload(path, buf, { contentType: mime, upsert: false });
   if (error) throw new Error(error.message);
   const { data } = admin.storage.from(BUCKET).getPublicUrl(path);

@@ -20,6 +20,7 @@ import ChatSidebar from '@/features/ai/chat-sidebar';
 import QuizDraftCard from '@/features/ai/quiz-draft-card';
 import { useQuizCommand, type QuizPush } from '@/features/ai/use-quiz-command';
 import type { Attachment, ChatMsg } from '@/types/ai';
+import { fetchTeacherQuizzes, type DbQuiz } from '@/lib/quizzes';
 
 const MODEL_ITEMS = AI_MODELS.map((m) => ({ key: m.key, name: m.name, tag: m.tag }));
 
@@ -27,8 +28,8 @@ const SOAL_MODE: SlashMode = {
   prefix: '/soal',
   label: 'Buat kuis dari materi',
   placeholder: 'Tulis jumlah soal + lampirkan materi…',
-  needFiles: true,
-  filesHint: 'Mode /soal butuh materi: lampirkan PDF, DOCX, gambar, atau teks dulu ya.',
+  needFiles: false,
+  filesHint: 'Mode /soal butuh materi atau mention @KODE soal. Ketik @ untuk cari kuis, mis: /soal @855207 revisi.',
 };
 
 export default function ChatPage({ apiBase = '/school/ai', allowConfigEdit = true, quizCommands = false }: { apiBase?: string; allowConfigEdit?: boolean; quizCommands?: boolean }) {
@@ -46,7 +47,14 @@ export default function ChatPage({ apiBase = '/school/ai', allowConfigEdit = tru
 
   const error = configError || chatError;
   const chatMirror = useRef<ChatMsg[]>([]);
-  const quiz = useQuizCommand({ enabled: quizCommands });
+  const [quizzes, setQuizzes] = useState<DbQuiz[]>([]);
+
+  useEffect(() => {
+    if (!quizCommands) return;
+    void fetchTeacherQuizzes().then(setQuizzes).catch(() => {});
+  }, [quizCommands]);
+
+  const quiz = useQuizCommand({ enabled: quizCommands, quizzes });
 
   useEffect(() => {
     chatMirror.current = chat;
@@ -148,7 +156,7 @@ export default function ChatPage({ apiBase = '/school/ai', allowConfigEdit = tru
         <div className="flex min-w-0 flex-1 flex-col gap-3 overflow-hidden rounded-lg p-4">
           {chat.length === 0 && !thinking && !streaming && !quiz.busy ? (
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-              <EmptyState onSend={sendWithCommand} model={model} onModelChange={setModel} models={MODEL_ITEMS} modes={quizCommands ? [SOAL_MODE] : undefined} />
+              <EmptyState onSend={sendWithCommand} model={model} onModelChange={setModel} models={MODEL_ITEMS} modes={quizCommands ? [SOAL_MODE] : undefined} quizzes={quizCommands ? quizzes : undefined} />
             </div>
           ) : (
             <>
@@ -176,7 +184,7 @@ export default function ChatPage({ apiBase = '/school/ai', allowConfigEdit = tru
                           </SelectableMessage>
                           ) : null}
                           {m.quizDraft?.length ? (
-                            <QuizDraftCard draft={m.quizDraft} savedCode={m.quizCode} onSaved={(code) => handleQuizSaved(i, code)} />
+                            <QuizDraftCard key={`quiz-${i}-${m.quizDraft.length}-${m.quizDraft[0]?.question.slice(0, 24) ?? ""}`} draft={m.quizDraft} savedCode={m.quizCode} onSaved={(code) => handleQuizSaved(i, code)} />
                           ) : null}
                           {m.questions?.length ? (
                             <div className="mt-2">
@@ -200,7 +208,24 @@ export default function ChatPage({ apiBase = '/school/ai', allowConfigEdit = tru
                               {meta.name}
                             </span>
                           ))}
-                          {m.content ? <div>{m.content}</div> : null}
+                          {m.content ? (
+                            <div className="whitespace-pre-wrap wrap-break-words">
+                              {m.content.split(/(@[A-Za-z0-9_-]+)/g).map((part, idx) => {
+                                if (!part.startsWith('@')) return <span key={idx}>{part}</span>;
+                                const code = part.slice(1);
+                                const hit = quizzes.find((q) => q.code.toLowerCase() === code.toLowerCase());
+                                return hit ? (
+                                  <span key={idx} className="inline-flex items-center rounded-full bg-blue-600 px-2 py-0.5 text-xs font-medium text-white">
+                                    @{hit.code}
+                                  </span>
+                                ) : (
+                                  <span key={idx} className="font-medium text-blue-700">
+                                    {part}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          ) : null}
                         </>
                       )}
                     </div>
@@ -218,7 +243,12 @@ export default function ChatPage({ apiBase = '/school/ai', allowConfigEdit = tru
                 )}
               </div>
               <div className="mx-auto w-full max-w-2xl shrink-0 px-4 pt-3 pb-1">
-                <PromptBar placeholder='Tanya AI... (tips: "/soal 5" + lampirkan materi untuk buat kuis)' onSend={sendWithCommand} currentModel={model} onModelChange={setModel} models={MODEL_ITEMS} modes={quizCommands ? [SOAL_MODE] : undefined} />
+                <PromptBar placeholder='Tanya AI... (ketik "/soal @855207 revisi" untuk bawa konteks kuis)' onSend={sendWithCommand} currentModel={model} onModelChange={setModel} models={MODEL_ITEMS} modes={quizCommands ? [SOAL_MODE] : undefined} quizzes={quizCommands ? quizzes : undefined} />
+                {quizCommands && quizzes.length > 0 && (
+                  <p className="mt-1.5 text-center text-[11px] text-neutral-400">
+                    Tip revisi: <span className="font-mono font-medium text-neutral-700">/soal @855207 tambahkan soal dari materi ini</span> — ketik <span className="font-mono">@</span> untuk cari kode.
+                  </p>
+                )}
               </div>
             </>
           )}

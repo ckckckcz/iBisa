@@ -13,8 +13,7 @@
     }
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.116.0",
-    "ws": "^8.21.3"
+    "@supabase/supabase-js": "^2.116.0"
   },
   "scripts": {
     "build": "tsc",
@@ -22,7 +21,6 @@
   },
   "devDependencies": {
     "@types/node": "^22.20.2",
-    "@types/ws": "^8.18.1",
     "typescript": "^5.7.2"
   }
 }

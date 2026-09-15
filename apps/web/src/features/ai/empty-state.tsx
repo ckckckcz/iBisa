@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { AI_CHAT_EXAMPLES } from "@/lib/constants";
 import PromptBar, { type SlashMode } from "@/features/ai/prompt-bar";
+import type { DbQuiz } from "@/lib/quizzes";
 
 export default function EmptyState({
   onSend,
@@ -10,12 +11,14 @@ export default function EmptyState({
   onModelChange,
   models,
   modes,
+  quizzes,
 }: {
   onSend: (text: string) => void;
   model: string;
   onModelChange: (model: string) => void;
   models: { key: string; name: string; tag: string }[];
   modes?: SlashMode[];
+  quizzes?: DbQuiz[];
 }) {
   return (
     <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden px-4 py-16">
@@ -50,6 +53,7 @@ export default function EmptyState({
             onModelChange={onModelChange}
             models={models}
             modes={modes}
+            quizzes={quizzes}
           />
         </div>
 

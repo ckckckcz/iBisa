@@ -14,10 +14,6 @@ export interface HeroSectionProps {
   readonly onExploreClick?: () => void;
 }
 
-export interface AboutSectionProps {
-  readonly onContactClick?: () => void;
-}
-
 export interface ProgramItem {
   readonly icon: IconSvgElement;
   readonly title: string;

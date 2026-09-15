@@ -1,5 +1,5 @@
 import { Router, type Request, type Response } from "express";
-import { getSupabaseAdmin, createSchoolWithManager, createUserWithProfile, signInWithPassword, type RoleName } from "@bisa/infrastructure";
+import { getSupabase, getSupabaseAdmin, createSchoolWithManager, createUserWithProfile, signInWithPassword, type RoleName } from "@bisa/infrastructure";
 
 const router = Router();
 const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
@@ -81,13 +81,39 @@ router.post("/login", async (req: Request, res: Response) => {
   } catch (e) { return err(res, 401, e instanceof Error ? e.message : "Email atau password salah"); }
 });
 
+router.post("/refresh", async (req: Request, res: Response) => {
+  const refresh_token = String(req.body?.refresh_token ?? "").trim();
+  if (!refresh_token) return err(res, 400, "Missing refresh_token");
+  const supabase = getSupabase();
+  if (!supabase) return err(res, 503, "Supabase not configured");
+  const { data, error } = await supabase.auth.refreshSession({ refresh_token });
+  if (error || !data.session) return err(res, 401, error?.message ?? "Refresh failed");
+  const admin = getSupabaseAdmin();
+  let profile: unknown = null;
+  if (admin && data.user) {
+    const { data: p } = await admin.from("users_with_role").select("*").eq("id", data.user.id).single();
+    profile = p ?? null;
+  }
+  return res.json({
+    success: true,
+    token: data.session.access_token,
+    refresh_token: data.session.refresh_token,
+    expires_at: data.session.expires_at,
+    user: data.user ? { id: data.user.id, email: data.user.email } : undefined,
+    profile,
+  });
+});
+
 router.get("/me", async (req: Request, res: Response) => {
   const auth = req.headers.authorization;
   if (!auth?.startsWith("Bearer ")) return err(res, 401, "Missing token");
   const admin = getSupabaseAdmin();
   if (!admin) return err(res, 503, "Supabase not configured");
   const { data, error: e } = await admin.auth.getUser(auth.slice(7));
-  if (e || !data.user) return err(res, 401, "Token tidak valid");
+  if (e || !data.user) {
+    const msg = e?.message?.toLowerCase().includes("expired") ? "Token expired, silakan login ulang" : "Token tidak valid";
+    return err(res, 401, msg);
+  }
   const { data: profile } = await admin.from("users_with_role").select("*").eq("id", data.user.id).single();
   return res.json({ success: true, user: data.user, profile });
 });

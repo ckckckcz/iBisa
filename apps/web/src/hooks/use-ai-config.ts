@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { AI_MODELS } from '@/lib/constants';
-import { getToken } from '@/lib/ai-helpers';
+import { getValidToken } from '@/lib/ai-helpers';
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000';
 
@@ -14,7 +14,7 @@ export function useAiConfig(apiBase = '/school/ai') {
   useEffect(() => {
     async function loadConfig() {
       const res = await fetch(`${apiUrl}${apiBase}/config`, {
-        headers: { Authorization: `Bearer ${getToken()}` },
+        headers: { Authorization: `Bearer ${await getValidToken()}` },
       });
       const data = await res.json();
       if (data.success) {
@@ -31,7 +31,7 @@ export function useAiConfig(apiBase = '/school/ai') {
     setError('');
     const res = await fetch(`${apiUrl}${apiBase}/config`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${await getValidToken()}` },
       body: JSON.stringify({ system_prompt: prompt, model }),
     });
     const data = await res.json();

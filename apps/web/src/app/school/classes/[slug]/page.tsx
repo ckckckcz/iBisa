@@ -8,7 +8,7 @@ import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
 import { MemberTable } from "@/features/school/member-table";
 import { studentColumns } from "@/features/school/student-columns";
 import type { Member } from "@/types/school";
-import { getToken } from "@/lib/ai-helpers";
+import { getValidToken } from "@/lib/ai-helpers";
 import { fetchSchoolList } from "@/lib/school-api";
 
 type Kelas = { id: string; name: string; tingkat: string; wali_guru_id: string | null };
@@ -26,24 +26,25 @@ export default function ClassStudentsPage() {
 
   useEffect(() => {
     let cancelled = false;
-    const token = getToken();
-    Promise.all([
-      fetchSchoolList(apiUrl, token, "classes"),
-      fetchSchoolList(apiUrl, token, "teachers"),
-      fetchSchoolList(apiUrl, token, "students"),
-    ])
-      .then(([c, g, s]) => {
+    void (async () => {
+      const token = await getValidToken();
+      try {
+        const [c, g, s] = await Promise.all([
+          fetchSchoolList<Kelas[]>(apiUrl, token, "classes"),
+          fetchSchoolList<Guru[]>(apiUrl, token, "teachers"),
+          fetchSchoolList<Member[]>(apiUrl, token, "students"),
+        ]);
         if (cancelled) return;
-        const found = (c.success ? (c.data as Kelas[]) : []).find((k) => k.id === slug) ?? null;
+        const found = (c.success ? c.data : []).find((k) => k.id === slug) ?? null;
         setKelas(found);
         if (found) {
-          const w = (g.success ? (g.data as Guru[]) : []).find((x) => x.id === found.wali_guru_id);
+          const w = (g.success ? g.data : []).find((x) => x.id === found.wali_guru_id);
           setWali(w?.full_name ?? "Tanpa wali");
         }
-        if (s.success) setStudents((s.data as Member[]).filter((m) => m.class_id === slug));
+        if (s.success) setStudents(s.data.filter((m) => m.class_id === slug));
         setLoaded(true);
-      })
-      .catch(() => setLoaded(true));
+      } catch { setLoaded(true); }
+    })();
     return () => { cancelled = true; };
   }, [apiUrl, slug]);
 

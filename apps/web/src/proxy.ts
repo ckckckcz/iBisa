@@ -1,13 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 const roleRoutes: Record<string, string[]> = {
-  school: ["/school", "/dashboard"],
+  school: ["/school"],
   teacher: ["/teacher"],
   student: ["/student"],
 };
 
 function getRoleForPath(path: string) {
-  if (path.startsWith("/school") || path.startsWith("/dashboard")) return "school";
+  if (path.startsWith("/school")) return "school";
   if (path.startsWith("/teacher")) return "teacher";
   if (path.startsWith("/student")) return "student";
   return null;
@@ -21,7 +21,6 @@ export async function proxy(req: NextRequest) {
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
-  // Handle /login and /register pages for already authenticated users
   if (isAuthPage) {
     if (!token) return NextResponse.next();
     try {
@@ -35,14 +34,12 @@ export async function proxy(req: NextRequest) {
       const target = role === "teacher" ? "/teacher" : role === "student" ? "/student" : "/school";
       return NextResponse.redirect(new URL(target, req.url));
     } catch {
-      // Token is invalid or expired: clear token cookie and allow user to view login/register
       const resp = NextResponse.next();
       resp.cookies.delete("token");
       return resp;
     }
   }
 
-  // Handle protected dashboard routes
   if (!requiredRole) return NextResponse.next();
 
   if (!token) {
@@ -75,14 +72,11 @@ export async function proxy(req: NextRequest) {
   }
 }
 
-export default proxy;
-
 export const config = {
   matcher: [
     "/school/:path*",
     "/teacher/:path*",
     "/student/:path*",
-    "/dashboard/:path*",
     "/login",
     "/register",
   ],

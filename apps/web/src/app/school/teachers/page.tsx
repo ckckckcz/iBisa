@@ -9,8 +9,8 @@ import { MemberTable } from "@/features/school/member-table";
 import { MemberForm } from "@/features/school/member-form";
 import { GenderBadge, StatusBadge } from "@/features/school/member-badges";
 import { initials, type Column, type FormPayload, type Member } from "@/types/school";
-import { getToken } from "@/lib/ai-helpers";
-import { fetchSchoolList } from "@/lib/school-api";
+import { getValidToken } from "@/lib/ai-helpers";
+import { fetchSchoolList, type BatchItemResult, type SchoolListResponse } from "@/lib/school-api";
 import { BookOpen01Icon, CalendarOffIcon, CheckmarkCircle01Icon, TeacherIcon } from "@hugeicons/core-free-icons";
 
 import { parseExcelOrCsvFile, downloadExcelTemplate, type ExcelMemberRow } from "@/lib/excel-import";
@@ -29,7 +29,10 @@ export default function TeachersPage() {
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
-  function applyTeacherData(t: { success: boolean; data: Member[] }, c: { success: boolean; data: { wali_guru_id: string | null }[] } | null) {
+  function applyTeacherData(
+    t: SchoolListResponse<Member[]>,
+    c: SchoolListResponse<{ wali_guru_id: string | null }[]> | null,
+  ) {
     if (!t.success) return;
     setRows(t.data);
     if (c?.success) {
@@ -39,23 +42,26 @@ export default function TeachersPage() {
   }
 
   async function load() {
-    const token = getToken();
+    const token = await getValidToken();
     const [t, c] = await Promise.all([
-      fetchSchoolList(apiUrl, token, "teachers"),
-      fetchSchoolList(apiUrl, token, "classes").catch(() => null),
+      fetchSchoolList<Member[]>(apiUrl, token, "teachers"),
+      fetchSchoolList<{ wali_guru_id: string | null }[]>(apiUrl, token, "classes").catch(() => null),
     ]);
     applyTeacherData(t, c);
   }
 
   useEffect(() => {
     let cancelled = false;
-    const token = getToken();
-    Promise.all([
-      fetchSchoolList(apiUrl, token, "teachers"),
-      fetchSchoolList(apiUrl, token, "classes").catch(() => null),
-    ])
-      .then(([t, c]) => { if (!cancelled) applyTeacherData(t, c); })
-      .catch(() => {});
+    void (async () => {
+      const token = await getValidToken();
+      try {
+        const [t, c] = await Promise.all([
+          fetchSchoolList<Member[]>(apiUrl, token, "teachers"),
+          fetchSchoolList<{ wali_guru_id: string | null }[]>(apiUrl, token, "classes").catch(() => null),
+        ]);
+        if (!cancelled) applyTeacherData(t, c);
+      } catch {}
+    })();
     return () => { cancelled = true; };
   }, [apiUrl]);
 
@@ -95,7 +101,7 @@ export default function TeachersPage() {
 
   async function submit(p: FormPayload) {
     setSaving(true);
-    const token = getToken();
+    const token = await getValidToken();
     const body = {
       number: p.number || null, full_name: p.full_name, email: p.email || undefined,
       password: p.password || undefined, whatsapp: p.whatsapp || null,
@@ -112,7 +118,7 @@ export default function TeachersPage() {
 
   async function remove(m: Member) {
     if (!confirm(`Hapus ${m.full_name}?`)) return;
-    await fetch(`${apiUrl}/school/users/${m.id}`, { method: "DELETE", headers: { Authorization: `Bearer ${getToken()}` } });
+    await fetch(`${apiUrl}/school/users/${m.id}`, { method: "DELETE", headers: { Authorization: `Bearer ${await getValidToken()}` } });
     void load();
   }
 
@@ -137,7 +143,7 @@ export default function TeachersPage() {
   async function confirmBatchImport() {
     setBatchSubmitting(true);
     try {
-      const token = getToken();
+      const token = await getValidToken();
       const res = await fetch(`${apiUrl}/school/teachers/batch`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -145,10 +151,11 @@ export default function TeachersPage() {
       });
       const data = await res.json().catch(() => null);
       if (data?.success) {
-        const created = data.data?.createdCount ?? 0;
-        const failed = data.data?.failedCount ?? 0;
+        const created = (data.data?.createdCount as number | undefined) ?? 0;
+        const failed = (data.data?.failedCount as number | undefined) ?? 0;
         if (failed > 0) {
-          const firstErr = data.data?.results?.find((r: any) => !r.success)?.error || "Email/User sudah terdaftar";
+          const results = (data.data?.results as BatchItemResult[] | undefined) ?? [];
+          const firstErr = results.find((r) => !r.success)?.error || "Email/User sudah terdaftar";
           alert(`Berhasil mengimpor ${created} guru. Gagal: ${failed} guru (${firstErr})`);
         } else {
           alert(`Berhasil mengimpor ${created} guru.`);
