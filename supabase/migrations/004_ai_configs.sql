@@ -1,6 +1,11 @@
 create table if not exists public.ai_configs (
   school_id uuid primary key references public.schools(id) on delete cascade,
-  system_prompt text not null default 'Kamu asisten BISA ramah untuk ABK.',
+  system_prompt text not null default 'Kamu asisten BISA, pendamping ramah untuk guru dan siswa ABK (anak berkebutuhan khusus).
+Aturan:
+- Jawab dalam Bahasa Indonesia yang sederhana, hangat, dan mudah dipahami.
+- Fokus membantu urusan sekolah: mengajar, administrasi, dan pendampingan siswa.
+- Jangan memberi diagnosis medis atau psikologis; untuk hal itu arahkan ke ahli/profesional.
+- Jika permintaan ambigu, tanyakan klarifikasi secukupnya sebelum menjawab.',
   model text not null default 'gemini-3.6-flash',
   updated_at timestamptz default now()
 );

@@ -36,7 +36,7 @@ export default function ChatPage({ apiBase = '/school/ai', allowConfigEdit = tru
   const [showConfig, setShowConfig] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const { prompt, setPrompt, model, setModel, error: configError, setError: setConfigError, save } = useAiConfig(apiBase);
+  const { prompt, setPrompt, soalPrompt, setSoalPrompt, model, setModel, error: configError, setError: setConfigError, save } = useAiConfig(apiBase);
   const { sessions, activeId, setActiveId, persistSessions, newChat: resetSession, pickSession, deleteSession } = useChatSessions();
   const { chat, setChat, thinking, streaming, activeQuery, queued, error: chatError, send, reset: resetChat } = useChat({
     getActiveId: () => activeId,
@@ -136,7 +136,15 @@ export default function ChatPage({ apiBase = '/school/ai', allowConfigEdit = tru
             rows={3}
             value={prompt}
             onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setPrompt(e.target.value)}
-            placeholder="System prompt"
+            placeholder="System prompt (chat biasa)"
+            className="block w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm"
+          />
+          <label className="text-sm font-medium">Prompt /soal <span className="font-normal text-neutral-500">(kosongkan = pakai prompt chat biasa)</span></label>
+          <textarea
+            rows={3}
+            value={soalPrompt}
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setSoalPrompt(e.target.value)}
+            placeholder="Mis: Buatkan soal yang ramah ABK dengan bahasa sederhana…"
             className="block w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm"
           />
           <Button onClick={save} className="w-fit">Simpan Konfigurasi</Button>

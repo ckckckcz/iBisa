@@ -1,17 +1,34 @@
 import { getSupabaseAdmin } from "../supabase/client.js";
 
-export async function getAiConfig(schoolId: string) {
+export type AiConfig = { system_prompt: string; soal_system_prompt: string; model: string };
+
+export const DEFAULT_SYSTEM_PROMPT = `Kamu asisten BISA, pendamping ramah untuk guru dan siswa ABK (anak berkebutuhan khusus).
+Aturan:
+- Jawab dalam Bahasa Indonesia yang sederhana, hangat, dan mudah dipahami.
+- Fokus membantu urusan sekolah: mengajar, administrasi, dan pendampingan siswa.
+- Jangan memberi diagnosis medis atau psikologis; untuk hal itu arahkan ke ahli/profesional.
+- Jika permintaan ambigu, tanyakan klarifikasi secukupnya sebelum menjawab.`;
+
+export const DEFAULT_SOAL_PROMPT = `Kamu penyusun soal untuk siswa ABK (anak berkebutuhan khusus).
+Aturan:
+- Gunakan Bahasa Indonesia sederhana: kalimat pendek, kosakata mudah.
+- Satu soal menguji satu konsep saja; hindari pengecoh yang menjebak atau ambigu.
+- Pakai konteks dekat kehidupan sehari-hari anak.`;
+
+const DEFAULT_CONFIG: AiConfig = { system_prompt: DEFAULT_SYSTEM_PROMPT, soal_system_prompt: DEFAULT_SOAL_PROMPT, model: "gemini-3.6-flash" };
+
+export async function getAiConfig(schoolId: string): Promise<AiConfig> {
   const admin = getSupabaseAdmin();
   if (!admin) throw new Error("Supabase not configured");
-  const { data } = await admin.from("ai_configs").select("system_prompt,model").eq("school_id", schoolId).single();
-  if (data) return data as { system_prompt: string; model: string };
-  return { system_prompt: "Kamu asisten BISA ramah untuk ABK.", model: "gemini-3.6-flash" };
+  const { data } = await admin.from("ai_configs").select("system_prompt,soal_system_prompt,model").eq("school_id", schoolId).single();
+  if (data) return { ...DEFAULT_CONFIG, ...(data as Partial<AiConfig>) };
+  return DEFAULT_CONFIG;
 }
 
-export async function upsertAiConfig(schoolId: string, p: { system_prompt: string; model: string }) {
+export async function upsertAiConfig(schoolId: string, p: { system_prompt: string; soal_system_prompt?: string; model: string }) {
   const admin = getSupabaseAdmin();
   if (!admin) throw new Error("Supabase not configured");
-  const { data, error } = await admin.from("ai_configs").upsert({ school_id: schoolId, system_prompt: p.system_prompt, model: p.model, updated_at: new Date().toISOString() }).select("system_prompt,model").single();
+  const { data, error } = await admin.from("ai_configs").upsert({ school_id: schoolId, system_prompt: p.system_prompt, soal_system_prompt: p.soal_system_prompt ?? "", model: p.model, updated_at: new Date().toISOString() }).select("system_prompt,soal_system_prompt,model").single();
   if (error) throw new Error(error.message);
   return data;
 }
@@ -135,8 +152,9 @@ export async function generateQuizDraft(
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw new Error("GEMINI_API_KEY belum dikonfigurasi.");
   const n = Math.min(Math.max(Math.floor(count) || 5, 1), 20);
+  const persona = config.soal_system_prompt.trim() || config.system_prompt;
   const body = JSON.stringify({
-    system_instruction: { parts: [{ text: quizSystemPrompt(n, subject) }] },
+    system_instruction: { parts: [{ text: `${persona}\n${quizSystemPrompt(n, subject)}` }] },
     contents: messages.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: toGeminiParts(m) })),
   });
   const post = () =>

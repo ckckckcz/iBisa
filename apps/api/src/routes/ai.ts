@@ -22,9 +22,9 @@ router.get("/config", authenticate, authorize("school", "teacher"), async (req, 
 router.put("/config", authenticate, authorize("school"), async (req, res) => {
   const sid = schoolId(req);
   if (!sid) return err(res, 400, "Akun belum terhubung sekolah");
-  const { system_prompt, model } = req.body ?? {};
+  const { system_prompt, soal_system_prompt, model } = req.body ?? {};
   if (!system_prompt || !model) return err(res, 400, "Prompt dan model wajib");
-  const data = await upsertAiConfig(sid, { system_prompt, model });
+  const data = await upsertAiConfig(sid, { system_prompt, soal_system_prompt: typeof soal_system_prompt === "string" ? soal_system_prompt : "", model });
   return res.json({ success: true, data });
 });
 

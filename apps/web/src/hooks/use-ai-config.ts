@@ -8,6 +8,7 @@ const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000';
 
 export function useAiConfig(apiBase = '/school/ai') {
   const [prompt, setPrompt] = useState('');
+  const [soalPrompt, setSoalPrompt] = useState('');
   const [model, setModel] = useState(AI_MODELS[0].key);
   const [error, setError] = useState('');
 
@@ -19,6 +20,7 @@ export function useAiConfig(apiBase = '/school/ai') {
       const data = await res.json();
       if (data.success) {
         setPrompt(data.data.system_prompt);
+        setSoalPrompt(data.data.soal_system_prompt ?? '');
         setModel(AI_MODELS.find((m) => m.key === data.data.model)?.key ?? AI_MODELS[0].key);
       } else {
         setError(data.message);
@@ -32,12 +34,12 @@ export function useAiConfig(apiBase = '/school/ai') {
     const res = await fetch(`${apiUrl}${apiBase}/config`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${await getValidToken()}` },
-      body: JSON.stringify({ system_prompt: prompt, model }),
+      body: JSON.stringify({ system_prompt: prompt, soal_system_prompt: soalPrompt, model }),
     });
     const data = await res.json();
     if (!data.success) setError(data.message);
     else alert('Tersimpan');
   }
 
-  return { prompt, setPrompt, model, setModel, error, setError, save };
+  return { prompt, setPrompt, soalPrompt, setSoalPrompt, model, setModel, error, setError, save };
 }
