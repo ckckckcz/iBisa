@@ -53,21 +53,20 @@ const teams = [
 ];
 
 const navSchool = [
-  { title: "Beranda", url: "/school", icon: <HugeiconsIcon icon={DashboardSquare01Icon} strokeWidth={2} />, isActive: true, items: [{ title: "Ringkasan", url: "/school" }] },
+  { title: "Beranda", url: "/school", icon: <HugeiconsIcon icon={DashboardSquare01Icon} strokeWidth={2} />, items: [{ title: "Ringkasan", url: "/school" }] },
   { title: "Manajemen Akun", url: "#", icon: <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} />, items: [{ title: "Guru", url: "/school/teachers" }, { title: "Murid", url: "/school/students" }] },
   { title: "Kelas", url: "/school/classes", icon: <HugeiconsIcon icon={BookOpen02Icon} strokeWidth={2} />, items: [{ title: "Daftar Kelas", url: "/school/classes" }] },
   { title: "Chat AI", url: "/school/ai", icon: <HugeiconsIcon icon={Idea01Icon} strokeWidth={2} />, items: [{ title: "Konfigurasi AI", url: "/school/ai" }] },
 ];
 
 const navTeacher = [
-  { title: "Beranda", url: "/teacher", icon: <HugeiconsIcon icon={DashboardSquare01Icon} strokeWidth={2} />, isActive: true, items: [{ title: "Progres Belajar", url: "/teacher" }, { title: "Modul Rekomendasi", url: "#" }] },
+  { title: "Beranda", url: "/teacher", icon: <HugeiconsIcon icon={DashboardSquare01Icon} strokeWidth={2} />, items: [{ title: "Progres Belajar", url: "/teacher" }, { title: "Modul Rekomendasi", url: "#" }] },
   { title: "Bank Soal", url: "/teacher/quizzes", icon: <HugeiconsIcon icon={Quiz02Icon} strokeWidth={2} />, items: [{ title: "Daftar Soal", url: "/teacher/quizzes" }] },
-  { title: "Sesi Pembelajaran", url: "#", icon: <HugeiconsIcon icon={CourseIcon} strokeWidth={2} />, items: [{ title: "Materi Pembelajaran", url: "#" }] },
   { title: "Chat AI", url: "/teacher/ai", icon: <HugeiconsIcon icon={Idea01Icon} strokeWidth={2} />, items: [{ title: "Tanya AI", url: "/teacher/ai" }] },
 ];
 
 const navStudent = [
-  { title: "Beranda", url: "/student", icon: <HugeiconsIcon icon={DashboardSquare01Icon} strokeWidth={2} />, isActive: true, items: [{ title: "Modul Saya", url: "/student" }] },
+  { title: "Beranda", url: "/student", icon: <HugeiconsIcon icon={DashboardSquare01Icon} strokeWidth={2} />, items: [{ title: "Modul Saya", url: "/student" }] },
 ];
 
 const navMainByRole: Record<string, typeof navSchool> = {

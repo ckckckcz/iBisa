@@ -13,7 +13,9 @@
     }
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.116.0"
+    "@supabase/supabase-js": "^2.116.0",
+    "@types/ws": "^8.18.1",
+    "ws": "^8.21.3"
   },
   "scripts": {
     "build": "tsc",
