@@ -92,7 +92,7 @@ export default function PromptBar({
   const [expanded, setExpanded] = useState(false);
   const wide = expanded;
 
-  type Picked = { id: string; fileName: string; file: File; status: 'loading' | 'ready' | 'error'; error?: string; attachment?: Attachment };
+  type Picked = { id: string; fileName: string; file: File; status: 'loading' | 'ready' | 'error'; error?: string; attachments?: Attachment[] };
   const [picked, setPicked] = useState<Picked[]>([]);
   const [attachError, setAttachError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
@@ -111,8 +111,8 @@ export default function PromptBar({
 
   async function runExtract(id: string, file: File) {
     try {
-      const attachment = await extractFile(file);
-      setPicked((c) => c.map((p) => (p.id === id ? { ...p, status: 'ready' as const, attachment } : p)));
+      const attachments = await extractFile(file);
+      setPicked((c) => c.map((p) => (p.id === id ? { ...p, status: 'ready' as const, attachments } : p)));
     } catch (e) {
       setPicked((c) => c.map((p) => (p.id === id ? { ...p, status: 'error' as const, error: e instanceof Error ? e.message : 'Gagal membaca file.' } : p)));
     }
@@ -301,7 +301,7 @@ export default function PromptBar({
     input.style.overflowY = h > max ? 'auto' : 'hidden';
   }, [draft, expanded]);
 
-  const readyFiles = picked.filter((p) => p.status === 'ready' && p.attachment).map((p) => p.attachment as Attachment);
+  const readyFiles = picked.filter((p) => p.status === 'ready' && p.attachments?.length).flatMap((p) => p.attachments as Attachment[]);
   const extracting = picked.some((p) => p.status === 'loading');
   const canSend = draft.trim().length > 0 || (readyFiles.length > 0 && !extracting);
 
@@ -399,13 +399,13 @@ export default function PromptBar({
                   <span key={p.id} title={p.error ?? p.fileName} className={`flex h-7 items-center gap-1.5 rounded-[8px] py-1 pr-1 pl-1.5 text-[11.5px] ${p.status === 'error' ? 'bg-amber-50 text-amber-800' : 'bg-neutral-100 text-neutral-700'}`}>
                     {p.status === 'loading' ? (
                       <span className="size-3.5 animate-spin rounded-full border-[1.5px] border-neutral-300 border-t-neutral-600" />
-                    ) : p.attachment?.kind === 'image' ? (
+                    ) : p.attachments?.[0]?.kind === 'image' ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={`data:${p.attachment.mimeType};base64,${p.attachment.data}`} alt="" className="size-4 rounded-lg object-cover" />
+                      <img src={`data:${p.attachments[0].mimeType};base64,${p.attachments[0].data}`} alt="" className="size-4 rounded-lg object-cover" />
                     ) : (
                       <span className={`rounded px-1 text-[9px] font-bold ${badge.className}`}>{badge.label}</span>
                     )}
-                    <span className="max-w-36 truncate">{p.status === 'loading' ? `Mengekstrak ${shortName(p.fileName)}…` : shortName(p.fileName)}</span>
+                    <span className="max-w-36 truncate">{p.status === 'loading' ? `Mengekstrak ${shortName(p.fileName)}…` : `${shortName(p.fileName)}${(p.attachments?.length ?? 0) > 1 ? ` (${p.attachments?.length} hlm)` : ''}`}</span>
                     {p.status === 'error' && (
                       <>
                         <span className="max-w-48 truncate text-[10.5px]">{p.error}</span>

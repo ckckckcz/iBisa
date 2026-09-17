@@ -43,6 +43,14 @@ function formatQuizForPrompt(q: DbQuiz): string {
   return `Kuis untuk direvisi (kode ${q.code} — ${q.title} | ${q.subject || 'Umum'}):\n${lines}`;
 }
 
+const ATTACH_PER_MESSAGE = 3;
+
+function chunk<T>(arr: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
+
 async function postGenerate(files: Attachment[], count: number, mention: DbQuiz | null): Promise<QuizDraftQuestion[]> {
   const isRevisi = !!mention;
   const revisiBlock = mention ? `${formatQuizForPrompt(mention)}\n\n` : '';
@@ -50,13 +58,20 @@ async function postGenerate(files: Attachment[], count: number, mention: DbQuiz 
     ? `${revisiBlock}Revisi soal di atas berdasarkan materi terlampir. Perbaiki yang janggal, pertahankan yang sudah bagus, dan buatkan ${count} soal baru yang selaras (jika materi menambah konteks).`
     : `Buatkan ${count} soal pilihan ganda dari materi terlampir.`;
 
+  const groups = chunk(files, ATTACH_PER_MESSAGE);
+  const messages = groups.map((g, i) => ({
+    role: 'user',
+    content: i === 0 ? instruction : `Lanjutan materi (bagian ${i + 1} dari ${groups.length}).`,
+    attachments: g,
+  }));
+
   const res = await fetch(`${apiUrl}/quizzes/ai/generate-quiz`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${await getValidToken()}` },
     body: JSON.stringify({
       count,
       subject: mention?.subject ?? '',
-      messages: [{ role: 'user', content: instruction, attachments: files }],
+      messages,
     }),
   });
   const data = await res.json();

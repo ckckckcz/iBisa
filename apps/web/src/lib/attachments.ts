@@ -12,7 +12,7 @@ export const ATTACH_LIMITS = {
 } as const;
 
 export const ATTACH_ACCEPT =
-  '.png,.jpg,.jpeg,.gif,.webp,.txt,.csv,.md,.markdown,.pdf,.docx,image/png,image/jpeg,image/gif,image/webp';
+  '.png,.jpg,.jpeg,.gif,.webp,.txt,.csv,.md,.markdown,.pdf,.docx,image/png,image/jpeg,image/gif,image/webp,application/pdf';
 
 const IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 const TEXT_EXTS = ['txt', 'csv', 'md', 'markdown'];
@@ -36,8 +36,18 @@ function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
-async function extractPdf(file: File): Promise<string> {
+async function loadPdfjs() {
   const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+  if (!pdfjs.GlobalWorkerOptions.workerSrc) pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+  return pdfjs;
+}
+
+const PDF_IMAGE_PAGES = ATTACH_LIMITS.maxPdfPages;
+const PDF_RENDER_SCALE = 1.0;
+const PDF_JPEG_QUALITY = 0.7;
+
+async function extractPdf(file: File): Promise<Attachment[]> {
+  const pdfjs = await loadPdfjs();
   const buf = await file.arrayBuffer();
   let doc;
   try {
@@ -46,20 +56,41 @@ async function extractPdf(file: File): Promise<string> {
     if (/password|encrypt/i.test(e instanceof Error ? e.message : '')) {
       throw new Error(`"${file.name}" terkunci password. Buka kuncinya dulu.`);
     }
-    throw new Error(`"${file.name}" tidak bisa dibaca sebagai PDF.`);
+    throw new Error(`"${file.name}" tidak bisa dibaca sebagai PDF. Coba export/simpan ulang PDF-nya.`);
   }
-  const pages: string[] = [];
-  const n = Math.min(doc.numPages, ATTACH_LIMITS.maxPdfPages);
-  for (let i = 1; i <= n; i++) {
-    const page = await doc.getPage(i);
-    const content = await page.getTextContent();
-    pages.push(content.items.map((it) => ('str' in it ? (it.str as string) : '')).join(' '));
+  try {
+    const pages: string[] = [];
+    const n = Math.min(doc.numPages, ATTACH_LIMITS.maxPdfPages);
+    for (let i = 1; i <= n; i++) {
+      const page = await doc.getPage(i);
+      const content = await page.getTextContent();
+      pages.push(content.items.map((it) => ('str' in it ? (it.str as string) : '')).join(' '));
+    }
+    const note = doc.numPages > n ? `\n\n[hanya ${n} dari ${doc.numPages} halaman dibaca]` : '';
+    if (pages.join('').trim()) {
+      return [{ kind: 'text', name: file.name, text: trimText(pages.join('\n\n')) + note }];
+    }
+    const base = file.name.replace(/\.pdf$/i, '') || 'pdf';
+    const shots: Attachment[] = [];
+    for (let i = 1; i <= Math.min(doc.numPages, PDF_IMAGE_PAGES); i++) {
+      const page = await doc.getPage(i);
+      const viewport = page.getViewport({ scale: PDF_RENDER_SCALE });
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.floor(viewport.width);
+      canvas.height = Math.floor(viewport.height);
+      const ctx = canvas.getContext('2d');
+      if (!ctx) break;
+      await page.render({ canvas, viewport }).promise;
+      const data = canvas.toDataURL('image/jpeg', PDF_JPEG_QUALITY).split(',')[1] ?? '';
+      if (data) shots.push({ kind: 'image', name: `${base}-hal${i}.jpg`, mimeType: 'image/jpeg', data });
+    }
+    if (!shots.length) {
+      throw new Error(`"${file.name}" tidak ada teks/halaman yang terbaca. Coba export ulang sebagai PDF teks, atau screenshot halamannya sebagai gambar.`);
+    }
+    return shots;
+  } finally {
+    await doc?.cleanup?.()?.catch(() => {});
   }
-  if (!pages.join('').trim()) {
-    throw new Error(`"${file.name}" tampaknya hasil scan/foto, teksnya tidak terbaca. Kirim sebagai gambar (screenshot/foto) supaya AI bisa melihatnya.`);
-  }
-  const note = doc.numPages > n ? `\n\n[hanya ${n} dari ${doc.numPages} halaman dibaca]` : '';
-  return trimText(pages.join('\n\n')) + note;
 }
 
 async function extractDocx(file: File): Promise<string> {
@@ -77,26 +108,26 @@ async function extractDocx(file: File): Promise<string> {
   return trimText(out.value);
 }
 
-export async function extractFile(file: File): Promise<Attachment> {
+export async function extractFile(file: File): Promise<Attachment[]> {
   if (file.size > ATTACH_LIMITS.maxBytes) {
     throw new Error(`"${file.name}" melebihi 5MB.`);
   }
   const ext = extOf(file.name);
   if (IMAGE_MIMES.includes(file.type)) {
     const url = await fileToDataUrl(file);
-    return { kind: 'image', name: file.name, mimeType: file.type, data: url.split(',')[1] ?? '' };
+    return [{ kind: 'image', name: file.name, mimeType: file.type, data: url.split(',')[1] ?? '' }];
   }
   if (ext === 'pdf' || file.type === 'application/pdf') {
-    return { kind: 'text', name: file.name, text: await extractPdf(file) };
+    return extractPdf(file);
   }
   if (ext === 'docx') {
-    return { kind: 'text', name: file.name, text: await extractDocx(file) };
+    return [{ kind: 'text', name: file.name, text: await extractDocx(file) }];
   }
   if (ext === 'doc') {
     throw new Error(`"${file.name}" format .doc lama tidak didukung. Simpan sebagai .docx dulu.`);
   }
   if (TEXT_EXTS.includes(ext) || file.type.startsWith('text/')) {
-    return { kind: 'text', name: file.name, text: trimText(await file.text()) };
+    return [{ kind: 'text', name: file.name, text: trimText(await file.text()) }];
   }
   throw new Error(`"${file.name}" format tidak didukung. Pakai gambar, txt, csv, md, pdf, atau docx.`);
 }
