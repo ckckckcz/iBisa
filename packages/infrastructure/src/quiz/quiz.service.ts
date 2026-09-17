@@ -11,6 +11,9 @@ export type QuizRecord = {
   id: string;
   school_id: string | null;
   created_by: string | null;
+  created_by_name: string | null;
+  original_by: string | null;
+  original_by_name: string | null;
   code: string;
   title: string;
   subject: string;
@@ -19,6 +22,38 @@ export type QuizRecord = {
   questions: QuizQuestionInput[];
   created_at: string;
 };
+
+const QUIZ_SELECT =
+  "id, school_id, created_by, code, title, subject, time_limit, base_points, questions, created_at, " +
+  "created_author:users!quizzes_created_by_fkey(full_name), " +
+  "original_author:users!quizzes_original_by_fkey(full_name)";
+
+type QuizRow = {
+  id: string;
+  school_id: string | null;
+  created_by: string | null;
+  original_by: string | null;
+  code: string;
+  title: string;
+  subject: string;
+  time_limit: number;
+  base_points: number;
+  questions: QuizQuestionInput[];
+  created_at: string;
+  created_author: { full_name: string | null } | null;
+  original_author: { full_name: string | null } | null;
+};
+
+function toQuizRecord(row: QuizRow): QuizRecord {
+  return {
+    ...row,
+    created_by_name: row.created_author?.full_name ?? null,
+    original_by: row.original_by ?? null,
+    original_by_name: row.original_author?.full_name ?? null,
+  };
+}
+
+type QuizActor = { userId: string; role: string };
 
 export type QuizCreateInput = {
   title: string;
@@ -63,6 +98,7 @@ export async function createQuiz(schoolId: string, createdBy: string | null, bod
     .insert({
       school_id: schoolId,
       created_by: createdBy,
+      original_by: createdBy,
       code,
       title: body.title.trim(),
       subject: body.subject?.trim() || "",
@@ -70,10 +106,10 @@ export async function createQuiz(schoolId: string, createdBy: string | null, bod
       base_points: body.base_points || 1000,
       questions: body.questions,
     })
-    .select("*")
+    .select(QUIZ_SELECT)
     .single();
   if (error) throw new Error(error.message);
-  return data as QuizRecord;
+  return toQuizRecord(data as unknown as QuizRow);
 }
 
 export async function listQuizzes(schoolId: string): Promise<QuizRecord[]> {
@@ -81,19 +117,88 @@ export async function listQuizzes(schoolId: string): Promise<QuizRecord[]> {
   if (!admin) throw new Error("Supabase not configured");
   const { data, error } = await admin
     .from("quizzes")
-    .select("*")
+    .select(QUIZ_SELECT)
     .eq("school_id", schoolId)
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
-  return (data ?? []) as QuizRecord[];
+  return ((data ?? []) as unknown as QuizRow[]).map(toQuizRecord);
 }
 
 export async function getQuizByCode(code: string): Promise<QuizRecord | null> {
   const admin = getSupabaseAdmin();
   if (!admin) throw new Error("Supabase not configured");
-  const { data, error } = await admin.from("quizzes").select("*").eq("code", code.trim()).maybeSingle();
+  const { data, error } = await admin.from("quizzes").select(QUIZ_SELECT).eq("code", code.trim()).maybeSingle();
   if (error) throw new Error(error.message);
-  return (data as QuizRecord | null) ?? null;
+  return data ? toQuizRecord(data as unknown as QuizRow) : null;
+}
+
+export async function copyQuiz(schoolId: string, actor: QuizActor, sourceCode: string): Promise<QuizRecord> {
+  const admin = getSupabaseAdmin();
+  if (!admin) throw new Error("Supabase not configured");
+  const source = await getQuizByCode(sourceCode);
+  if (!source || source.school_id !== schoolId) throw new Error("Kuis tidak ditemukan.");
+  if (source.created_by === actor.userId) throw new Error("Kuis ini sudah milikmu.");
+  let code = randomCode();
+  for (let i = 0; i < 10; i++) {
+    const { data } = await admin.from("quizzes").select("id").eq("code", code).maybeSingle();
+    if (!data) break;
+    code = randomCode();
+  }
+  const { data, error } = await admin
+    .from("quizzes")
+    .insert({
+      school_id: schoolId,
+      created_by: actor.userId,
+      original_by: source.original_by ?? source.created_by ?? actor.userId,
+      code,
+      title: source.title,
+      subject: source.subject,
+      time_limit: source.time_limit,
+      base_points: source.base_points,
+      questions: source.questions,
+    })
+    .select(QUIZ_SELECT)
+    .single();
+  if (error) throw new Error(error.message);
+  return toQuizRecord(data as unknown as QuizRow);
+}
+
+export type QuizUpdateInput = Partial<Pick<QuizCreateInput, "title" | "subject" | "time_limit" | "base_points" | "questions">>;
+
+export async function updateQuiz(schoolId: string, code: string, actor: QuizActor, patch: QuizUpdateInput): Promise<QuizRecord> {
+  const admin = getSupabaseAdmin();
+  if (!admin) throw new Error("Supabase not configured");
+  const existing = await getQuizByCode(code);
+  if (!existing || existing.school_id !== schoolId) throw new Error("Kuis tidak ditemukan.");
+  if (actor.role !== "school" && existing.created_by !== actor.userId) {
+    throw new Error("Hanya pemilik kuis atau admin sekolah yang bisa mengedit.");
+  }
+  const update: { title?: string; subject?: string; time_limit?: number; base_points?: number; questions?: QuizQuestionInput[] } = {};
+  if (patch.title !== undefined) {
+    if (!String(patch.title).trim()) throw new Error("Judul wajib.");
+    update.title = String(patch.title).trim();
+  }
+  if (patch.subject !== undefined) update.subject = String(patch.subject).trim();
+  if (patch.time_limit !== undefined) {
+    const tl = Number(patch.time_limit) || 60;
+    if (tl < 10 || tl > 3600) throw new Error("Batas waktu harus 10-3600 detik.");
+    update.time_limit = tl;
+  }
+  if (patch.base_points !== undefined) update.base_points = Number(patch.base_points) || 1000;
+  if (patch.questions !== undefined) {
+    assertValidQuestions(patch.questions);
+    update.questions = patch.questions;
+  }
+  if (Object.keys(update).length === 0) throw new Error("Tidak ada data yang diubah.");
+  const { data, error } = await admin
+    .from("quizzes")
+    .update(update)
+    .eq("id", existing.id)
+    .eq("school_id", schoolId)
+    .select(QUIZ_SELECT)
+    .single();
+  if (error) throw new Error(error.message);
+  return toQuizRecord(data as unknown as QuizRow);
 }
 
 export async function submitQuizScore(

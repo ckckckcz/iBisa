@@ -1,12 +1,12 @@
 import { Router, type Request, type Response } from "express";
 import { authenticate, authorize, type AuthenticatedRequest } from "../middlewares/auth.js";
-import { generateQuizDraft, createQuiz, listQuizzes, getQuizByCode, type ChatMessage } from "@bisa/infrastructure";
+import { generateQuizDraft, createQuiz, copyQuiz, updateQuiz, listQuizzes, getQuizByCode, type ChatMessage } from "@bisa/infrastructure";
 
 const router = Router();
 
 function ctx(req: Request) {
   const auth = req as AuthenticatedRequest;
-  return { schoolId: auth.profile?.school_id ?? null, userId: auth.user?.id ?? null };
+  return { schoolId: auth.profile?.school_id ?? null, userId: auth.user?.id ?? null, role: auth.profile?.role ?? "" };
 }
 
 function err(res: Response, status: number, message: string) {
@@ -59,6 +59,33 @@ router.get("/by-code/:code", authenticate, authorize("school", "teacher", "stude
     return res.json({ success: true, data });
   } catch (e) {
     return fail(res, e);
+  }
+});
+
+router.post("/copy", authenticate, authorize("school", "teacher"), async (req, res) => {
+  const { schoolId, userId, role } = ctx(req);
+  if (!schoolId) return err(res, 400, "Akun belum terhubung sekolah");
+  if (!userId) return err(res, 400, "Sesi tidak valid.");
+  const { code } = req.body ?? {};
+  if (!code || typeof code !== "string") return err(res, 400, "Kode kuis wajib.");
+  try {
+    const data = await copyQuiz(schoolId, { userId, role }, code);
+    return res.json({ success: true, data });
+  } catch (e) {
+    return err(res, 400, e instanceof Error ? e.message : String(e));
+  }
+});
+
+router.put("/:code", authenticate, authorize("school", "teacher"), async (req, res) => {
+  const { schoolId, userId, role } = ctx(req);
+  if (!schoolId) return err(res, 400, "Akun belum terhubung sekolah");
+  if (!userId) return err(res, 400, "Sesi tidak valid.");
+  const { title, subject, time_limit, base_points, questions } = req.body ?? {};
+  try {
+    const data = await updateQuiz(schoolId, req.params.code ?? "", { userId, role }, { title, subject, time_limit, base_points, questions });
+    return res.json({ success: true, data });
+  } catch (e) {
+    return err(res, 400, e instanceof Error ? e.message : String(e));
   }
 });
 

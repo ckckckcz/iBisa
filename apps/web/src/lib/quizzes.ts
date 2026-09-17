@@ -11,6 +11,10 @@ export type DbQuiz = {
   time_limit: number;
   base_points: number;
   questions: { question: string; options: [string, string, string, string]; answerIndex: number; explanation: string }[];
+  created_by?: string | null;
+  created_by_name?: string | null;
+  original_by?: string | null;
+  original_by_name?: string | null;
   created_at?: string;
 };
 
@@ -75,6 +79,39 @@ async function fetchDb(path: string) {
   });
   const data = await res.json();
   return res.ok && data.success ? data.data : null;
+}
+
+async function postDb(path: string, body: unknown) {
+  const res = await fetch(`${apiUrl}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${await getValidToken()}` },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message ?? "Permintaan gagal.");
+  }
+  return data.data as DbQuiz;
+}
+
+export async function copyQuizByCode(code: string): Promise<DbQuiz> {
+  return postDb("/quizzes/copy", { code });
+}
+
+export async function updateQuizByCode(
+  code: string,
+  patch: { title?: string; subject?: string; time_limit?: number; base_points?: number; questions?: DbQuiz["questions"] }
+): Promise<DbQuiz> {
+  const res = await fetch(`${apiUrl}/quizzes/${encodeURIComponent(code)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${await getValidToken()}` },
+    body: JSON.stringify(patch),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message ?? "Gagal menyimpan perubahan.");
+  }
+  return data.data as DbQuiz;
 }
 
 export async function fetchQuizByCode(code: string): Promise<Quiz | null> {

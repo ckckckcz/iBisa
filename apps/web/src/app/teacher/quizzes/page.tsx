@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { fetchTeacherQuizzes, type DbQuiz } from "@/lib/quizzes";
 import { getValidToken } from "@/lib/ai-helpers";
+import { useAuth } from "@/hooks/use-auth";
 
 function fmtDate(s?: string) {
   if (!s) return "-";
@@ -26,6 +27,8 @@ function fmtDate(s?: string) {
 }
 
 export default function TeacherQuizzesPage() {
+  const { profile } = useAuth();
+  const myId = profile?.id ?? null;
   const [rows, setRows] = useState<DbQuiz[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -54,15 +57,19 @@ export default function TeacherQuizzesPage() {
     return () => { cancelled = true; };
   }, []);
 
+  const ownRows = useMemo(() => (myId ? rows.filter((r) => r.created_by === myId) : rows), [rows, myId]);
+
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    if (!needle) return rows;
-    return rows.filter((r) =>
+    if (!needle) return ownRows;
+    return ownRows.filter((r) =>
       r.title.toLowerCase().includes(needle) ||
       r.code.toLowerCase().includes(needle) ||
       (r.subject ?? "").toLowerCase().includes(needle)
     );
-  }, [rows, q]);
+  }, [ownRows, q]);
+
+  const ownCount = ownRows.length;
 
   async function copyCode(code: string) {
     try {
@@ -76,8 +83,8 @@ export default function TeacherQuizzesPage() {
     <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Bank Soal</h1>
-          <p className="text-sm text-muted-foreground">Semua soal yang pernah kamu generate — {rows.length} kuis total</p>
+          <h1 className="text-xl font-semibold tracking-tight">Daftar Soal</h1>
+          <p className="text-sm text-muted-foreground">Soal pribadi yang kamu buat — bisa diedit — {ownCount} kuis</p>
         </div>
         <Link href="/teacher/ai" className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/80">
           <HugeiconsIcon icon={Add01Icon} size={14} /> Buat soal di Chat AI
@@ -122,13 +129,18 @@ export default function TeacherQuizzesPage() {
                 </p>
               </div>
               <div className="flex flex-1 flex-col gap-2 px-3 py-3">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="rounded bg-neutral-900 px-2 py-0.5 font-mono text-xs font-bold tracking-widest text-white">{r.code}</span>
-                  <button type="button" onClick={() => copyCode(r.code)} className="inline-flex items-center gap-1 rounded border border-neutral-200 bg-white px-2 py-1 text-xs hover:bg-neutral-50">
-                    <HugeiconsIcon icon={copied === r.code ? Tick02Icon : Copy01Icon} size={12} />
-                    {copied === r.code ? "Tersalin" : "Salin kode"}
-                  </button>
-                </div>
+<div className="flex flex-wrap items-center gap-1.5">
+                    <span className="rounded bg-neutral-900 px-2 py-0.5 font-mono text-xs font-bold tracking-widest text-white">{r.code}</span>
+                    <button type="button" onClick={() => copyCode(r.code)} className="inline-flex items-center gap-1 rounded border border-neutral-200 bg-white px-2 py-1 text-xs hover:bg-neutral-50">
+                      <HugeiconsIcon icon={copied === r.code ? Tick02Icon : Copy01Icon} size={12} />
+                      {copied === r.code ? "Tersalin" : "Salin kode"}
+                    </button>
+                  </div>
+                  {r.original_by && r.original_by !== r.created_by && (
+                    <span className="inline-flex items-center gap-1 text-[11px] text-neutral-500">
+                      <HugeiconsIcon icon={Idea01Icon} size={12} /> Original by {r.original_by_name || "pembuat asli"}
+                    </span>
+                  )}
                 <ul className="mt-1 space-y-1">
                   {r.questions.slice(0, 2).map((qq, idx) => (
                     <li key={idx} className="line-clamp-2 rounded bg-neutral-50 px-2 py-1.5 text-xs leading-snug text-neutral-600">
