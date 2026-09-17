@@ -127,6 +127,16 @@ pnpm --filter web dev
 pnpm --filter api dev
 ```
 
+### Akun Demo
+
+Gunakan akun berikut untuk mencoba aplikasi (masuk melalui halaman `/login`):
+
+| Peran | Email | Password |
+| :--- | :--- | :--- |
+| **Sekolah** | `jiha@belajar.id` | `12qwaszx` |
+| **Guru** | `munifah@belajar.id` | `123456` |
+| **Murid** | `ody@belajar.id` | `12qwaszx` |
+
 ---
 
 ## Verifikasi Build Produksi
