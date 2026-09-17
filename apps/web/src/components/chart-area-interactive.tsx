@@ -3,7 +3,6 @@
 import * as React from "react"
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
 
-import { useIsMobile } from "@/hooks/use-mobile"
 import {
   Card,
   CardAction,
@@ -25,10 +24,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  ToggleGroup,
-  ToggleGroupItem,
-} from "@/components/ui/toggle-group"
+
+const ALL_MONTHS = "__all"
 
 const chartConfig = {
   submissions: {
@@ -37,75 +34,68 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
+function monthLabel(month: string): string {
+  const d = new Date(`${month}-01T00:00:00`)
+  if (Number.isNaN(d.getTime())) return month
+  return d.toLocaleDateString("id-ID", { month: "long", year: "numeric" })
+}
+
+function currentMonthKey(): string {
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
+}
+
 export function ChartAreaInteractive({ data }: { data: { date: string; submissions: number }[] }) {
-  const isMobile = useIsMobile()
-  const [selectedTimeRange, setSelectedTimeRange] = React.useState<string | null>(null)
-  const timeRange = selectedTimeRange ?? (isMobile ? "7d" : "90d")
-
-  const referenceDate = data.length > 0 ? new Date(data[data.length - 1].date) : new Date()
-
-  const filteredData = data.filter((item) => {
-    const date = new Date(item.date)
-    let daysToSubtract = 90
-    if (timeRange === "30d") {
-      daysToSubtract = 30
-    } else if (timeRange === "7d") {
-      daysToSubtract = 7
+  const months = React.useMemo(() => {
+    const set = new Set<string>()
+    for (const item of data) {
+      const m = item.date ? item.date.slice(0, 7) : ""
+      if (m) set.add(m)
     }
-    const startDate = new Date(referenceDate)
-    startDate.setDate(startDate.getDate() - daysToSubtract)
-    return date >= startDate
-  })
+    return [...set].sort().reverse()
+  }, [data])
+
+  const [selectedMonth, setSelectedMonth] = React.useState<string | null>(null)
+  const nowMonth = currentMonthKey()
+  const activeMonth =
+    selectedMonth ?? (months.includes(nowMonth) ? nowMonth : (months[0] ?? nowMonth))
+
+  const filteredData =
+    activeMonth === ALL_MONTHS
+      ? data
+      : data.filter((item) => Boolean(item.date) && item.date.startsWith(activeMonth))
+
+  const description =
+    activeMonth === ALL_MONTHS
+      ? "Pengerjaan kuis — Semua bulan"
+      : `Pengerjaan kuis — ${monthLabel(activeMonth)}`
 
   return (
     <Card className="@container/card">
       <CardHeader>
         <CardTitle>Aktivitas Pembelajaran</CardTitle>
-        <CardDescription>
-          <span className="hidden @[540px]/card:block">
-            Pengerjaan kuis — 3 bulan terakhir
-          </span>
-          <span className="@[540px]/card:hidden">Pengerjaan kuis • 3 bulan</span>
-        </CardDescription>
+        <CardDescription className="truncate">{description}</CardDescription>
         <CardAction>
-          <ToggleGroup
-            multiple={false}
-            value={timeRange ? [timeRange] : []}
-            onValueChange={(value) => {
-              setSelectedTimeRange(value[0] ?? "90d")
-            }}
-            variant="outline"
-            className="hidden *:data-[slot=toggle-group-item]:px-4! @[767px]/card:flex"
-          >
-            <ToggleGroupItem value="90d">3 bulan</ToggleGroupItem>
-            <ToggleGroupItem value="30d">30 hari</ToggleGroupItem>
-            <ToggleGroupItem value="7d">7 hari</ToggleGroupItem>
-          </ToggleGroup>
           <Select
-            value={timeRange}
-            onValueChange={(value) => {
-              if (value !== null) {
-                setSelectedTimeRange(value)
-              }
-            }}
+            value={activeMonth}
+            onValueChange={(value) => setSelectedMonth(value || ALL_MONTHS)}
           >
             <SelectTrigger
-              className="flex w-40 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate @[767px]/card:hidden"
+              className="flex w-44 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate"
               size="sm"
-              aria-label="Pilih rentang"
+              aria-label="Pilih bulan"
             >
-              <SelectValue placeholder="3 bulan" />
+              <SelectValue placeholder={monthLabel(activeMonth)} />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
-              <SelectItem value="90d" className="rounded-lg">
-                3 bulan
+              <SelectItem value={ALL_MONTHS} className="rounded-lg">
+                Semua bulan
               </SelectItem>
-              <SelectItem value="30d" className="rounded-lg">
-                30 hari
-              </SelectItem>
-              <SelectItem value="7d" className="rounded-lg">
-                7 hari
-              </SelectItem>
+              {months.map((m) => (
+                <SelectItem key={m} value={m} className="rounded-lg">
+                  {monthLabel(m)}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </CardAction>
