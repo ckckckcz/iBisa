@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowDown01Icon, BookOpen02Icon } from "@hugeicons/core-free-icons";
+import { TablePagination } from "@/components/table-pagination";
 import { formatDate, nilaColor, type QuizResultItem } from "./quiz-results-table";
 
 export type StudentQuizGroup = {
@@ -147,6 +148,14 @@ function EvalRow({ group }: { group: StudentQuizGroup }) {
 
 export function EvaluasiTab({ results }: { results: QuizResultItem[] | null }) {
   const groups = useMemo(() => aggregateBestPerQuiz(results ?? []), [results]);
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+
+  useEffect(() => setPageIndex(0), [results]);
+
+  const pageCount = Math.max(1, Math.ceil(groups.length / pageSize));
+  const safePageIndex = Math.min(pageIndex, pageCount - 1);
+  const visible = groups.slice(safePageIndex * pageSize, safePageIndex * pageSize + pageSize);
 
   if (results === null) {
     return (
@@ -169,24 +178,36 @@ export function EvaluasiTab({ results }: { results: QuizResultItem[] | null }) {
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border bg-card">
-      <Table>
-        <TableHeader className="sticky top-0 z-10 bg-muted">
-          <TableRow>
-            <TableHead>Siswa</TableHead>
-            <TableHead>Modul / Kuis</TableHead>
-            <TableHead className="w-24 text-right">Percobaan</TableHead>
-            <TableHead className="w-28 text-right">Nilai Terbaik</TableHead>
-            <TableHead className="w-28 text-right">Poin</TableHead>
-            <TableHead className="w-10" />
-          </TableRow>
-        </TableHeader>
-        <TableBody className="**:data-[slot=table-cell]:first:w-8">
-          {groups.map((g) => (
-            <EvalRow key={`${g.studentId}::${g.quizId}`} group={g} />
-          ))}
-        </TableBody>
-      </Table>
+    <div className="flex flex-col gap-1">
+      <div className="overflow-hidden rounded-lg border bg-card">
+        <Table>
+          <TableHeader className="sticky top-0 z-10 bg-muted">
+            <TableRow>
+              <TableHead>Siswa</TableHead>
+              <TableHead>Modul / Kuis</TableHead>
+              <TableHead className="w-24 text-right">Percobaan</TableHead>
+              <TableHead className="w-28 text-right">Nilai Terbaik</TableHead>
+              <TableHead className="w-28 text-right">Poin</TableHead>
+              <TableHead className="w-10" />
+            </TableRow>
+          </TableHeader>
+          <TableBody className="**:data-[slot=table-cell]:first:w-8">
+            {visible.map((g) => (
+              <EvalRow key={`${g.studentId}::${g.quizId}`} group={g} />
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      <TablePagination
+        pageIndex={safePageIndex}
+        pageCount={pageCount}
+        pageSize={pageSize}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setPageIndex(0);
+        }}
+        onPageChange={setPageIndex}
+      />
     </div>
   );
 }

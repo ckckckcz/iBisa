@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { BookOpen02Icon } from "@hugeicons/core-free-icons";
 import { StatusBadge } from "@/features/school/member-badges";
+import { TablePagination } from "@/components/table-pagination";
 import { initials } from "@/types/school";
 import { formatDate, nilaColor, type QuizResultItem } from "./quiz-results-table";
 
@@ -70,6 +71,14 @@ export function ProfilSiswaTab({
   results: QuizResultItem[] | null;
 }) {
   const progresses = useMemo(() => toProgress(students ?? [], results ?? []), [students, results]);
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+
+  useEffect(() => setPageIndex(0), [students, results]);
+
+  const pageCount = Math.max(1, Math.ceil(progresses.length / pageSize));
+  const safePageIndex = Math.min(pageIndex, pageCount - 1);
+  const visible = progresses.slice(safePageIndex * pageSize, safePageIndex * pageSize + pageSize);
 
   if (!students || students.length === 0) {
     return (
@@ -84,21 +93,22 @@ export function ProfilSiswaTab({
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border bg-card">
-      <Table>
-        <TableHeader className="sticky top-0 z-10 bg-muted">
-          <TableRow>
-            <TableHead>Siswa</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="text-right">Kuis Dikerjakan</TableHead>
-            <TableHead className="text-right">Nilai Terbaik</TableHead>
-            <TableHead className="text-right">Rata-rata</TableHead>
-            <TableHead className="text-right">Poin</TableHead>
-            <TableHead className="text-right">Terakhir Aktif</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody className="**:data-[slot=table-cell]:first:w-8">
-          {progresses.map((p) => (
+    <div className="flex flex-col gap-1">
+      <div className="overflow-hidden rounded-lg border bg-card">
+        <Table>
+          <TableHeader className="sticky top-0 z-10 bg-muted">
+            <TableRow>
+              <TableHead>Siswa</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Kuis Dikerjakan</TableHead>
+              <TableHead className="text-right">Nilai Terbaik</TableHead>
+              <TableHead className="text-right">Rata-rata</TableHead>
+              <TableHead className="text-right">Poin</TableHead>
+              <TableHead className="text-right">Terakhir Aktif</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody className="**:data-[slot=table-cell]:first:w-8">
+            {visible.map((p) => (
             <TableRow key={p.student.id} className="hover:bg-muted/50">
               <TableCell>
                 <div className="flex items-center gap-2.5">
@@ -148,6 +158,17 @@ export function ProfilSiswaTab({
           ))}
         </TableBody>
       </Table>
+      </div>
+      <TablePagination
+        pageIndex={safePageIndex}
+        pageCount={pageCount}
+        pageSize={pageSize}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setPageIndex(0);
+        }}
+        onPageChange={setPageIndex}
+      />
     </div>
   );
 }
