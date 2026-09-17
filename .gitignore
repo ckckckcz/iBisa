@@ -9,3 +9,5 @@ dist
 apps/*/.turbo
 apps/*/.next
 apps/*/dist
+.gemini/
+repomix-output.xml
