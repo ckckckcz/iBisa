@@ -11,6 +11,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { QUIZZES, type Quiz } from "@/types/questions";
 import { fetchLobbyQuizzes } from "@/lib/quizzes";
+import { getValidToken } from "@/lib/ai-helpers";
 import {
   AvatarChip,
   useFullscreen,
@@ -20,6 +21,17 @@ import {
   groupBySubject,
 } from "@/features/student-quiz/paper-quiz-card";
 import { useStudentIdentity } from "@/hooks/use-student-identity";
+
+type StudentQuizResult = {
+  quiz_id: string;
+  quiz_title: string | null;
+  subject: string | null;
+  score: number;
+  correct_count: number;
+  total_questions: number;
+  nilai: number;
+  created_at: string;
+};
 
 export default function StudentLobbyPage() {
   const router = useRouter();
@@ -38,6 +50,10 @@ export default function StudentLobbyPage() {
   }
 
   const [quizzes, setQuizzes] = useState<Quiz[]>(QUIZZES);
+  const [results, setResults] = useState<Record<string, { nilai: number }>>(
+    {}
+  );
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
   useEffect(() => {
     let live = true;
@@ -49,10 +65,36 @@ export default function StudentLobbyPage() {
     };
   }, []);
 
+  useEffect(() => {
+    let live = true;
+    void (async () => {
+      const token = await getValidToken();
+      if (!token) return;
+      try {
+        const res = await fetch(`${apiUrl}/student/quiz-results`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const payload = await res.json();
+        if (!payload.success) return;
+        const list = (payload.data ?? []) as StudentQuizResult[];
+        const latestByQuiz = new Map<string, { nilai: number }>();
+        for (const r of list) {
+          if (!latestByQuiz.has(r.quiz_id)) {
+            latestByQuiz.set(r.quiz_id, { nilai: r.nilai });
+          }
+        }
+        if (live) setResults(Object.fromEntries(latestByQuiz));
+      } catch {}
+    })();
+    return () => {
+      live = false;
+    };
+  }, [apiUrl]);
+
   const grouped = useMemo(() => groupBySubject(quizzes), [quizzes]);
-  const [selectedSubject, setSelectedSubject] = useState<string>(
-    () => grouped[0]?.[0] || "IPA"
-  );
+  const [selectedSubject, setSelectedSubject] = useState<string>("");
+  const activeSubject = selectedSubject || (grouped[0]?.[0] ?? "");
 
   async function copyCode(quizCode: string) {
     try {
@@ -146,8 +188,9 @@ export default function StudentLobbyPage() {
                 isFirst={idx === 0}
                 isLast={idx === grouped.length - 1}
                 index={idx}
-                isSelected={selectedSubject === subject}
+                isSelected={activeSubject === subject} 
                 onSelect={() => setSelectedSubject(subject)}
+                results={results}
               />
             ))}
           </div>

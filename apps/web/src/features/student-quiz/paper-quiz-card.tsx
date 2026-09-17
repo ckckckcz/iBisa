@@ -93,6 +93,7 @@ export function PaperQuizCard({
   index,
   isSelected,
   onSelect,
+  results,
 }: {
   subject: string;
   quizzes: Quiz[];
@@ -104,11 +105,11 @@ export function PaperQuizCard({
   index?: number;
   isSelected?: boolean;
   onSelect: () => void;
+  results?: Record<string, { nilai: number } | null | undefined>;
 }) {
   const cfg = SUBJECT_CONFIG[subject] ?? FALLBACK_CONFIG;
   const shown = quizzes.slice(0, 3);
   const extra = quizzes.length - 3;
-  const safeId = subject.replace(/\s+/g, "-").toLowerCase();
 
   const roundClasses = isFirst
     ? isSelected
@@ -125,7 +126,9 @@ export function PaperQuizCard({
   return (
     <article
       onClick={onSelect}
-      className={`relative cursor-pointer ${index && index > 0 ? "-mt-px" : ""} transition-all duration-200`}
+      className={`relative cursor-pointer ${
+        index && index > 0 ? "-mt-px" : ""
+      } transition-all duration-200`}
       style={{ zIndex: isSelected ? 30 : 10 - (index || 0) }}
     >
       <div
@@ -160,83 +163,94 @@ export function PaperQuizCard({
           </div>
 
           <div
-            className={`flex flex-1 flex-col divide-y divide-slate-100 ${
+            className={`flex min-w-0 flex-1 flex-col divide-y divide-slate-100 ${
               isSelected ? "pr-4 sm:pr-14" : "pr-4 sm:pr-6"
             }`}
           >
-            {shown.map((quiz, i) => (
-              <div
-                key={quiz.id}
-                onClick={onSelect}
-                className="flex flex-wrap sm:flex-nowrap items-center gap-3 px-5 sm:px-6 py-4"
-              >
-                <span className="shrink-0 rounded-md bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-500">
-                  Kuis {i + 1}
-                </span>
+            {shown.map((quiz, i) => {
+              const result = results?.[quiz.id];
+              return (
+                <div
+                  key={quiz.id}
+                  onClick={onSelect}
+                  className="flex min-w-0 items-center gap-3 px-5 py-4 sm:px-6"
+                >
+                  <span className="shrink-0 rounded-md bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-500">
+                    Kuis {i + 1}
+                  </span>
 
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-bold text-slate-800">
-                    {quiz.title}
-                  </p>
-                  <p className="mt-0.5 text-xs text-slate-400">
-                    {quiz.questions.length} soal · {quiz.timeLimit} dtk
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2 w-full sm:w-auto justify-end mt-2 sm:mt-0">
-                  <div className="hidden md:block text-right">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                      Kode
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-bold text-slate-800">
+                      {quiz.title}
                     </p>
-                    <p
-                      className="text-xs font-extrabold tracking-[0.18em] text-slate-700"
-                      aria-label={`Kode ${quiz.code}`}
-                    >
-                      {quiz.code}
+                    <p className="mt-0.5 truncate text-xs text-slate-400">
+                      {quiz.questions.length} soal · {quiz.timeLimit} dtk
+                      {result?.nilai != null && (
+                        <>
+                          {" · "}
+                          <span className="font-bold text-emerald-600 tabular-nums">
+                            Nilai {result.nilai}
+                          </span>
+                        </>
+                      )}
                     </p>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onCopy(quiz.code);
-                    }}
-                    aria-label={
-                      copied === quiz.code
-                        ? "Kode tersalin"
-                        : `Salin kode ${quiz.code}`
-                    }
-                    className="flex size-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
-                  >
-                    <HugeiconsIcon
-                      icon={copied === quiz.code ? Tick02Icon : Copy01Icon}
-                      size={14}
-                      strokeWidth={2}
-                      className={
-                        copied === quiz.code ? "text-emerald-600" : undefined
-                      }
-                    />
-                  </button>
+                  <div className="flex shrink-0 items-center gap-2 whitespace-nowrap">
+                    <div className="hidden md:block text-right">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                        Kode
+                      </p>
+                      <p
+                        className="text-xs font-extrabold tracking-[0.18em] text-slate-700"
+                        aria-label={`Kode ${quiz.code}`}
+                      >
+                        {quiz.code}
+                      </p>
+                    </div>
 
-                  <Button
-                    size="sm"
-                    className="h-8 rounded-xl bg-slate-900 px-3.5 text-xs font-bold text-white hover:bg-slate-800 active:scale-95"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onPlay(quiz.code);
-                    }}
-                  >
-                    Mainkan
-                    <HugeiconsIcon
-                      icon={ArrowRight01Icon}
-                      size={13}
-                      strokeWidth={2.5}
-                    />
-                  </Button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onCopy(quiz.code);
+                      }}
+                      aria-label={
+                        copied === quiz.code
+                          ? "Kode tersalin"
+                          : `Salin kode ${quiz.code}`
+                      }
+                      className="flex size-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                    >
+                      <HugeiconsIcon
+                        icon={copied === quiz.code ? Tick02Icon : Copy01Icon}
+                        size={14}
+                        strokeWidth={2}
+                        className={
+                          copied === quiz.code ? "text-emerald-600" : undefined
+                        }
+                      />
+                    </button>
+
+                    <Button
+                      size="sm"
+                      className="h-8 rounded-xl bg-slate-900 px-3.5 text-xs font-bold text-white hover:bg-slate-800 active:scale-95"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onPlay(quiz.code);
+                      }}
+                    >
+                      Mainkan
+                      <HugeiconsIcon
+                        icon={ArrowRight01Icon}
+                        size={13}
+                        strokeWidth={2.5}
+                      />
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             {extra > 0 && (
               <div className="flex items-center px-5 sm:px-6 py-3">
@@ -257,7 +271,7 @@ export function PaperQuizCard({
         </div>
       </div>
 
-      {isSelected && <DogEarFold id={safeId} size={FOLD_SIZE} radius={FOLD_RADIUS} />}
+      {isSelected && <DogEarFold size={FOLD_SIZE} radius={FOLD_RADIUS} />}
     </article>
   );
 }
