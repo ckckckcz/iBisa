@@ -24,7 +24,8 @@ router.get("/me", async (req: Request, res: Response) => {
 
   try {
     const data = await getTeacherDashboardData(userId, schoolId);
-    const stats = await getTeacherQuizStats(schoolId, (data.students ?? []).length);
+    const students = (data.students ?? []) as { id: string }[];
+    const stats = await getTeacherQuizStats(schoolId, students.length, students.map((s) => s.id));
     return res.json({
       success: true,
       profile: data.profile,
@@ -49,7 +50,8 @@ router.get("/dashboard", async (req: Request, res: Response) => {
 
   try {
     const data = await getTeacherDashboardData(userId, schoolId);
-    const stats = await getTeacherQuizStats(schoolId, (data.students ?? []).length);
+    const students = (data.students ?? []) as { id: string }[];
+    const stats = await getTeacherQuizStats(schoolId, students.length, students.map((s) => s.id));
     return res.json({ success: true, data: { ...data, stats } });
   } catch (e) {
     return err(res, 500, e instanceof Error ? e.message : String(e));

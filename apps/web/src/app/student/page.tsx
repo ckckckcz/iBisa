@@ -21,6 +21,7 @@ import {
   groupBySubject,
 } from "@/features/student-quiz/paper-quiz-card";
 import { useStudentIdentity } from "@/hooks/use-student-identity";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type StudentQuizResult = {
   quiz_id: string;
@@ -49,7 +50,7 @@ export default function StudentLobbyPage() {
     router.push("/login");
   }
 
-  const [quizzes, setQuizzes] = useState<Quiz[]>(QUIZZES);
+  const [quizzes, setQuizzes] = useState<Quiz[] | null>(null);
   const [results, setResults] = useState<Record<string, { nilai: number }>>(
     {}
   );
@@ -57,9 +58,13 @@ export default function StudentLobbyPage() {
 
   useEffect(() => {
     let live = true;
-    void fetchLobbyQuizzes().then((list) => {
-      if (live) setQuizzes(list);
-    });
+    void fetchLobbyQuizzes()
+      .then((list) => {
+        if (live) setQuizzes(list);
+      })
+      .catch(() => {
+        if (live) setQuizzes(QUIZZES);
+      });
     return () => {
       live = false;
     };
@@ -92,7 +97,7 @@ export default function StudentLobbyPage() {
     };
   }, [apiUrl]);
 
-  const grouped = useMemo(() => groupBySubject(quizzes), [quizzes]);
+  const grouped = useMemo(() => groupBySubject(quizzes ?? []), [quizzes]);
   const [selectedSubject, setSelectedSubject] = useState<string>("");
   const activeSubject = selectedSubject || (grouped[0]?.[0] ?? "");
 
@@ -172,28 +177,58 @@ export default function StudentLobbyPage() {
               Pilih Kuis
             </h2>
             <span className="text-xs font-semibold text-slate-400">
-              {quizzes.length} kuis total
+              {quizzes === null ? <Skeleton className="inline-block h-4 w-20" /> : `${quizzes.length} kuis total`}
             </span>
           </div>
 
-          <div className="flex flex-col">
-            {grouped.map(([subject, quizzes], idx) => (
-              <PaperQuizCard
-                key={subject}
-                subject={subject}
-                quizzes={quizzes}
-                copied={copied}
-                onCopy={copyCode}
-                onPlay={(c) => router.push("/student/" + c)}
-                isFirst={idx === 0}
-                isLast={idx === grouped.length - 1}
-                index={idx}
-                isSelected={activeSubject === subject} 
-                onSelect={() => setSelectedSubject(subject)}
-                results={results}
-              />
-            ))}
-          </div>
+          {quizzes === null ? (
+            <div className="flex flex-col gap-3">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="overflow-hidden rounded-2xl border border-slate-200 bg-white"
+                >
+                  <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+                    <Skeleton className="h-5 w-36" />
+                    <Skeleton className="h-8 w-24" />
+                  </div>
+                  <div className="grid gap-3 p-4 sm:grid-cols-2">
+                    {Array.from({ length: i === 0 ? 4 : 2 }).map((_, j) => (
+                      <div
+                        key={j}
+                        className="flex items-center justify-between rounded-xl border border-slate-100 p-4"
+                      >
+                        <div className="flex flex-col gap-2">
+                          <Skeleton className="h-4 w-40" />
+                          <Skeleton className="h-3 w-24" />
+                        </div>
+                        <Skeleton className="h-9 w-24" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col">
+              {grouped.map(([subject, quizzes], idx) => (
+                <PaperQuizCard
+                  key={subject}
+                  subject={subject}
+                  quizzes={quizzes}
+                  copied={copied}
+                  onCopy={copyCode}
+                  onPlay={(c) => router.push("/student/" + c)}
+                  isFirst={idx === 0}
+                  isLast={idx === grouped.length - 1}
+                  index={idx}
+                  isSelected={activeSubject === subject}
+                  onSelect={() => setSelectedSubject(subject)}
+                  results={results}
+                />
+              ))}
+            </div>
+          )}
         </section>
 
         <footer className="mt-auto pt-2 text-center text-xs text-slate-400">

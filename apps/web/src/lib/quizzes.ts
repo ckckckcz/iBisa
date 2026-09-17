@@ -14,6 +14,17 @@ export type DbQuiz = {
   created_at?: string;
 };
 
+export type QuizCompletionStatus = "Not Attempted" | "In Process" | "Completed";
+
+export function quizStatus(
+  attemptedStudents: number,
+  totalStudents: number
+): QuizCompletionStatus {
+  if (attemptedStudents <= 0) return "Not Attempted";
+  if (totalStudents > 0 && attemptedStudents >= totalStudents) return "Completed";
+  return "In Process";
+}
+
 const COVERS: Record<string, { cover: string; accent: string }> = {
   IPA: { cover: "from-blue-700 to-blue-900", accent: "bg-blue-700" },
   Matematika: { cover: "from-emerald-600 to-teal-800", accent: "bg-emerald-600" },

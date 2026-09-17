@@ -4,8 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import { ChartAreaInteractive } from "@/components/chart-area-interactive";
 import { DataTable, type DataTableTab } from "@/components/data-table";
 import { SectionCards } from "@/components/section-cards";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { getValidToken } from "@/lib/ai-helpers";
+import { quizStatus } from "@/lib/quizzes";
+import { ModuleTableSkeleton } from "@/components/module-table-skeleton";
 import { EvaluasiTab } from "@/features/teacher/evaluasi-tab";
 import { ProfilSiswaTab } from "@/features/teacher/profil-siswa-tab";
 import type { QuizResultItem } from "@/features/teacher/quiz-results-table";
@@ -31,6 +34,7 @@ type TeacherDashboard = {
       subject: string;
       questionCount: number;
       attempts: number;
+      attemptedStudents: number;
       avgNilai: number;
       bestNilai: number;
     }[];
@@ -38,25 +42,14 @@ type TeacherDashboard = {
   };
 };
 
-const rowSchema = {
-  id: Number,
-  header: String,
-  type: String,
-  status: String,
-  target: String,
-  limit: String,
-  reviewer: String,
-};
-
-function toTableRows(quizzes: NonNullable<TeacherDashboard["stats"]>["quizzes"]) {
+function toTableRows(quizzes: NonNullable<TeacherDashboard["stats"]>["quizzes"], totalStudents: number) {
   return quizzes.map((q, i) => ({
     id: i + 1,
     header: q.title,
     type: q.subject || "Umum",
-    status: q.attempts > 0 ? "Done" : "In Process",
-    target: q.attempts > 0 ? String(q.avgNilai) : "—",
+    status: quizStatus(q.attemptedStudents, totalStudents),
+    target: q.attemptedStudents > 0 ? String(q.avgNilai) : "—",
     limit: `${q.questionCount} soal`,
-    reviewer: "Guru",
   }));
 }
 
@@ -87,7 +80,10 @@ export default function TeacherPage() {
   }, [apiUrl]);
 
   const stats = data?.stats;
-  const tableRows = useMemo(() => toTableRows(stats?.quizzes ?? []), [stats?.quizzes]);
+  const tableRows = useMemo(
+    () => toTableRows(stats?.quizzes ?? [], data?.students?.length ?? 0),
+    [stats?.quizzes, data?.students?.length]
+  );
 
   const classMap = useMemo(() => {
     const m: Record<string, string> = {};
@@ -129,7 +125,12 @@ export default function TeacherPage() {
         <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
           <div className="px-4 lg:px-6">
             <h1 className="text-2xl font-semibold tracking-tight">
-              Selamat datang, {data?.profile?.full_name ?? "Guru BISA"}!
+              Selamat datang,{" "}
+              {data === null ? (
+                <Skeleton className="inline-block h-[1.3em] w-44 align-baseline" />
+              ) : (
+                <>{data?.profile?.full_name ?? "Guru BISA"}!</>
+              )}
             </h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-3xl">
               Platform LMS inklusif untuk tunanetra, tunarungu, dan tunawicara. Pantau{" "}
@@ -168,16 +169,15 @@ export default function TeacherPage() {
             totalQuizzes={stats?.totalQuizzes ?? 0}
             engagementPct={stats?.engagementPct ?? 0}
             needsHelpCount={stats?.needsHelpCount ?? 0}
+            loading={data === null}
           />
           <div className="px-4 lg:px-6">
-            <ChartAreaInteractive data={stats?.chart ?? []} />
+            <ChartAreaInteractive data={stats?.chart ?? []} loading={data === null} />
           </div>
           {stats ? (
             <DataTable key="real-data" data={tableRows} tabs={tabs} />
           ) : (
-            <div className="mx-4 rounded-3xl border border-dashed border-slate-300 bg-white/60 px-6 py-12 text-center text-sm text-slate-500 lg:mx-6">
-              Memuat daftar modul…
-            </div>
+            <ModuleTableSkeleton />
           )}
         </div>
       </div>

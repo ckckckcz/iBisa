@@ -232,6 +232,7 @@ export type TeacherQuizStat = {
   subject: string;
   questionCount: number;
   attempts: number;
+  attemptedStudents: number;
   avgNilai: number;
   bestNilai: number;
 };
@@ -246,17 +247,24 @@ export type TeacherDashboardStats = {
   chart: { date: string; submissions: number }[];
 };
 
-export async function getTeacherQuizStats(schoolId: string, activeStudents: number): Promise<TeacherDashboardStats> {
+export async function getTeacherQuizStats(schoolId: string, activeStudents: number, studentIds?: string[]): Promise<TeacherDashboardStats> {
   const quizzes = await listQuizzes(schoolId);
-  const results = await listQuizResults(schoolId);
+  const allResults = await listQuizResults(schoolId);
+  const scoped = studentIds && studentIds.length > 0
+    ? allResults.filter((r) => studentIds.includes(r.student_id))
+    : allResults;
 
   const byQuiz = new Map<string, { attempts: number; nilaiSum: number; nilaiMax: number }>();
-  for (const r of results) {
+  const studentsByQuiz = new Map<string, Set<string>>();
+  for (const r of scoped) {
     const cur = byQuiz.get(r.quiz_id) ?? { attempts: 0, nilaiSum: 0, nilaiMax: 0 };
     cur.attempts += 1;
     cur.nilaiSum += r.nilai;
     cur.nilaiMax = Math.max(cur.nilaiMax, r.nilai);
     byQuiz.set(r.quiz_id, cur);
+    const students = studentsByQuiz.get(r.quiz_id) ?? new Set<string>();
+    students.add(r.student_id);
+    studentsByQuiz.set(r.quiz_id, students);
   }
 
   const quizStats: TeacherQuizStat[] = quizzes.map((q) => {
@@ -268,6 +276,7 @@ export async function getTeacherQuizStats(schoolId: string, activeStudents: numb
       subject: q.subject,
       questionCount: Array.isArray(q.questions) ? q.questions.length : 0,
       attempts: s.attempts,
+      attemptedStudents: studentsByQuiz.get(q.id)?.size ?? 0,
       avgNilai: s.attempts > 0 ? Math.round(s.nilaiSum / s.attempts) : 0,
       bestNilai: s.nilaiMax,
     };
@@ -281,14 +290,14 @@ export async function getTeacherQuizStats(schoolId: string, activeStudents: numb
     d.setDate(today.getDate() - i);
     chart.push({ date: d.toISOString().slice(0, 10), submissions: 0 });
   }
-  for (const r of results) {
+  for (const r of scoped) {
     const key = new Date(r.created_at).toISOString().slice(0, 10);
     const day = chart.find((c) => c.date === key);
     if (day) day.submissions += 1;
   }
 
   const latestByStudent = new Map<string, number>();
-  for (const r of results) {
+  for (const r of scoped) {
     if (!latestByStudent.has(r.student_id)) latestByStudent.set(r.student_id, r.nilai);
   }
   const needsHelpCount = [...latestByStudent.values()].filter((n) => n < 60).length;
@@ -297,7 +306,7 @@ export async function getTeacherQuizStats(schoolId: string, activeStudents: numb
   return {
     activeStudents,
     totalQuizzes: quizzes.length,
-    totalAttempts: results.length,
+    totalAttempts: scoped.length,
     engagementPct,
     needsHelpCount,
     quizzes: quizStats,

@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Skeleton } from "@/components/ui/skeleton"
 
 const ALL_MONTHS = "__all"
 
@@ -45,7 +46,7 @@ function currentMonthKey(): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
 }
 
-export function ChartAreaInteractive({ data }: { data: { date: string; submissions: number }[] }) {
+export function ChartAreaInteractive({ data, loading }: { data: { date: string; submissions: number }[]; loading?: boolean }) {
   const months = React.useMemo(() => {
     const set = new Set<string>()
     for (const item of data) {
@@ -76,35 +77,42 @@ export function ChartAreaInteractive({ data }: { data: { date: string; submissio
         <CardTitle>Aktivitas Pembelajaran</CardTitle>
         <CardDescription className="truncate">{description}</CardDescription>
         <CardAction>
-          <Select
-            value={activeMonth}
-            onValueChange={(value) => setSelectedMonth(value || ALL_MONTHS)}
-          >
-            <SelectTrigger
-              className="flex w-44 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate"
-              size="sm"
-              aria-label="Pilih bulan"
+          {loading ? (
+            <Skeleton className="h-8 w-44" />
+          ) : (
+            <Select
+              value={activeMonth}
+              onValueChange={(value) => setSelectedMonth(value || ALL_MONTHS)}
             >
-              <SelectValue placeholder={monthLabel(activeMonth)} />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl">
-              <SelectItem value={ALL_MONTHS} className="rounded-lg">
-                Semua bulan
-              </SelectItem>
-              {months.map((m) => (
-                <SelectItem key={m} value={m} className="rounded-lg">
-                  {monthLabel(m)}
+              <SelectTrigger
+                className="flex w-44 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate"
+                size="sm"
+                aria-label="Pilih bulan"
+              >
+                <SelectValue placeholder={monthLabel(activeMonth)} />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value={ALL_MONTHS} className="rounded-lg">
+                  Semua bulan
                 </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+                {months.map((m) => (
+                  <SelectItem key={m} value={m} className="rounded-lg">
+                    {monthLabel(m)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </CardAction>
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-        <ChartContainer
-          config={chartConfig}
-          className="aspect-auto h-62.5 w-full"
-        >
+        {loading ? (
+          <Skeleton className="aspect-auto h-62.5 w-full" />
+        ) : (
+          <ChartContainer
+            config={chartConfig}
+            className="aspect-auto h-62.5 w-full"
+          >
           <AreaChart data={filteredData}>
             <defs>
               <linearGradient id="fillSubmissions" x1="0" y1="0" x2="0" y2="1">
@@ -159,7 +167,8 @@ export function ChartAreaInteractive({ data }: { data: { date: string; submissio
               stackId="a"
             />
           </AreaChart>
-        </ChartContainer>
+          </ChartContainer>
+        )}
       </CardContent>
     </Card>
   )

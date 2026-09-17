@@ -122,7 +122,6 @@ export const schema = z.object({
   status: z.string(),
   target: z.string(),
   limit: z.string(),
-  reviewer: z.string(),
 })
 
 function DragHandle({ id }: { id: number }) {
@@ -183,7 +182,7 @@ const columns = columnHelper.columns([
     enableHiding: false,
   }),
   columnHelper.accessor("type", {
-    header: "Kategori ABK",
+    header: "Kategori",
     cell: ({ row }) => (
       <div className="w-32">
         <Badge variant="outline" className="px-1.5 text-muted-foreground">
@@ -194,19 +193,24 @@ const columns = columnHelper.columns([
   }),
   columnHelper.accessor("status", {
     header: "Status",
-    cell: ({ row }) => (
-      <Badge variant="outline" className="px-1.5 text-muted-foreground">
-        {row.original.status === "Done" ? (
-          <HugeiconsIcon icon={CheckmarkCircle01Icon} strokeWidth={2} className="fill-green-500 dark:fill-green-400" />
-        ) : (
-          <HugeiconsIcon icon={Loading03Icon} strokeWidth={2} />
-        )}
-        {row.original.status === "Done" ? "Selesai" : "Proses"}
-      </Badge>
-    ),
+    cell: ({ row }) => {
+      const status = row.original.status
+      return (
+        <Badge variant="outline" className="px-1.5 text-muted-foreground">
+          {status === "Completed" ? (
+            <HugeiconsIcon icon={CheckmarkCircle01Icon} strokeWidth={2} className="fill-green-500 dark:fill-green-400" />
+          ) : status === "In Process" ? (
+            <HugeiconsIcon icon={Loading03Icon} strokeWidth={2} />
+          ) : (
+            <span className="size-2 rounded-full bg-slate-400" />
+          )}
+          {status === "Completed" ? "Selesai" : status === "In Process" ? "Proses" : "Belum Dikerjakan"}
+        </Badge>
+      )
+    },
   }),
   columnHelper.accessor("target", {
-    header: () => <div className="w-full text-right">Skor</div>,
+    header: "Skor",
     cell: ({ row }) => (
       <form
         onSubmit={(e) => {
@@ -230,7 +234,7 @@ const columns = columnHelper.columns([
     ),
   }),
   columnHelper.accessor("limit", {
-    header: () => <div className="w-full text-right">Batas</div>,
+    header: "Batas",
     cell: ({ row }) => (
       <form
         onSubmit={(e) => {
@@ -246,50 +250,12 @@ const columns = columnHelper.columns([
           Limit
         </Label>
         <Input
-          className="h-8 w-16 border-transparent bg-transparent text-right shadow-none hover:bg-input/30 focus-visible:border focus-visible:bg-background dark:bg-transparent dark:hover:bg-input/30 dark:focus-visible:bg-input/30"
+          className="h-8 w-24 border-transparent bg-transparent text-right shadow-none hover:bg-input/30 focus-visible:border focus-visible:bg-background dark:bg-transparent dark:hover:bg-input/30 dark:focus-visible:bg-input/30"
           defaultValue={row.original.limit}
           id={`${row.original.id}-limit`}
         />
       </form>
     ),
-  }),
-  columnHelper.accessor("reviewer", {
-    header: "Guru Pendamping",
-    cell: ({ row }) => {
-      const isAssigned = row.original.reviewer !== "Assign reviewer"
-      if (isAssigned) {
-        return row.original.reviewer
-      }
-      return (
-        <>
-          <Label htmlFor={`${row.original.id}-reviewer`} className="sr-only">
-            Reviewer
-          </Label>
-          <Select
-            items={[
-              { label: "Eddie Lake", value: "Eddie Lake" },
-              { label: "Jamik Tashpulatov", value: "Jamik Tashpulatov" },
-            ]}
-          >
-            <SelectTrigger
-              className="w-38 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate"
-              size="sm"
-              id={`${row.original.id}-reviewer`}
-            >
-              <SelectValue placeholder="Assign reviewer" />
-            </SelectTrigger>
-            <SelectContent align="end">
-              <SelectGroup>
-                <SelectItem value="Eddie Lake">Eddie Lake</SelectItem>
-                <SelectItem value="Jamik Tashpulatov">
-                  Jamik Tashpulatov
-                </SelectItem>
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </>
-      )
-    },
   }),
   columnHelper.display({
     id: "actions",
@@ -706,7 +672,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-3">
-                <Label htmlFor="type">Kategori ABK</Label>
+                <Label htmlFor="type">Kategori</Label>
                 <Select
                   defaultValue={item.type}
                   items={[
@@ -753,9 +719,9 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                 <Select
                   defaultValue={item.status}
                   items={[
-                    { label: "Done", value: "Done" },
-                    { label: "In Progress", value: "In Progress" },
-                    { label: "Not Started", value: "Not Started" },
+                    { label: "Completed", value: "Completed" },
+                    { label: "In Process", value: "In Process" },
+                    { label: "Not Attempted", value: "Not Attempted" },
                   ]}
                 >
                   <SelectTrigger id="status" className="w-full">
@@ -763,9 +729,9 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
-                      <SelectItem value="Done">Done</SelectItem>
-                      <SelectItem value="In Progress">In Progress</SelectItem>
-                      <SelectItem value="Not Started">Not Started</SelectItem>
+                      <SelectItem value="Completed">Completed</SelectItem>
+                      <SelectItem value="In Process">In Process</SelectItem>
+                      <SelectItem value="Not Attempted">Not Attempted</SelectItem>
                     </SelectGroup>
                   </SelectContent>
                 </Select>
@@ -780,30 +746,6 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                 <Label htmlFor="limit">Batas</Label>
                 <Input id="limit" defaultValue={item.limit} />
               </div>
-            </div>
-            <div className="flex flex-col gap-3">
-              <Label htmlFor="reviewer">Guru Pendamping</Label>
-              <Select
-                defaultValue={item.reviewer}
-                items={[
-                  { label: "Eddie Lake", value: "Eddie Lake" },
-                  { label: "Jamik Tashpulatov", value: "Jamik Tashpulatov" },
-                  { label: "Emily Whalen", value: "Emily Whalen" },
-                ]}
-              >
-                <SelectTrigger id="reviewer" className="w-full">
-                  <SelectValue placeholder="Select a reviewer" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectItem value="Eddie Lake">Eddie Lake</SelectItem>
-                    <SelectItem value="Jamik Tashpulatov">
-                      Jamik Tashpulatov
-                    </SelectItem>
-                    <SelectItem value="Emily Whalen">Emily Whalen</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
             </div>
           </form>
         </div>

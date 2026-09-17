@@ -9,18 +9,28 @@ import {
 } from "@/components/ui/card"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { UserGroupIcon, BookOpen02Icon, GameController01Icon, Alert01Icon } from "@hugeicons/core-free-icons"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export function SectionCards({
   activeStudents,
   totalQuizzes,
   engagementPct,
   needsHelpCount,
+  loading,
 }: {
   activeStudents: number
   totalQuizzes: number
   engagementPct: number
   needsHelpCount: number
+  loading?: boolean
 }) {
+  const Value = ({ children }: { children: React.ReactNode }) =>
+    loading ? (
+      <Skeleton className="inline-block h-[1.4em] w-24 align-baseline" />
+    ) : (
+      <span className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">{children}</span>
+    )
+
   return (
     <div className="grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4 dark:*:data-[slot=card]:bg-card">
       <Card className="@container/card">
@@ -30,7 +40,7 @@ export function SectionCards({
             Siswa ABK Aktif
           </CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {activeStudents} siswa
+            <Value>{activeStudents}</Value> siswa
           </CardTitle>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
@@ -50,7 +60,7 @@ export function SectionCards({
             Modul & Soal
           </CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {totalQuizzes}
+            <Value>{totalQuizzes}</Value>
           </CardTitle>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
@@ -69,7 +79,7 @@ export function SectionCards({
             Keterlibatan (Engagement)
           </CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {engagementPct}%
+            <Value>{engagementPct}</Value>%
           </CardTitle>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
@@ -86,7 +96,7 @@ export function SectionCards({
             Perlu Pendampingan
           </CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {needsHelpCount} siswa
+            <Value>{needsHelpCount}</Value> siswa
           </CardTitle>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">

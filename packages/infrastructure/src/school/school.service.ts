@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from "../supabase/client.js";
 import { createUserWithProfile } from "../auth/auth.service.js";
+import { getTeacherQuizStats } from "../quiz/quiz.service.js";
 
 export type MemberPatch = {
   full_name?: string; whatsapp?: string | null; number?: string | null;
@@ -219,6 +220,32 @@ export async function getStudentDashboardData(userId: string, schoolId: string) 
     profile,
     class: classInfo,
     wali: waliInfo,
+  };
+}
+
+export async function getSchoolDashboardData(schoolId: string) {
+  const admin = getSupabaseAdmin();
+  if (!admin) throw new Error("Supabase not configured");
+
+  const { data: profile, error: profileErr } = await admin
+    .from("users_with_role")
+    .select(MEMBER_SELECT)
+    .eq("school_id", schoolId)
+    .eq("role", "school")
+    .maybeSingle();
+  if (profileErr) throw new Error(profileErr.message);
+
+  const { count: studentCount } = await admin
+    .from("users_with_role")
+    .select("*", { count: "exact", head: true })
+    .eq("school_id", schoolId)
+    .eq("role", "student");
+
+  const stats = await getTeacherQuizStats(schoolId, studentCount ?? 0);
+
+  return {
+    profile: profile ?? null,
+    stats,
   };
 }
 
