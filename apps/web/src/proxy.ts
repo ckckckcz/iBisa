@@ -13,30 +13,64 @@ function getRoleForPath(path: string) {
   return null;
 }
 
+function decodeExp(token: string): number | null {
+  try {
+    const payload = token.split(".")[1];
+    if (!payload) return null;
+    const b64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const pad = b64.length % 4 ? "=".repeat(4 - (b64.length % 4)) : "";
+    const obj = JSON.parse(atob(b64 + pad)) as { exp?: number };
+    return typeof obj.exp === "number" ? obj.exp : null;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchWithTimeout(url: string, init: RequestInit, ms = 5000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal, cache: "no-store" });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function verifyToken(token: string) {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
+  const res = await fetchWithTimeout(`${apiUrl}/auth/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("unauthorized");
+  return (await res.json()) as { profile?: { role?: string } | null };
+}
+
+function roleTarget(role: string) {
+  if (role === "teacher") return "/teacher";
+  if (role === "student") return "/student";
+  return "/school";
+}
+
+function clearToken(resp: NextResponse) {
+  resp.cookies.delete("token");
+  resp.cookies.delete("refresh_token");
+  return resp;
+}
+
 export async function proxy(req: NextRequest) {
   const path = req.nextUrl.pathname;
   const token = req.cookies.get("token")?.value;
   const isAuthPage = path === "/login" || path === "/register";
   const requiredRole = getRoleForPath(path);
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
-
   if (isAuthPage) {
     if (!token) return NextResponse.next();
     try {
-      const res = await fetch(`${apiUrl}/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-        cache: "no-store",
-      });
-      if (!res.ok) throw new Error("unauthorized");
-      const data = await res.json();
+      const data = await verifyToken(token);
       const role = (data.profile?.role as string | undefined) ?? "school";
-      const target = role === "teacher" ? "/teacher" : role === "student" ? "/student" : "/school";
-      return NextResponse.redirect(new URL(target, req.url));
+      return NextResponse.redirect(new URL(roleTarget(role), req.url));
     } catch {
-      const resp = NextResponse.next();
-      resp.cookies.delete("token");
-      return resp;
+      return clearToken(NextResponse.next());
     }
   }
 
@@ -46,29 +80,21 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
+  const exp = decodeExp(token);
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  if (exp !== null && exp > nowSeconds + 60) {
+    return NextResponse.next();
+  }
+
   try {
-    const res = await fetch(`${apiUrl}/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: "no-store",
-    });
-    if (!res.ok) throw new Error("unauthorized");
-    const data = await res.json();
-    const role = data.profile?.role as string | undefined;
+    const data = await verifyToken(token);
+    const role = (data.profile?.role as string | undefined) ?? "";
     if (!role || !roleRoutes[role]?.some((p) => path.startsWith(p))) {
-      if (role === "school") return NextResponse.redirect(new URL("/school", req.url));
-      if (role === "teacher") return NextResponse.redirect(new URL("/teacher", req.url));
-      if (role === "student") return NextResponse.redirect(new URL("/student", req.url));
-      return NextResponse.redirect(new URL("/login", req.url));
-    }
-    if (role !== requiredRole) {
-      const target = role === "school" ? "/school" : role === "teacher" ? "/teacher" : "/student";
-      return NextResponse.redirect(new URL(target, req.url));
+      return NextResponse.redirect(new URL(role ? roleTarget(role) : "/login", req.url));
     }
     return NextResponse.next();
   } catch {
-    const resp = NextResponse.redirect(new URL("/login", req.url));
-    resp.cookies.delete("token");
-    return resp;
+    return clearToken(NextResponse.redirect(new URL("/login", req.url)));
   }
 }
 

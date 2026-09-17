@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ViewIcon, ViewOffSlashIcon } from "@hugeicons/core-free-icons";
+import { ViewIcon, ViewOffSlashIcon, Loading03Icon } from "@hugeicons/core-free-icons";
 import { AuthSplit } from "@/features/auth/authSplit";
 
 export default function Login() {
@@ -16,10 +16,18 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const router = useRouter();
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
+  const navigatedRef = useRef(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
+      const hasCookie = document.cookie.split("; ").some((c) => c.startsWith("token="));
+      if (!hasCookie) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("refresh_token");
+        localStorage.removeItem("expires_at");
+        localStorage.removeItem("profile");
+      }
       try {
         const profileRaw = localStorage.getItem("profile");
         const profile = profileRaw ? JSON.parse(profileRaw) : null;
@@ -63,8 +71,15 @@ export default function Login() {
 
       const role = data.profile?.role;
       const target = role === "teacher" ? "/teacher" : role === "student" ? "/student" : "/school";
+      navigatedRef.current = true;
       // Keep loading = true during navigation so the spinner/loading text stays visible until dashboard loads
       router.push(target);
+      // Safety net: if client navigation stalls (e.g. slow middleware/API), force a full page load.
+      window.setTimeout(() => {
+        if (!navigatedRef.current && window.location.pathname.startsWith("/login")) {
+          window.location.assign(target);
+        }
+      }, 6000);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setLoading(false);
@@ -137,9 +152,16 @@ export default function Login() {
         <button
           type="submit"
           disabled={loading}
-          className="mt-2 w-full rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-40 cursor-pointer"
+          className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-40 cursor-pointer"
         >
-          {loading ? "Memproses masuk..." : "Masuk"}
+          {loading ? (
+            <>
+              <HugeiconsIcon icon={Loading03Icon} strokeWidth={2} className="size-4 animate-spin" />
+              Memproses masuk...
+            </>
+          ) : (
+            "Masuk"
+          )}
         </button>
         <p className="mt-4 text-center text-xs text-neutral-500">
           Dengan melanjutkan, Anda menyetujui{" "}
