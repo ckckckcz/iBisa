@@ -2,16 +2,22 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ChartAreaInteractive } from "@/components/chart-area-interactive";
-import { DataTable } from "@/components/data-table";
+import { DataTable, type DataTableTab } from "@/components/data-table";
 import { SectionCards } from "@/components/section-cards";
-import { getValidToken } from "@/lib/ai-helpers";
-import { QuizResultsTable, type QuizResultItem } from "@/features/teacher/quiz-results-table";
 import { Badge } from "@/components/ui/badge";
+import { getValidToken } from "@/lib/ai-helpers";
+import { EvaluasiTab } from "@/features/teacher/evaluasi-tab";
+import { ProfilSiswaTab } from "@/features/teacher/profil-siswa-tab";
+import type { QuizResultItem } from "@/features/teacher/quiz-results-table";
 
 type TeacherDashboard = {
   profile?: { id: string; full_name: string; subject?: string };
-  assignedClasses?: { id: string; name: string; tingkat: string }[];
-  students?: { id: string; full_name: string; grade?: string; status?: string }[];
+  classesTaught?: { id: string; name: string; tingkat: string }[];
+  waliClasses?: { id: string; name: string; tingkat: string }[];
+  students?: {
+    id: string; full_name: string; grade?: string | null; status?: string;
+    avatar_url?: string | null; class_id?: string | null;
+  }[];
   stats?: {
     activeStudents: number;
     totalQuizzes: number;
@@ -83,6 +89,40 @@ export default function TeacherPage() {
   const stats = data?.stats;
   const tableRows = useMemo(() => toTableRows(stats?.quizzes ?? []), [stats?.quizzes]);
 
+  const classMap = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const c of [...(data?.classesTaught ?? []), ...(data?.waliClasses ?? [])]) {
+      m[c.id] = c.name;
+    }
+    return m;
+  }, [data?.classesTaught, data?.waliClasses]);
+
+  const tabs = useMemo<DataTableTab[]>(
+    () => [
+      { value: "outline", label: "Daftar Modul" },
+      {
+        value: "evaluasi",
+        label: "Evaluasi",
+        badge: results?.length ?? 0,
+        content: <EvaluasiTab results={results} />,
+      },
+      {
+        value: "profil",
+        label: "Profil Siswa",
+        badge: data?.students?.length ?? 0,
+        content: (
+          <ProfilSiswaTab
+            students={data?.students}
+            classMap={classMap}
+            totalQuizzes={stats?.totalQuizzes ?? 0}
+            results={results}
+          />
+        ),
+      },
+    ],
+    [results, data?.students, classMap, stats?.totalQuizzes]
+  );
+
   return (
     <div className="flex flex-1 flex-col">
       <div className="@container/main flex flex-1 flex-col gap-2">
@@ -97,16 +137,30 @@ export default function TeacherPage() {
               <span className="font-medium text-foreground">hasil kuis</span>.
             </p>
 
-            {data?.assignedClasses && data.assignedClasses.length > 0 && (
+            {(data?.classesTaught?.length ?? 0) > 0 || (data?.waliClasses?.length ?? 0) > 0 ? (
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="text-xs font-semibold text-muted-foreground">Kelas Binaan:</span>
-                {data.assignedClasses.map((c) => (
-                  <Badge key={c.id} variant="secondary">
-                    Kelas {c.name} (Tingkat {c.tingkat})
-                  </Badge>
-                ))}
+                {(data?.classesTaught?.length ?? 0) > 0 ? (
+                  <>
+                    <span className="text-xs font-semibold text-muted-foreground">Kelas Binaan:</span>
+                    {data?.classesTaught?.map((c) => (
+                      <Badge key={c.id} variant="secondary">
+                        Kelas {c.name}
+                      </Badge>
+                    ))}
+                  </>
+                ) : null}
+                {(data?.waliClasses?.length ?? 0) > 0 ? (
+                  <>
+                    <span className="text-xs font-semibold text-muted-foreground">Wali Kelas:</span>
+                    {data?.waliClasses?.map((c) => (
+                      <Badge key={c.id} variant="secondary">
+                        Kelas {c.name}
+                      </Badge>
+                    ))}
+                  </>
+                ) : null}
               </div>
-            )}
+            ) : null}
           </div>
 
           <SectionCards
@@ -118,32 +172,13 @@ export default function TeacherPage() {
           <div className="px-4 lg:px-6">
             <ChartAreaInteractive data={stats?.chart ?? []} />
           </div>
-          <div className="px-4 lg:px-6">
-            <h2 className="text-sm font-semibold">Daftar Modul / Soal</h2>
-            <p className="text-xs text-muted-foreground">
-              Kuis dari sekolah — nilai rata-rata tiap modul diambil dari hasil pengerjaan siswa.
-            </p>
-          </div>
           {stats ? (
-            <DataTable key="real-data" data={tableRows} />
+            <DataTable key="real-data" data={tableRows} tabs={tabs} />
           ) : (
             <div className="mx-4 rounded-3xl border border-dashed border-slate-300 bg-white/60 px-6 py-12 text-center text-sm text-slate-500 lg:mx-6">
               Memuat daftar modul…
             </div>
           )}
-          <div className="px-4 lg:px-6">
-            <h2 className="text-sm font-semibold">Hasil Kuis Siswa</h2>
-            <p className="mb-3 text-xs text-muted-foreground">
-              Nilai dari persentase jawaban benar, poin dari total skor kuis.
-            </p>
-            {results === null ? (
-              <div className="rounded-3xl border border-dashed border-slate-300 bg-white/60 px-6 py-12 text-center text-sm text-slate-500">
-                Memuat hasil kuis…
-              </div>
-            ) : (
-              <QuizResultsTable results={results} />
-            )}
-          </div>
         </div>
       </div>
     </div>

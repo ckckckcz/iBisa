@@ -344,11 +344,29 @@ function DraggableRow({
     </TableRow>
   )
 }
+export type DataTableTab = {
+  value: string
+  label: string
+  badge?: number
+  content?: React.ReactNode
+}
+
+const DEFAULT_TABS: DataTableTab[] = [
+  { value: "outline", label: "Daftar Modul" },
+  { value: "past-performance", label: "Evaluasi", badge: 3 },
+  { value: "key-personnel", label: "Profil Siswa", badge: 2 },
+  { value: "focus-documents", label: "Rekomendasi" },
+]
+
 export function DataTable({
   data: initialData,
+  tabs: tabDefs,
 }: {
   data: z.infer<typeof schema>[]
+  tabs?: DataTableTab[]
 }) {
+  const tabs = tabDefs ?? DEFAULT_TABS
+  const [activeTab, setActiveTab] = React.useState(tabs[0]?.value ?? "outline")
   const [data, setData] = React.useState(() => initialData)
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] =
@@ -402,7 +420,8 @@ export function DataTable({
   }
   return (
     <Tabs
-      defaultValue="outline"
+      value={activeTab}
+      onValueChange={(value) => setActiveTab(value ?? tabs[0]?.value ?? "outline")}
       className="w-full flex-col justify-start gap-6"
     >
       <div className="flex items-center justify-between px-4 lg:px-6">
@@ -410,13 +429,9 @@ export function DataTable({
           View
         </Label>
         <Select
-          defaultValue="outline"
-          items={[
-            { label: "Daftar Modul", value: "outline" },
-            { label: "Evaluasi", value: "past-performance" },
-            { label: "Profil Siswa", value: "key-personnel" },
-            { label: "Rekomendasi", value: "focus-documents" },
-          ]}
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value ?? tabs[0]?.value ?? "outline")}
+          items={tabs.map((tab) => ({ label: tab.label, value: tab.value }))}
         >
           <SelectTrigger
             className="flex w-fit @4xl/main:hidden"
@@ -427,22 +442,23 @@ export function DataTable({
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem value="outline">Daftar Modul</SelectItem>
-              <SelectItem value="past-performance">Evaluasi</SelectItem>
-              <SelectItem value="key-personnel">Profil Siswa</SelectItem>
-              <SelectItem value="focus-documents">Rekomendasi</SelectItem>
+              {tabs.map((tab) => (
+                <SelectItem key={tab.value} value={tab.value}>
+                  {tab.label}
+                </SelectItem>
+              ))}
             </SelectGroup>
           </SelectContent>
         </Select>
         <TabsList className="hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:bg-muted-foreground/30 **:data-[slot=badge]:px-1 @4xl/main:flex">
-          <TabsTrigger value="outline">Daftar Modul</TabsTrigger>
-          <TabsTrigger value="past-performance">
-            Evaluasi <Badge variant="secondary">3</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="key-personnel">
-            Profil Siswa <Badge variant="secondary">2</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="focus-documents">Rekomendasi</TabsTrigger>
+          {tabs.map((tab) => (
+            <TabsTrigger key={tab.value} value={tab.value}>
+              {tab.label}
+              {tab.badge !== undefined ? (
+                <Badge variant="secondary">{tab.badge}</Badge>
+              ) : null}
+            </TabsTrigger>
+          ))}
         </TabsList>
         <div className="flex items-center gap-2">
           <DropdownMenu>
@@ -483,11 +499,19 @@ export function DataTable({
           </Button>
         </div>
       </div>
-      <TabsContent
-        value="outline"
-        className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6"
-      >
-        <div className="overflow-hidden rounded-lg border">
+      {tabs.map((tab) => (
+        <TabsContent
+          key={tab.value}
+          value={tab.value}
+          className={
+            tab.value === "outline"
+              ? "relative flex flex-col gap-4 overflow-auto px-4 lg:px-6"
+              : "flex flex-col px-4 lg:px-6"
+          }
+        >
+          {tab.value === "outline" ? (
+            <>
+              <div className="overflow-hidden rounded-lg border">
           <DndContext
             collisionDetection={closestCenter}
             modifiers={[restrictToVerticalAxis]}
@@ -616,22 +640,14 @@ export function DataTable({
             </div>
           </div>
         </div>
-      </TabsContent>
-      <TabsContent
-        value="past-performance"
-        className="flex flex-col px-4 lg:px-6"
-      >
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
-      </TabsContent>
-      <TabsContent value="key-personnel" className="flex flex-col px-4 lg:px-6">
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
-      </TabsContent>
-      <TabsContent
-        value="focus-documents"
-        className="flex flex-col px-4 lg:px-6"
-      >
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
-      </TabsContent>
+            </>
+          ) : tab.content ? (
+            tab.content
+          ) : (
+            <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
+          )}
+        </TabsContent>
+      ))}
     </Tabs>
   )
 }

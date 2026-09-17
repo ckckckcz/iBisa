@@ -22,14 +22,14 @@ export type QuizResultItem = {
   created_at: string;
 };
 
-function nilaColor(nilai: number): string {
+export function nilaColor(nilai: number): string {
   if (nilai >= 90) return "text-emerald-600";
   if (nilai >= 75) return "text-blue-700";
   if (nilai >= 60) return "text-amber-600";
   return "text-red-600";
 }
 
-function formatDate(iso: string): string {
+export function formatDate(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "-";
   return d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
