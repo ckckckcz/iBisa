@@ -20,10 +20,20 @@ BISA adalah platform Learning Management System (LMS) dan Asisten Pembelajaran b
 *Rekaman walkthrough fitur Voice Quiz Tunanetra dan Manajemen Sekolah akan segera hadir.*
 
 ### Tangkapan Layar (Screenshots)
+
+#### Dashboard Sekolah
 <p align="center">
-  <img src="https://placehold.co/800x450/1d4ed8/ffffff.png?text=Dashboard+Sekolah+(Coming+Soon)" alt="Pratinjau Dashboard Sekolah - Coming Soon" width="48%" />
-  &nbsp;
-  <img src="https://placehold.co/800x450/0f172a/ffffff.png?text=Voice+Quiz+Tunanetra+(Coming+Soon)" alt="Pratinjau Voice Quiz Tunanetra - Coming Soon" width="48%" />
+  <img src="docs/dashboard.png" alt="Dashboard Sekolah - ringkasan siswa ABK, grafik aktivitas, dan daftar modul" width="100%" />
+</p>
+
+#### Voice Quiz Tunanetra
+<p align="center">
+  <img src="docs/quiz.png" alt="Voice Quiz - kuis berbasis suara dengan pilihan jawaban dan kontrol suara AI" width="100%" />
+</p>
+
+#### Chat AI
+<p align="center">
+  <img src="docs/chat-ai.png" alt="Chat AI - asisten AI dengan contoh pertanyaan dan perintah /soal" width="100%" />
 </p>
 
 ---
