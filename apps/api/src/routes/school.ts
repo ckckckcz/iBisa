@@ -4,7 +4,7 @@ import { authenticate, authorize, type AuthenticatedRequest } from "../middlewar
 import { listMembers, createMember, deleteMember, updateMember, createMembersBatch } from "@bisa/infrastructure";
 import { uploadAvatar } from "@bisa/infrastructure";
 import type { MemberCreateBody, MemberUpdateBody } from "@bisa/types";
-import { listClasses, createClass, updateClass, deleteClass } from "@bisa/infrastructure";
+import { listClasses, createClass, updateClass, deleteClass, getTeacherClassAssignments, updateTeacherAssignments } from "@bisa/infrastructure";
 
 const router = Router();
 router.use(authenticate, authorize("school"));
@@ -32,6 +32,17 @@ router.post("/teachers", async (req, res) => {
   try {
     const r = await createMember(sid, "teacher", { fullName: full_name, email, password, whatsapp, number, gender, status, avatar_url, subject, grade, class_id, attendance_pct });
     return res.status(201).json({ success: true, ...r });
+  } catch (e) {
+    return err(res, 400, e instanceof Error ? e.message : String(e));
+  }
+});
+
+router.get("/teachers/assignments", async (req, res) => {
+  const sid = schoolId(req);
+  if (!sid) return err(res, 400, "Akun belum terhubung sekolah");
+  try {
+    const data = await getTeacherClassAssignments(sid);
+    return res.json({ success: true, data });
   } catch (e) {
     return err(res, 400, e instanceof Error ? e.message : String(e));
   }
@@ -120,8 +131,15 @@ router.put("/users/:id", async (req, res) => {
   if (!sid) return err(res, 400, "Akun belum terhubung sekolah");
   const { id } = req.params;
   const { full_name, whatsapp, number, gender, status, avatar_url, guardian_name, grade, subject, class_id, attendance_pct, password } = (req.body ?? {}) as MemberUpdateBody & { password?: string };
+  const { taught_class_ids, wali_class_id } = (req.body ?? {}) as { taught_class_ids?: string[]; wali_class_id?: string | null };
   try {
     const data = await updateMember(id, sid, { full_name, whatsapp, number, gender, status, avatar_url, guardian_name, grade, subject, class_id, attendance_pct, password });
+    if (taught_class_ids !== undefined || wali_class_id !== undefined) {
+      await updateTeacherAssignments(sid, id, {
+        taughtClassIds: Array.isArray(taught_class_ids) ? taught_class_ids : [],
+        waliClassId: wali_class_id ? String(wali_class_id) : null,
+      });
+    }
     return res.json({ success: true, data });
   } catch (e) {
     return err(res, 400, e instanceof Error ? e.message : String(e));

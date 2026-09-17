@@ -138,13 +138,29 @@ export async function getTeacherDashboardData(userId: string, schoolId: string) 
     
   if (!profile) throw new Error("Profil guru tidak ditemukan");
 
-  const { data: assignedClasses } = await admin
+  const { data: taughtRows } = await admin
+    .from("teacher_classes")
+    .select("class_id")
+    .eq("teacher_id", userId);
+  const taughtClassIds = (taughtRows ?? []).map((r) => r.class_id);
+
+  const { data: waliClasses } = await admin
     .from("classes")
     .select("id,name,tingkat,created_at")
     .eq("school_id", schoolId)
     .eq("wali_guru_id", userId);
 
-  const classIds = (assignedClasses ?? []).map((c) => c.id);
+  let classesTaught: unknown[] = [];
+  if (taughtClassIds.length > 0) {
+    const { data: taught } = await admin
+      .from("classes")
+      .select("id,name,tingkat,created_at")
+      .eq("school_id", schoolId)
+      .in("id", taughtClassIds);
+    classesTaught = taught ?? [];
+  }
+
+  const classIds = [...new Set([...taughtClassIds, ...(waliClasses ?? []).map((c) => c.id)])];
   let studentsInClasses: unknown[] = [];
   if (classIds.length > 0) {
     const { data: students } = await admin
@@ -158,7 +174,8 @@ export async function getTeacherDashboardData(userId: string, schoolId: string) 
 
   return {
     profile,
-    assignedClasses: assignedClasses ?? [],
+    classesTaught,
+    waliClasses: waliClasses ?? [],
     students: studentsInClasses,
   };
 }

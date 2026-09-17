@@ -28,7 +28,8 @@ router.get("/me", async (req: Request, res: Response) => {
     return res.json({
       success: true,
       profile: data.profile,
-      assignedClasses: data.assignedClasses,
+      classesTaught: data.classesTaught,
+      waliClasses: data.waliClasses,
       students: data.students,
       stats,
     });
