@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { AI_CHAT_EXAMPLES } from "@/lib/constants";
-import PromptBar, { type SlashMode } from "@/features/ai/prompt-bar";
+import PromptBar, { type PromptBarHandle, type SlashMode } from "@/features/ai/prompt-bar";
 import type { DbQuiz } from "@/lib/quizzes";
 
 export default function EmptyState({
@@ -12,6 +12,7 @@ export default function EmptyState({
   models,
   modes,
   quizzes,
+  promptBarRef,
 }: {
   onSend: (text: string) => void;
   model: string;
@@ -19,6 +20,7 @@ export default function EmptyState({
   models: { key: string; name: string; tag: string }[];
   modes?: SlashMode[];
   quizzes?: DbQuiz[];
+  promptBarRef?: React.Ref<PromptBarHandle>;
 }) {
   return (
     <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden px-4 py-16">
@@ -47,6 +49,7 @@ export default function EmptyState({
 
         <div className="mt-6">
           <PromptBar
+            ref={promptBarRef}
             placeholder="Tanya AI..."
             onSend={onSend}
             currentModel={model}

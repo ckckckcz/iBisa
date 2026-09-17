@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useImperativeHandle, useLayoutEffect, useRef, useState } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Add01Icon, ArrowDown01Icon, ArrowUp01Icon, Cancel01Icon, Refresh01Icon, Tick02Icon } from '@hugeicons/core-free-icons';
 import { createShader, playSweep, accentChain, ACCENTS } from 'glimm';
@@ -26,9 +26,10 @@ const GLYPHS: Record<string, React.ReactNode> = {
 type Source = { key: string; name: string; desc: string; glyph?: string; attach?: boolean; template?: string };
 type Command = { key: string; name: string; desc: string; template: string };
 export type SlashMode = { prefix: string; label: string; placeholder: string; needFiles?: boolean; filesHint?: string };
+export type PromptBarHandle = { addFile: (file: File) => void };
 
 const SOURCES: Source[] = [
-  { key: 'attach', name: 'Tambah foto & file', desc: 'Gambar, PDF, DOCX dari perangkat', glyph: 'clip', attach: true },
+  { key: 'attach', name: 'Tambah foto & file', desc: 'Gambar, PDF, DOCX — maksimal 5MB/file', glyph: 'clip', attach: true },
   { key: 'jadwal', name: 'Template jadwal piket', desc: 'Tempel contoh permintaan jadwal', template: 'Buatkan jadwal piket kelas 5 minggu ini' },
   { key: 'materi', name: 'Template rangkum materi', desc: 'Tempel contoh permintaan materi', template: 'Rangkum materi pecahan untuk siswa kelas 4' },
   { key: 'surat', name: 'Template surat undangan', desc: 'Tempel contoh permintaan surat', template: 'Buatkan draft surat undangan rapat orang tua' },
@@ -65,6 +66,7 @@ function getSpeechRecognition(): (new () => SpeechRecognitionInstance) | null {
 }
 
 export default function PromptBar({
+  ref,
   placeholder,
   onSend,
   models,
@@ -73,6 +75,7 @@ export default function PromptBar({
   modes,
   quizzes,
 }: {
+  ref?: React.Ref<PromptBarHandle>;
   placeholder?: string;
   onSend?: (text: string, files?: Attachment[]) => void;
   models?: { key: string; name: string; tag: string }[];
@@ -117,6 +120,24 @@ export default function PromptBar({
       setPicked((c) => c.map((p) => (p.id === id ? { ...p, status: 'error' as const, error: e instanceof Error ? e.message : 'Gagal membaca file.' } : p)));
     }
   }
+
+  useImperativeHandle(ref, () => ({
+    addFile(file: File) {
+      setAttachError('');
+      if (file.size > ATTACH_LIMITS.maxBytes) {
+        setAttachError(`"${file.name}" melebihi 5MB — PDF dan file maksimal 5MB.`);
+        return;
+      }
+      const room = ATTACH_LIMITS.maxFiles - picked.length;
+      if (room <= 0) {
+        setAttachError(`Maksimal ${ATTACH_LIMITS.maxFiles} file.`);
+        return;
+      }
+      const id = `${crypto.randomUUID()}-${file.name}`;
+      setPicked((c) => [...c, { id, fileName: file.name, file, status: 'loading' as const }]);
+      void runExtract(id, file);
+    },
+  }));
 
   const [rowBox, setRowBox] = useState<{ top: number; height: number } | null>(null);
   const [engaged, setEngaged] = useState(false);

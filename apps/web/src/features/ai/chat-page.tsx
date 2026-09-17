@@ -9,7 +9,9 @@ import { useChatSessions } from '@/hooks/use-chat-sessions';
 import { useAiConfig } from '@/hooks/use-ai-config';
 import { useChat } from '@/hooks/use-chat';
 import PromptBar from '@/features/ai/prompt-bar';
-import type { SlashMode } from '@/features/ai/prompt-bar';
+import type { PromptBarHandle, SlashMode } from '@/features/ai/prompt-bar';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { Upload01Icon } from '@hugeicons/core-free-icons';
 import EmptyState from '@/features/ai/empty-state';
 import Thinking from '@/features/ai/thinking';
 import Loading from '@/features/ai/loading';
@@ -35,6 +37,30 @@ const SOAL_MODE: SlashMode = {
 export default function ChatPage({ apiBase = '/school/ai', allowConfigEdit = true, quizCommands = false }: { apiBase?: string; allowConfigEdit?: boolean; quizCommands?: boolean }) {
   const [showConfig, setShowConfig] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
+  const promptBarRef = useRef<PromptBarHandle | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const dragDepth = useRef(0);
+
+  function handleDragEnter(e: React.DragEvent): void {
+    e.preventDefault();
+    dragDepth.current += 1;
+    setIsDragOver(true);
+  }
+  function handleDragOver(e: React.DragEvent): void {
+    e.preventDefault();
+  }
+  function handleDragLeave(e: React.DragEvent): void {
+    e.preventDefault();
+    dragDepth.current = Math.max(0, dragDepth.current - 1);
+    if (dragDepth.current === 0) setIsDragOver(false);
+  }
+  function handleDrop(e: React.DragEvent): void {
+    e.preventDefault();
+    dragDepth.current = 0;
+    setIsDragOver(false);
+    const files = Array.from(e.dataTransfer.files ?? []).slice(0, 3);
+    for (const f of files) promptBarRef.current?.addFile(f);
+  }
 
   const { prompt, setPrompt, soalPrompt, setSoalPrompt, model, setModel, error: configError, setError: setConfigError, save } = useAiConfig(apiBase);
   const { sessions, activeId, setActiveId, persistSessions, newChat: resetSession, pickSession, deleteSession } = useChatSessions();
@@ -161,97 +187,115 @@ export default function ChatPage({ apiBase = '/school/ai', allowConfigEdit = tru
           onContactAdmin={() => alert('Hubungi admin sekolah Anda jika ada kendala.')}
         />
 
-        <div className="flex min-w-0 flex-1 flex-col gap-3 overflow-hidden rounded-lg p-4">
-          {chat.length === 0 && !thinking && !streaming && !quiz.busy ? (
-            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-              <EmptyState onSend={sendWithCommand} model={model} onModelChange={setModel} models={MODEL_ITEMS} modes={quizCommands ? [SOAL_MODE] : undefined} quizzes={quizCommands ? quizzes : undefined} />
+        <div
+          className="relative flex min-w-0 flex-1 flex-col gap-3 overflow-hidden rounded-lg p-4"
+          onDragEnter={handleDragEnter}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          {isDragOver && (
+            <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded-xl border-2 border-dashed border-neutral-400 bg-white/85 backdrop-blur-sm">
+              <div className="flex flex-col items-center gap-2 px-6 text-center text-neutral-600">
+                <HugeiconsIcon icon={Upload01Icon} size={34} strokeWidth={1.5} />
+                <p className="text-sm font-semibold">Lepaskan file di sini</p>
+                <p className="text-xs text-neutral-500">PDF, gambar, atau DOCX — maksimal 5MB per file</p>
+              </div>
             </div>
+          )}
+
+          {chat.length === 0 && !thinking && !streaming && !quiz.busy ? (
+            <>
+              <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+                <EmptyState promptBarRef={promptBarRef} onSend={sendWithCommand} model={model} onModelChange={setModel} models={MODEL_ITEMS} modes={quizCommands ? [SOAL_MODE] : undefined} quizzes={quizCommands ? quizzes : undefined} />
+              </div>
+            </>
           ) : (
             <>
-              <div ref={listRef} className="mx-auto flex w-full max-w-3xl min-h-0 flex-1 flex-col justify-start gap-2 overflow-y-auto px-4 pt-4">
+              <div ref={listRef} className="mx-auto flex w-full max-w-3xl min-h-0 flex-1 flex-col justify-start gap-2 overflow-y-auto px-4 pb-2 pt-4">
                 {chat.map((m, i) => {
-                  const isLast = i === chat.length - 1;
-                  return (
-                    <div key={i} className={`w-full rounded px-3 py-2 text-sm ${m.role === 'user' ? 'bg-blue-50' : ''}`}>
-                      {m.role === 'assistant' ? (
-                        <>
-                          {m.thoughts?.length ? (
-                            <div className="mb-1">
-                              <Thinking thinking={false} steps={m.thoughts} />
-                            </div>
-                          ) : null}
-                          {m.content ? (
-                          <SelectableMessage onAction={(action, selected) => sendWithCommand(`${action} teks berikut: "${selected}"`)}>
-                            <StreamingText
-                              text={isLast && streaming ? streaming : m.content}
-                              animate={isLast && streaming !== ''}
-                              followUps={isLast ? followUpsFor(activeQuery) : []}
-                              onFollowUp={(f) => sendWithCommand(f)}
-                              onRetry={isLast && activeQuery ? () => sendWithCommand(activeQuery) : undefined}
-                            />
-                          </SelectableMessage>
-                          ) : null}
-                          {m.quizDraft?.length ? (
-                            <QuizDraftCard key={`quiz-${i}-${m.quizDraft.length}-${m.quizDraft[0]?.question.slice(0, 24) ?? ""}`} draft={m.quizDraft} savedCode={m.quizCode} onSaved={(code) => handleQuizSaved(i, code)} />
-                          ) : null}
-                          {m.questions?.length ? (
-                            <div className="mt-2">
-                              <ApprovalCard questions={m.questions} onSubmitted={(_, summary) => sendWithCommand(summary)} />
-                            </div>
-                          ) : null}
-                        </>
-                      ) : (
-                        <>
-                          {(m.attachments ?? []).map((a) =>
-                            a.kind === 'image' ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img key={a.name} src={`data:${a.mimeType};base64,${a.data}`} alt={a.name} className="mb-1.5 max-h-48 rounded-lg object-cover" />
-                            ) : null,
-                          )}
-                          {(m.attachmentMeta ?? m.attachments?.map((a) => ({ kind: a.kind, name: a.name })) ?? []).map((meta) => (
-                            <span key={meta.name} className="mb-1.5 inline-flex items-center gap-1 rounded-[6px] bg-white/70 px-1.5 py-0.5 font-mono text-[11px] text-neutral-600">
-                              <span className={`rounded px-1 text-[9px] font-bold uppercase ${meta.kind === 'image' ? 'bg-neutral-800 text-white' : 'bg-neutral-200'}`}>
-                                {meta.kind === 'image' ? 'IMG' : meta.name.split('.').pop()}
-                              </span>
-                              {meta.name}
+                const isLast = i === chat.length - 1;
+                return (
+                  <div key={i} className={`w-full rounded px-3 py-2 text-sm ${m.role === 'user' ? 'bg-blue-50' : ''}`}>
+                    {m.role === 'assistant' ? (
+                      <>
+                        {m.thoughts?.length ? (
+                          <div className="mb-1">
+                            <Thinking thinking={false} steps={m.thoughts} />
+                          </div>
+                        ) : null}
+                        {m.content ? (
+                        <SelectableMessage onAction={(action, selected) => sendWithCommand(`${action} teks berikut: "${selected}"`)}>
+                          <StreamingText
+                            text={isLast && streaming ? streaming : m.content}
+                            animate={isLast && streaming !== ''}
+                            followUps={isLast ? followUpsFor(activeQuery) : []}
+                            onFollowUp={(f) => sendWithCommand(f)}
+                            onRetry={isLast && activeQuery ? () => sendWithCommand(activeQuery) : undefined}
+                          />
+                        </SelectableMessage>
+                        ) : null}
+                        {m.quizDraft?.length ? (
+                          <QuizDraftCard key={`quiz-${i}-${m.quizDraft.length}-${m.quizDraft[0]?.question.slice(0, 24) ?? ""}`} draft={m.quizDraft} savedCode={m.quizCode} onSaved={(code) => handleQuizSaved(i, code)} />
+                        ) : null}
+                        {m.questions?.length ? (
+                          <div className="mt-2">
+                            <ApprovalCard questions={m.questions} onSubmitted={(_, summary) => sendWithCommand(summary)} />
+                          </div>
+                        ) : null}
+                      </>
+                    ) : (
+                      <>
+                        {(m.attachments ?? []).map((a) =>
+                          a.kind === 'image' ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img key={a.name} src={`data:${a.mimeType};base64,${a.data}`} alt={a.name} className="mb-1.5 max-h-48 rounded-lg object-cover" />
+                          ) : null,
+                        )}
+                        {(m.attachmentMeta ?? m.attachments?.map((a) => ({ kind: a.kind, name: a.name })) ?? []).map((meta) => (
+                          <span key={meta.name} className="mb-1.5 inline-flex items-center gap-1 rounded-[6px] bg-white/70 px-1.5 py-0.5 font-mono text-[11px] text-neutral-600">
+                            <span className={`rounded px-1 text-[9px] font-bold uppercase ${meta.kind === 'image' ? 'bg-neutral-800 text-white' : 'bg-neutral-200'}`}>
+                              {meta.kind === 'image' ? 'IMG' : meta.name.split('.').pop()}
                             </span>
-                          ))}
-                          {m.content ? (
-                            <div className="whitespace-pre-wrap wrap-break-words">
-                              {m.content.split(/(@[A-Za-z0-9_-]+)/g).map((part, idx) => {
-                                if (!part.startsWith('@')) return <span key={idx}>{part}</span>;
-                                const code = part.slice(1);
-                                const hit = quizzes.find((q) => q.code.toLowerCase() === code.toLowerCase());
-                                return hit ? (
-                                  <span key={idx} className="inline-flex items-center rounded-full bg-blue-600 px-2 py-0.5 text-xs font-medium text-white">
-                                    @{hit.code}
-                                  </span>
-                                ) : (
-                                  <span key={idx} className="font-medium text-blue-700">
-                                    {part}
-                                  </span>
-                                );
-                              })}
-                            </div>
-                          ) : null}
-                        </>
-                      )}
-                    </div>
-                  );
-                })}
-                {thinking && <Loading label={`Memanggil ${model}`} variant="Drive" />}
-                {quiz.busy && <Loading label="Membuat soal dari materi" variant="Drive" />}
-                {quiz.error && (
-                  <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                    {quiz.error}
+                            {meta.name}
+                          </span>
+                        ))}
+                        {m.content ? (
+                          <div className="whitespace-pre-wrap wrap-break-words">
+                            {m.content.split(/(@[A-Za-z0-9_-]+)/g).map((part, idx) => {
+                              if (!part.startsWith('@')) return <span key={idx}>{part}</span>;
+                              const code = part.slice(1);
+                              const hit = quizzes.find((q) => q.code.toLowerCase() === code.toLowerCase());
+                              return hit ? (
+                                <span key={idx} className="inline-flex items-center rounded-full bg-blue-600 px-2 py-0.5 text-xs font-medium text-white">
+                                  @{hit.code}
+                                </span>
+                              ) : (
+                                <span key={idx} className="font-medium text-blue-700">
+                                  {part}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        ) : null}
+                      </>
+                    )}
                   </div>
-                )}
-                {queued > 1 && (
+                );
+              })}
+              {thinking && <Loading label={`Memanggil ${model}`} variant="Drive" />}
+              {quiz.busy && <Loading label="Membuat soal dari materi" variant="Drive" />}
+              {quiz.error && (
+                <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {quiz.error}
+                </div>
+              )}
+              {queued > 1 && (
                   <div className="text-xs text-neutral-500">⏳ {queued - 1} pertanyaan dalam antrean…</div>
                 )}
               </div>
               <div className="mx-auto w-full max-w-2xl shrink-0 px-4 pt-3 pb-1">
-                <PromptBar placeholder='Tanya AI... (ketik "/soal @855207 revisi" untuk bawa konteks kuis)' onSend={sendWithCommand} currentModel={model} onModelChange={setModel} models={MODEL_ITEMS} modes={quizCommands ? [SOAL_MODE] : undefined} quizzes={quizCommands ? quizzes : undefined} />
+                <PromptBar ref={promptBarRef} placeholder='Tanya AI... (ketik "/soal @855207 revisi" untuk bawa konteks kuis)' onSend={sendWithCommand} currentModel={model} onModelChange={setModel} models={MODEL_ITEMS} modes={quizCommands ? [SOAL_MODE] : undefined} quizzes={quizCommands ? quizzes : undefined} />
                 {quizCommands && quizzes.length > 0 && (
                   <p className="mt-1.5 text-center text-[11px] text-neutral-400">
                     Tip revisi: <span className="font-mono font-medium text-neutral-700">/soal @855207 tambahkan soal dari materi ini</span> — ketik <span className="font-mono">@</span> untuk cari kode.
