@@ -60,7 +60,7 @@ const navSchool = [
 ];
 
 const navTeacher = [
-  { title: "Beranda", url: "/teacher", icon: <HugeiconsIcon icon={DashboardSquare01Icon} strokeWidth={2} />, items: [{ title: "Progres Belajar", url: "/teacher" }, { title: "Modul Rekomendasi", url: "#" }] },
+  { title: "Beranda", url: "/teacher", icon: <HugeiconsIcon icon={DashboardSquare01Icon} strokeWidth={2} />, items: [{ title: "Progres Belajar", url: "/teacher" }] },
   { title: "Bank Soal", url: "/teacher/quizzes", icon: <HugeiconsIcon icon={Quiz02Icon} strokeWidth={2} />, items: [{ title: "Daftar Soal", url: "/teacher/quizzes" }] },
   { title: "Chat AI", url: "/teacher/ai", icon: <HugeiconsIcon icon={Idea01Icon} strokeWidth={2} />, items: [{ title: "Tanya AI", url: "/teacher/ai" }] },
 ];

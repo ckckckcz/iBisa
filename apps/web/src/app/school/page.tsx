@@ -2,12 +2,17 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ChartAreaInteractive } from "@/components/chart-area-interactive";
-import { DataTable } from "@/components/data-table";
+import { DataTable, type DataTableTab } from "@/components/data-table";
 import { SectionCards } from "@/components/section-cards";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ModuleTableSkeleton } from "@/components/module-table-skeleton";
 import { getValidToken } from "@/lib/ai-helpers";
 import { quizStatus } from "@/lib/quizzes";
+import { EvaluasiTab } from "@/features/teacher/evaluasi-tab";
+import { ProfilSiswaTab, type ProfilStudent } from "@/features/teacher/profil-siswa-tab";
+import type { QuizResultItem } from "@/features/teacher/quiz-results-table";
+
+type SchoolClass = { id: string; name: string };
 
 type SchoolDashboard = {
   profile?: { id: string; full_name: string; role?: string } | null;
@@ -45,6 +50,9 @@ function toTableRows(quizzes: NonNullable<SchoolDashboard["stats"]>["quizzes"], 
 
 export default function SchoolPage() {
   const [data, setData] = useState<SchoolDashboard | null>(null);
+  const [students, setStudents] = useState<ProfilStudent[] | null>(null);
+  const [results, setResults] = useState<QuizResultItem[] | null>(null);
+  const [classes, setClasses] = useState<SchoolClass[]>([]);
   const [failed, setFailed] = useState(false);
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
@@ -55,16 +63,30 @@ export default function SchoolPage() {
         setFailed(true);
         return;
       }
+      const headers = { Authorization: `Bearer ${token}` };
       try {
-        const res = await fetch(`${apiUrl}/school/dashboard`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await fetch(`${apiUrl}/school/dashboard`, { headers });
         const payload = await res.json();
         if (payload.success) setData(payload.data);
         else setFailed(true);
       } catch {
         setFailed(true);
       }
+      try {
+        const res = await fetch(`${apiUrl}/school/quiz-results`, { headers });
+        const payload = await res.json();
+        if (payload.success) setResults(payload.data);
+      } catch {}
+      try {
+        const res = await fetch(`${apiUrl}/school/students`, { headers });
+        const payload = await res.json();
+        if (payload.success) setStudents(payload.data);
+      } catch {}
+      try {
+        const res = await fetch(`${apiUrl}/school/classes`, { headers });
+        const payload = await res.json();
+        if (payload.success) setClasses(payload.data);
+      } catch {}
     })();
   }, [apiUrl]);
 
@@ -73,6 +95,40 @@ export default function SchoolPage() {
   const tableRows = useMemo(
     () => toTableRows(stats?.quizzes ?? [], stats?.activeStudents ?? 0),
     [stats?.quizzes, stats?.activeStudents]
+  );
+
+  const classMap = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const c of classes) m[c.id] = c.name;
+    return m;
+  }, [classes]);
+
+  const tabs = useMemo<DataTableTab[]>(
+    () => [
+      { value: "outline", label: "Daftar Modul" },
+      {
+        value: "evaluasi",
+        label: "Evaluasi",
+        badge: results?.length ?? 0,
+        content: <EvaluasiTab results={results} />,
+      },
+      {
+        value: "profil",
+        label: "Profil Siswa",
+        badge: students?.length ?? 0,
+        content: (
+          <ProfilSiswaTab
+            students={students ?? undefined}
+            classMap={classMap}
+            totalQuizzes={stats?.totalQuizzes ?? 0}
+            results={results}
+            emptyHeading="Belum ada siswa terdaftar"
+            emptyHint="Tambahkan murid di menu Manajemen Akun (> Murid) agar siswa muncul di sini."
+          />
+        ),
+      },
+    ],
+    [results, students, classMap, stats?.totalQuizzes]
   );
 
   return (
@@ -104,11 +160,7 @@ export default function SchoolPage() {
           <div className="px-4 lg:px-6">
             <ChartAreaInteractive data={stats?.chart ?? []} loading={loading} />
           </div>
-          <div className="px-4 lg:px-6">
-            <h2 className="text-sm font-semibold">Kelas & Evaluasi Sekolah</h2>
-            <p className="text-xs text-muted-foreground">Ringkasan kelas inklusi, guru pendamping, dan modul adaptif.</p>
-          </div>
-          {loading ? <ModuleTableSkeleton /> : <DataTable data={tableRows} />}
+          {loading ? <ModuleTableSkeleton /> : <DataTable data={tableRows} tabs={tabs} />}
         </div>
       </div>
     </div>

@@ -64,11 +64,15 @@ export function ProfilSiswaTab({
   classMap,
   totalQuizzes,
   results,
+  emptyHeading = "Belum ada siswa di kelas binaan",
+  emptyHint = "Tetapkan kelas binaan atau wali kelas di menu Guru (> Edit Guru) agar siswa muncul di sini.",
 }: {
   students: ProfilStudent[] | undefined;
   classMap: Record<string, string>;
   totalQuizzes: number;
   results: QuizResultItem[] | null;
+  emptyHeading?: string;
+  emptyHint?: string;
 }) {
   const progresses = useMemo(() => toProgress(students ?? [], results ?? []), [students, results]);
   const [pageIndex, setPageIndex] = useState(0);
@@ -84,10 +88,8 @@ export function ProfilSiswaTab({
     return (
       <div className="flex flex-col items-center gap-2 rounded-3xl border border-dashed border-slate-300 bg-white/60 px-6 py-12 text-center">
         <HugeiconsIcon icon={BookOpen02Icon} strokeWidth={2} className="size-8 text-slate-300" />
-        <p className="text-sm font-bold text-slate-600">Belum ada siswa di kelas binaan</p>
-        <p className="max-w-sm text-xs text-slate-500">
-          Tetapkan kelas binaan atau wali kelas di menu Guru ({">"} Edit Guru) agar siswa muncul di sini.
-        </p>
+        <p className="text-sm font-bold text-slate-600">{emptyHeading}</p>
+        <p className="max-w-sm text-xs text-slate-500">{emptyHint}</p>
       </div>
     );
   }

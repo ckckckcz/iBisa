@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import multer from "multer";
 import { authenticate, authorize, type AuthenticatedRequest } from "../middlewares/auth.js";
-import { listMembers, createMember, deleteMember, updateMember, createMembersBatch, getSchoolDashboardData } from "@bisa/infrastructure";
+import { listMembers, createMember, deleteMember, updateMember, createMembersBatch, getSchoolDashboardData, listQuizResults } from "@bisa/infrastructure";
 import { uploadAvatar } from "@bisa/infrastructure";
 import type { MemberCreateBody, MemberUpdateBody } from "@bisa/types";
 import { listClasses, createClass, updateClass, deleteClass, getTeacherClassAssignments, updateTeacherAssignments } from "@bisa/infrastructure";
@@ -152,6 +152,17 @@ router.get("/dashboard", async (req, res) => {
   try {
     const data = await getSchoolDashboardData(sid);
     return res.json({ success: true, data });
+  } catch (e) {
+    return err(res, 500, e instanceof Error ? e.message : String(e));
+  }
+});
+
+router.get("/quiz-results", async (req, res) => {
+  const sid = schoolId(req);
+  if (!sid) return err(res, 400, "Akun belum terhubung ke sekolah");
+  try {
+    const results = await listQuizResults(sid);
+    return res.json({ success: true, data: results });
   } catch (e) {
     return err(res, 500, e instanceof Error ? e.message : String(e));
   }

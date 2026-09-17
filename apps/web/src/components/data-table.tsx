@@ -322,7 +322,6 @@ const DEFAULT_TABS: DataTableTab[] = [
   { value: "outline", label: "Daftar Modul" },
   { value: "past-performance", label: "Evaluasi", badge: 3 },
   { value: "key-personnel", label: "Profil Siswa", badge: 2 },
-  { value: "focus-documents", label: "Rekomendasi" },
 ]
 
 export function DataTable({
