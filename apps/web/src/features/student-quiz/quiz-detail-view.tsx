@@ -19,6 +19,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import type { Quiz } from "@/types/questions";
+import { SHOW_DUMMY_DATA } from "@/lib/flags";
 import {
   OPTION_LETTERS,
   AvatarChip,
@@ -137,10 +138,16 @@ export function QuizDetailView({
                 </span>
                 <span>•</span>
                 <span>Kelas 4 – 6 SD</span>
+                {SHOW_DUMMY_DATA && (
+                  <>
+                    <span>•</span>
+                    <span>{quiz.questions.length * 150}x Dimainkan</span>
+                  </>
+                )}
                 <span>•</span>
-                <span>{quiz.questions.length * 150}x Dimainkan</span>
-                <span>•</span>
-                <span className="font-bold text-blue-700">Tingkat Menengah</span>
+                <span className="font-bold text-blue-700">
+                  {SHOW_DUMMY_DATA ? "Tingkat Menengah" : "Nilai maks 100"}
+                </span>
               </div>
             </div>
           </div>
@@ -257,7 +264,10 @@ export function QuizDetailView({
           <div className="flex-1 rounded-2xl border border-slate-300 bg-white shadow-xs">
             <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-6 py-4">
               <span className="text-sm font-extrabold text-slate-800">
-                {quiz.questions.length} Soal • {quiz.questions.length * 10} Poin
+                {quiz.questions.length} Soal
+                {SHOW_DUMMY_DATA
+                  ? ` • ${quiz.questions.length * 10} Poin`
+                  : " • Nilai maks 100"}
               </span>
 
               <div className="flex items-center gap-2.5">
@@ -287,7 +297,8 @@ export function QuizDetailView({
               {quiz.questions.map((q, idx) => (
                 <div key={q.id} className="flex flex-col gap-4 p-6">
                   <div className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                    {idx + 1}. PILIHAN GANDA • {quiz.timeLimit} DTK • 10 PT
+                    {idx + 1}. PILIHAN GANDA • {quiz.timeLimit} DTK
+                    {SHOW_DUMMY_DATA ? " • 10 PT" : ""}
                   </div>
 
                   <h4 className="text-base font-bold text-slate-900 leading-snug">

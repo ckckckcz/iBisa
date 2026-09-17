@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Quiz } from "@/types/questions";
 import type { useVoiceQuiz } from "@/hooks/use-voice-quiz";
+import { SHOW_DUMMY_DATA } from "@/lib/flags";
 import {
   OPTION_LETTERS,
   CountdownOverlay,
@@ -111,10 +112,12 @@ export function QuizArenaView({
               priority
             />
           </button>
-          <Badge className="hidden items-center gap-1 border-0 bg-amber-100 font-extrabold text-amber-800 hover:bg-amber-100 sm:inline-flex">
-            <HugeiconsIcon icon={TrophyIcon} size={13} strokeWidth={2} />
-            1st
-          </Badge>
+          {SHOW_DUMMY_DATA && (
+            <Badge className="hidden items-center gap-1 border-0 bg-amber-100 font-extrabold text-amber-800 hover:bg-amber-100 sm:inline-flex">
+              <HugeiconsIcon icon={TrophyIcon} size={13} strokeWidth={2} />
+              1st
+            </Badge>
+          )}
           {vq.streak >= 2 && (
             <Badge className="inline-flex items-center gap-1 border-0 bg-orange-100 font-extrabold text-orange-700 hover:bg-orange-100 tabular-nums">
               <HugeiconsIcon icon={FireIcon} size={13} strokeWidth={2} />
@@ -370,7 +373,6 @@ export function QuizArenaView({
               <ResultStats
                 correctCount={vq.correctCount}
                 total={total}
-                timePerQuestion={quiz.timeLimit}
                 streak={vq.streak}
               />
               <ReviewList

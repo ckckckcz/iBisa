@@ -28,6 +28,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { QuizQuestion } from "@/types/questions";
 import type { useVoiceQuiz } from "@/hooks/use-voice-quiz";
+import { SHOW_DUMMY_DATA } from "@/lib/flags";
 
 export { useFullscreen } from "../../hooks/use-fullscreen";
 export { AvatarChip } from "./avatar-chip";
@@ -286,6 +287,7 @@ export function Podium({
 }) {
   const perfect = correctCount === total;
   const good = correctCount >= Math.ceil(total / 2);
+  const nilai = total === 0 ? 0 : Math.round((correctCount / total) * 100);
 
   const ResultIcon = perfect ? TrophyIcon : good ? MedalFirstPlaceIcon : SmileIcon;
   const resultIconBg = perfect
@@ -316,12 +318,20 @@ export function Podium({
         </Badge>
       )}
 
-      <p className="mt-4 text-5xl font-extrabold text-blue-700 tabular-nums">
-        {totalPoints.toLocaleString("id-ID")}
-        <span className="ml-1 text-2xl font-bold text-slate-400"> poin</span>
-      </p>
+      <div className="mx-auto mt-6 grid w-full max-w-sm grid-cols-2 gap-3">
+        <div className="rounded-2xl bg-emerald-50 p-4 text-center ring-1 ring-emerald-100">
+          <p className="text-[11px] font-bold tracking-widest text-slate-500 uppercase">Nilai</p>
+          <p className="mt-1 text-4xl font-extrabold text-emerald-600 tabular-nums">{nilai}</p>
+        </div>
+        <div className="rounded-2xl bg-blue-50 p-4 text-center ring-1 ring-blue-100">
+          <p className="text-[11px] font-bold tracking-widest text-slate-500 uppercase">Poin</p>
+          <p className="mt-1 text-4xl font-extrabold text-blue-700 tabular-nums">
+            {totalPoints.toLocaleString("id-ID")}
+          </p>
+        </div>
+      </div>
 
-      <p className="mt-1 text-lg font-bold text-slate-800">
+      <p className="mt-5 text-2xl font-bold text-slate-800">
         Hebat, {playerName.trim() || "Pemain"}!
       </p>
 
@@ -360,12 +370,10 @@ export function Podium({
 export function ResultStats({
   correctCount,
   total,
-  timePerQuestion,
   streak,
 }: {
   correctCount: number;
   total: number;
-  timePerQuestion: number;
   streak: number;
 }) {
   const incorrect = total - correctCount;
@@ -409,15 +417,17 @@ export function ResultStats({
           </Badge>
           <Badge className="border-0 bg-red-100 px-3 py-1.5 font-bold text-red-700 hover:bg-red-100">
             <HugeiconsIcon icon={Cancel01Icon} size={13} strokeWidth={2} className="mr-1" />
-            {incorrect} Incorrect
+            {incorrect} Salah
           </Badge>
-          <Badge className="border-0 bg-sky-100 px-3 py-1.5 font-bold text-sky-800 hover:bg-sky-100">
-            <HugeiconsIcon icon={Clock01Icon} size={13} strokeWidth={2} className="mr-1" />
-            {timePerQuestion} s time/question
-          </Badge>
+          {SHOW_DUMMY_DATA && (
+            <Badge className="border-0 bg-sky-100 px-3 py-1.5 font-bold text-sky-800 hover:bg-sky-100">
+              <HugeiconsIcon icon={Clock01Icon} size={13} strokeWidth={2} className="mr-1" />
+              Waktu/soal
+            </Badge>
+          )}
           <Badge className="border-0 bg-orange-100 px-3 py-1.5 font-bold text-orange-700 hover:bg-orange-100">
             <HugeiconsIcon icon={FireIcon} size={13} strokeWidth={2} className="mr-1" />
-            {streak} Streak
+            Streak {streak}
           </Badge>
         </div>
       </section>

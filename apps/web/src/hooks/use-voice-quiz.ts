@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Quiz } from "@/types/questions";
+import { getValidToken } from "@/lib/ai-helpers";
 
 export type VoicePhase = "idle" | "countdown" | "question" | "reveal" | "scoreboard" | "result";
 export type SpeechRate = 0.75 | 1 | 1.25;
@@ -321,6 +322,24 @@ export function useVoiceQuiz(quiz: Quiz | null) {
           (record && total > 0 ? "Rekor baru! Hebat sekali!" : "Bagus! ") +
           "Ucapkan mulai ulang untuk main lagi, atau selesai untuk keluar."
       );
+
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
+      getValidToken().then((token) => {
+        if (!token) return;
+        fetch(`${apiUrl}/student/quiz/submit`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            quizId: quiz.id,
+            score: total,
+            correctCount: cc,
+            totalQuestions: quiz.questions.length,
+          }),
+        }).catch((err) => console.error("Gagal menyimpan nilai kuis:", err));
+      });
     } else {
       setQIndex(s.qIndex + 1);
       setSelected(null);
