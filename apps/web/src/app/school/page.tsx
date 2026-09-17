@@ -11,6 +11,16 @@ const data = [
   { id: 6, header: "Evaluasi Semester — 6 perlu review", type: "Evaluasi", status: "In Process", target: "61", limit: "70", reviewer: "Assign reviewer" },
 ];
 
+const previewChartData = [
+  { date: "2024-04-01", submissions: 24 },
+  { date: "2024-04-02", submissions: 31 },
+  { date: "2024-04-03", submissions: 28 },
+  { date: "2024-04-04", submissions: 40 },
+  { date: "2024-04-05", submissions: 47 },
+  { date: "2024-04-06", submissions: 38 },
+  { date: "2024-04-07", submissions: 52 },
+];
+
 export default function SchoolPage() {
   return (
     <div className="flex flex-1 flex-col">
@@ -24,8 +34,15 @@ export default function SchoolPage() {
               <span className="font-medium text-foreground">guru pendamping</span> — data terpusat untuk pendampingan adaptif.
             </p>
           </div>
-          <SectionCards />
-          <div className="px-4 lg:px-6"><ChartAreaInteractive /></div>
+          <SectionCards
+            activeStudents={12}
+            totalQuizzes={24}
+            engagementPct={84}
+            needsHelpCount={7}
+          />
+          <div className="px-4 lg:px-6">
+            <ChartAreaInteractive data={previewChartData} />
+          </div>
           <div className="px-4 lg:px-6">
             <h2 className="text-sm font-semibold">Kelas & Evaluasi Sekolah</h2>
             <p className="text-xs text-muted-foreground">Ringkasan kelas inklusi, guru pendamping, dan modul adaptif.</p>
