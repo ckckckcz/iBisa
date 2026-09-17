@@ -1,10 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { initials, type ClassOption, type FormPayload, type Member } from "@/types/school";
@@ -13,15 +14,25 @@ import { getValidToken } from "@/lib/ai-helpers";
 
 export function MemberForm({
   open, onOpenChange, mode, initial, classOptions, saving, apiUrl, onSubmit,
+  taughtClassIds = [], waliClassId = null,
 }: {
   open: boolean; onOpenChange: (v: boolean) => void;
   mode: "student" | "teacher"; initial: Member | null;
   classOptions: ClassOption[]; saving: boolean; apiUrl: string;
   onSubmit: (p: FormPayload) => void;
+  taughtClassIds?: string[]; waliClassId?: string | null;
 }) {
   const { f, set, isEdit } = useMemberForm({ open, initial });
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [checked, setChecked] = useState<string[]>([]);
+  const [wali, setWali] = useState("__none");
+
+  useEffect(() => {
+    if (!open) return;
+    setChecked(taughtClassIds);
+    setWali(waliClassId ?? "__none");
+  }, [open, taughtClassIds, waliClassId]);
 
   const className = classOptions.find((c) => c.id === f.class_id)?.name ?? "";
   const grade = mode === "student" ? className || f.grade : f.grade;
@@ -51,7 +62,8 @@ export function MemberForm({
   }
 
   function submit() {
-    onSubmit(mode === "student" ? { ...f, grade } : f);
+    if (mode === "student") onSubmit({ ...f, grade });
+    else onSubmit({ ...f, taught_class_ids: checked, wali_class_id: wali === "__none" ? "" : wali });
   }
 
   return (
@@ -118,10 +130,43 @@ export function MemberForm({
               <div className="grid gap-1.5"><Label>Wali</Label><Input placeholder="Nama wali" value={f.guardian_name} onChange={(e) => set("guardian_name", e.target.value)} /></div>
             </>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
+            <>
               <div className="grid gap-1.5"><Label>Mapel / Subject</Label><Input placeholder="Matematika" value={f.subject} onChange={(e) => set("subject", e.target.value)} /></div>
-              <div className="grid gap-1.5"><Label>Grade binaan</Label><Input placeholder="10-A" value={f.grade} onChange={(e) => set("grade", e.target.value)} /></div>
-            </div>
+              <div className="grid gap-1.5">
+                <Label>Kelas yang diajar</Label>
+                <div className="grid max-h-48 gap-0.5 overflow-y-auto rounded-lg border border-input p-1.5">
+                  {classOptions.length === 0 ? (
+                    <p className="px-2 py-1.5 text-xs text-muted-foreground">Belum ada kelas. Tambah dulu di menu Kelas.</p>
+                  ) : (
+                    classOptions.map((c) => {
+                      const active = checked.includes(c.id);
+                      return (
+                        <label key={c.id} className="flex cursor-pointer items-center gap-2 rounded-md px-1.5 py-1 text-sm hover:bg-muted">
+                          <Checkbox
+                            checked={active}
+                            onCheckedChange={(v) => setChecked((prev) => (v ? [...prev, c.id] : prev.filter((x) => x !== c.id)))}
+                          />
+                          {c.name}
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
+                <span className="text-xs text-muted-foreground">Boleh pilih lebih dari satu kelas.</span>
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Wali kelas</Label>
+                <Select value={wali} onValueChange={(v) => setWali(v ?? "__none")}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue>{wali === "__none" ? "Tanpa wali" : classOptions.find((c) => c.id === wali)?.name ?? "Tanpa wali"}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none">Tanpa wali</SelectItem>
+                    {classOptions.map((c) => (<SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
           )}
 
           <div className="grid gap-1.5">

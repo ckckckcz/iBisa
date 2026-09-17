@@ -8,6 +8,7 @@ export type FormPayload = {
   number: string; full_name: string; email: string; password: string;
   whatsapp: string; gender: string; status: string; avatar_url: string;
   guardian_name: string; grade: string; subject: string; class_id: string; attendance_pct: number;
+  taught_class_ids?: string[]; wali_class_id?: string;
 };
 
 export const EMPTY_FORM: FormPayload = {

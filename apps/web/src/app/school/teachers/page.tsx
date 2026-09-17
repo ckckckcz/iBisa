@@ -22,6 +22,8 @@ export default function TeachersPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Member | null>(null);
   const [saving, setSaving] = useState(false);
+  const [classes, setClasses] = useState<{ id: string; name: string; wali_guru_id: string | null }[]>([]);
+  const [assignments, setAssignments] = useState<{ teacher_id: string; class_id: string }[]>([]);
 
   const [previewItems, setPreviewItems] = useState<ExcelMemberRow[]>([]);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -31,23 +33,27 @@ export default function TeachersPage() {
 
   function applyTeacherData(
     t: SchoolListResponse<Member[]>,
-    c: SchoolListResponse<{ wali_guru_id: string | null }[]> | null,
+    c: SchoolListResponse<{ id: string; name: string; wali_guru_id: string | null }[]> | null,
+    a: SchoolListResponse<{ teacher_id: string; class_id: string }[]> | null,
   ) {
     if (!t.success) return;
     setRows(t.data);
     if (c?.success) {
+      setClasses(c.data);
       const ids = new Set(t.data.map((x) => x.id));
       setWaliCount(c.data.filter((k) => k.wali_guru_id && ids.has(k.wali_guru_id)).length);
     }
+    if (a?.success) setAssignments(a.data);
   }
 
   async function load() {
     const token = await getValidToken();
-    const [t, c] = await Promise.all([
+    const [t, c, a] = await Promise.all([
       fetchSchoolList<Member[]>(apiUrl, token, "teachers"),
-      fetchSchoolList<{ wali_guru_id: string | null }[]>(apiUrl, token, "classes").catch(() => null),
+      fetchSchoolList<{ id: string; name: string; wali_guru_id: string | null }[]>(apiUrl, token, "classes").catch(() => null),
+      fetchSchoolList<{ teacher_id: string; class_id: string }[]>(apiUrl, token, "teachers/assignments").catch(() => null),
     ]);
-    applyTeacherData(t, c);
+    applyTeacherData(t, c, a);
   }
 
   useEffect(() => {
@@ -55,15 +61,26 @@ export default function TeachersPage() {
     void (async () => {
       const token = await getValidToken();
       try {
-        const [t, c] = await Promise.all([
+        const [t, c, a] = await Promise.all([
           fetchSchoolList<Member[]>(apiUrl, token, "teachers"),
-          fetchSchoolList<{ wali_guru_id: string | null }[]>(apiUrl, token, "classes").catch(() => null),
+          fetchSchoolList<{ id: string; name: string; wali_guru_id: string | null }[]>(apiUrl, token, "classes").catch(() => null),
+          fetchSchoolList<{ teacher_id: string; class_id: string }[]>(apiUrl, token, "teachers/assignments").catch(() => null),
         ]);
-        if (!cancelled) applyTeacherData(t, c);
+        if (!cancelled) applyTeacherData(t, c, a);
       } catch {}
     })();
     return () => { cancelled = true; };
   }, [apiUrl]);
+
+  const editingTaught = useMemo(
+    () => (editing ? assignments.filter((a) => a.teacher_id === editing.id).map((a) => a.class_id) : []),
+    [assignments, editing]
+  );
+  const editingWali = useMemo(
+    () => (editing ? classes.find((c) => c.wali_guru_id === editing.id)?.id ?? null : null),
+    [classes, editing]
+  );
+  const classOptions = useMemo(() => classes.map((c) => ({ id: c.id, name: c.name })), [classes]);
 
   const stats = useMemo(() => {
     const total = rows.length;
@@ -106,7 +123,9 @@ export default function TeachersPage() {
       number: p.number || null, full_name: p.full_name, email: p.email || undefined,
       password: p.password || undefined, whatsapp: p.whatsapp || null,
       gender: p.gender || null, status: p.status, avatar_url: p.avatar_url || null,
-      subject: p.subject || null, grade: p.grade || null,
+      subject: p.subject || null,
+      taught_class_ids: p.taught_class_ids ?? [],
+      wali_class_id: p.wali_class_id || null,
     };
     const url = editing ? `${apiUrl}/school/users/${editing.id}` : `${apiUrl}/school/teachers`;
     const res = await fetch(url, { method: editing ? "PUT" : "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(body) });
@@ -206,7 +225,7 @@ export default function TeachersPage() {
         ]}
         exportName="teachers" onEdit={(m) => { setEditing(m); setOpen(true); }} onDelete={remove}
       />
-      <MemberForm open={open} onOpenChange={setOpen} mode="teacher" initial={editing} classOptions={[]} saving={saving} apiUrl={apiUrl} onSubmit={submit} />
+      <MemberForm open={open} onOpenChange={setOpen} mode="teacher" initial={editing} classOptions={classOptions} taughtClassIds={editingTaught} waliClassId={editingWali} saving={saving} apiUrl={apiUrl} onSubmit={submit} />
       <CsvPreviewModal
         open={previewOpen}
         onOpenChange={setPreviewOpen}
