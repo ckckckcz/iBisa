@@ -233,10 +233,7 @@ export default function PromptBar({
     }
   };
 
-  useEffect(() => {
-    shaderRef.current = makeShader();
-    return () => { shaderRef.current?.destroy(); shaderRef.current = null; };
-  }, []);
+  useEffect(() => () => { shaderRef.current?.destroy(); shaderRef.current = null; }, []);
 
   const celebrate = () => {
     if (sweepingRef.current) return;
@@ -247,7 +244,11 @@ export default function PromptBar({
     if (!shader) return;
     sweepingRef.current = true;
     const sweep = playSweep(shader, { palette: RAINBOW, direction: 'ltr', sweepMs: 570, outroMs: 80, peakAlpha: 1.3, bandTight: 10, brightness: 1.4, swellAmount: 1, waveSpeed: 1.8, easing: 'easeOutExpo' });
-    sweep.done.finally(() => { sweepingRef.current = false; });
+    sweep.done.finally(() => {
+      sweepingRef.current = false;
+      shaderRef.current?.destroy();
+      shaderRef.current = null;
+    });
   };
 
   useEffect(() => () => { recogRef.current?.stop(); }, []);

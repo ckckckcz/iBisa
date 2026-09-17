@@ -28,6 +28,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { QuizQuestion } from "@/types/questions";
 import type { useVoiceQuiz } from "@/hooks/use-voice-quiz";
+import { NEURAL_VOICES } from "@/hooks/use-voice-quiz";
 import { SHOW_DUMMY_DATA } from "@/lib/flags";
 
 export { useFullscreen } from "../../hooks/use-fullscreen";
@@ -49,6 +50,60 @@ export const OPTION_TEXT: string[] = [
 
 export const OPTION_LETTERS = ["A", "B", "C", "D"];
 export type VQ = ReturnType<typeof useVoiceQuiz>;
+
+export function VoiceSettings({ vq }: { vq: VQ }) {
+  const value = vq.neural ? `neural:${vq.neuralVoice}` : `sys:${vq.voiceURI}`;
+  return (
+    <div className="inline-flex items-center gap-1 rounded-xl bg-slate-100 p-1">
+      <select
+        value={value}
+        onChange={(e) => {
+          const v = e.target.value;
+          if (v.startsWith("neural:")) {
+            vq.setNeural(true);
+            vq.setNeuralVoice(v.slice(7));
+          } else {
+            vq.setNeural(false);
+            vq.setVoiceURI(v.slice(4));
+          }
+        }}
+        aria-label="Pilih suara"
+        title="Pilih suara"
+        className="max-w-40 cursor-pointer rounded-lg bg-transparent px-2 py-1.5 text-xs font-semibold text-slate-600 outline-none hover:bg-slate-200"
+      >
+        <optgroup label="Suara AI (natural)">
+          {NEURAL_VOICES.map((n) => (
+            <option key={n.key} value={`neural:${n.key}`}>
+              AI · {n.label}
+            </option>
+          ))}
+        </optgroup>
+        {vq.sysVoices.length > 0 && (
+          <optgroup label="Suara perangkat">
+            {vq.sysVoices.map((s) => (
+              <option key={s.voiceURI} value={`sys:${s.voiceURI}`}>
+                {s.name}
+              </option>
+            ))}
+          </optgroup>
+        )}
+      </select>
+      {!vq.neural && (
+        <input
+          type="range"
+          min={0.5}
+          max={1.5}
+          step={0.1}
+          value={vq.pitch}
+          onChange={(e) => vq.setPitch(Number(e.target.value))}
+          aria-label="Nada suara"
+          title={`Nada: ${vq.pitch.toFixed(1)}`}
+          className="w-20 accent-blue-700"
+        />
+      )}
+    </div>
+  );
+}
 
 export function MicSvg({ className }: { className?: string }) {
   return (
@@ -593,6 +648,8 @@ export function VoiceDock({ vq }: { vq: VQ }) {
           ))}
         </div>
 
+        <VoiceSettings vq={vq} />
+
         <button
           type="button"
           onClick={() => vq.setTimerEnabled(!vq.timerEnabled)}
@@ -682,6 +739,9 @@ export function VoiceMenu({ vq, onExit }: { vq: VQ; onExit: () => void }) {
           />
           Suara: {vq.ttsEnabled ? "Nyala" : "Mati"}
         </button>
+        <div className="px-1 py-1">
+          <VoiceSettings vq={vq} />
+        </div>
         <button
           type="button"
           onClick={() => vq.setTimerEnabled(!vq.timerEnabled)}

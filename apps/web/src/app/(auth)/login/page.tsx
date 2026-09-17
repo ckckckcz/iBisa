@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ViewIcon, ViewOffSlashIcon, Loading03Icon } from "@hugeicons/core-free-icons";
 import { AuthSplit } from "@/features/auth/authSplit";
@@ -14,31 +13,30 @@ export default function Login() {
   const [error, setError] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const router = useRouter();
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
-  const navigatedRef = useRef(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (token) {
-      const hasCookie = document.cookie.split("; ").some((c) => c.startsWith("token="));
-      if (!hasCookie) {
+    const hasCookie = document.cookie.split("; ").some((c) => c.startsWith("token="));
+    if (!token || !hasCookie) {
+      if (token && !hasCookie) {
         localStorage.removeItem("token");
         localStorage.removeItem("refresh_token");
         localStorage.removeItem("expires_at");
         localStorage.removeItem("profile");
       }
-      try {
-        const profileRaw = localStorage.getItem("profile");
-        const profile = profileRaw ? JSON.parse(profileRaw) : null;
-        const role = profile?.role;
-        const target = role === "teacher" ? "/teacher" : role === "student" ? "/student" : "/school";
-        router.replace(target);
-      } catch {
-        // ignore JSON parse error
-      }
+      return;
     }
-  }, [router]);
+    try {
+      const profile = JSON.parse(localStorage.getItem("profile") ?? "null");
+      const role = profile?.role;
+      if (role !== "teacher" && role !== "student" && role !== "school") return;
+      const target = role === "teacher" ? "/teacher" : role === "student" ? "/student" : "/school";
+      window.location.assign(target);
+    } catch {
+      // ignore JSON parse error
+    }
+  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -71,15 +69,7 @@ export default function Login() {
 
       const role = data.profile?.role;
       const target = role === "teacher" ? "/teacher" : role === "student" ? "/student" : "/school";
-      navigatedRef.current = true;
-      // Keep loading = true during navigation so the spinner/loading text stays visible until dashboard loads
-      router.push(target);
-      // Safety net: if client navigation stalls (e.g. slow middleware/API), force a full page load.
-      window.setTimeout(() => {
-        if (!navigatedRef.current && window.location.pathname.startsWith("/login")) {
-          window.location.assign(target);
-        }
-      }, 6000);
+      window.location.assign(target);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setLoading(false);

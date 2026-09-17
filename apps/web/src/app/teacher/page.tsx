@@ -62,20 +62,13 @@ export default function TeacherPage() {
     void (async () => {
       const token = await getValidToken();
       if (!token) return;
-      try {
-        const res = await fetch(`${apiUrl}/teacher/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const payload = await res.json();
-        if (payload.success) setData(payload);
-      } catch {}
-      try {
-        const res = await fetch(`${apiUrl}/teacher/quiz-results`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const payload = await res.json();
-        if (payload.success) setResults(payload.data);
-      } catch {}
+      const headers = { Authorization: `Bearer ${token}` };
+      const [me, quiz] = await Promise.allSettled([
+        fetch(`${apiUrl}/teacher/me`, { headers }).then((r) => r.json()),
+        fetch(`${apiUrl}/teacher/quiz-results`, { headers }).then((r) => r.json()),
+      ]);
+      if (me.status === "fulfilled" && me.value.success) setData(me.value);
+      if (quiz.status === "fulfilled" && quiz.value.success) setResults(quiz.value.data);
     })();
   }, [apiUrl]);
 

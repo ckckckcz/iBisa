@@ -64,29 +64,21 @@ export default function SchoolPage() {
         return;
       }
       const headers = { Authorization: `Bearer ${token}` };
-      try {
-        const res = await fetch(`${apiUrl}/school/dashboard`, { headers });
-        const payload = await res.json();
-        if (payload.success) setData(payload.data);
-        else setFailed(true);
-      } catch {
-        setFailed(true);
-      }
-      try {
-        const res = await fetch(`${apiUrl}/school/quiz-results`, { headers });
-        const payload = await res.json();
-        if (payload.success) setResults(payload.data);
-      } catch {}
-      try {
-        const res = await fetch(`${apiUrl}/school/students`, { headers });
-        const payload = await res.json();
-        if (payload.success) setStudents(payload.data);
-      } catch {}
-      try {
-        const res = await fetch(`${apiUrl}/school/classes`, { headers });
-        const payload = await res.json();
-        if (payload.success) setClasses(payload.data);
-      } catch {}
+      const get = async (path: string) => {
+        const res = await fetch(`${apiUrl}${path}`, { headers });
+        return res.json();
+      };
+      const [dash, quiz, stud, cls] = await Promise.allSettled([
+        get("/school/dashboard"),
+        get("/school/quiz-results"),
+        get("/school/students"),
+        get("/school/classes"),
+      ]);
+      if (dash.status === "fulfilled" && dash.value.success) setData(dash.value.data);
+      else setFailed(true);
+      if (quiz.status === "fulfilled" && quiz.value.success) setResults(quiz.value.data);
+      if (stud.status === "fulfilled" && stud.value.success) setStudents(stud.value.data);
+      if (cls.status === "fulfilled" && cls.value.success) setClasses(cls.value.data);
     })();
   }, [apiUrl]);
 

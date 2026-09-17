@@ -23,6 +23,7 @@ import schoolRouter from './routes/school.js';
 import teacherRouter from './routes/teacher.js';
 import studentRouter from './routes/student.js';
 import aiRouter from './routes/ai.js';
+import ttsRouter from './routes/tts.js';
 import quizzesRouter from './routes/quizzes.js';
 import { authenticate, authorize, type AuthenticatedRequest } from './middlewares/auth.js';
 
@@ -64,6 +65,7 @@ app.use('/teacher', teacherRouter);
 app.use('/student', studentRouter);
 app.use('/school/ai', aiRouter);
 app.use('/teacher/ai', aiRouter);
+app.use('/tts', ttsRouter);
 app.use('/quizzes', quizzesRouter);
 app.get('/school/me', authenticate, authorize('school'), (req: Request, res: Response) => res.json({ success: true, profile: (req as AuthenticatedRequest).profile }));
 app.get('/teacher/me', authenticate, authorize('teacher'), (req: Request, res: Response) => res.json({ success: true, profile: (req as AuthenticatedRequest).profile }));

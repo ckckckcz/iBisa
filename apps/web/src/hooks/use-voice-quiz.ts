@@ -6,6 +6,29 @@ import { getValidToken } from "@/lib/ai-helpers";
 
 export type VoicePhase = "idle" | "countdown" | "question" | "reveal" | "scoreboard" | "result";
 export type SpeechRate = 0.75 | 1 | 1.25;
+
+export const NEURAL_VOICES = [
+  { key: "Kore", label: "Kore · hangat" },
+  { key: "Fenrir", label: "Fenrir · ceria" },
+  { key: "Charon", label: "Charon · tenang" },
+  { key: "Leda", label: "Leda · lembut" },
+] as const;
+
+export type SystemVoiceInfo = { voiceURI: string; name: string; lang: string };
+
+function loadStored(key: string, fallback: string): string {
+  try {
+    return localStorage.getItem(key) ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function store(key: string, value: string) {
+  try {
+    localStorage.setItem(key, value);
+  } catch {}
+}
 type PendingDestructive = "restart" | "stop" | null;
 export type QuizBest = { points: number; correct: number };
 
@@ -84,6 +107,16 @@ export function useVoiceQuiz(quiz: Quiz | null) {
   const [liveMessage, setLiveMessage] = useState("Selamat datang di kuis suara BISA.");
   const [ttsEnabled, setTtsEnabled] = useState(true);
   const [rate, setRate] = useState<SpeechRate>(1);
+  const [sysVoices, setSysVoices] = useState<SystemVoiceInfo[]>([]);
+  const [voiceURI, setVoiceURIState] = useState(() => loadStored("bisa-tts-voice", ""));
+  const [pitch, setPitchState] = useState(() => Number(loadStored("bisa-tts-pitch", "1")) || 1);
+  const [neural, setNeuralState] = useState(() => loadStored("bisa-tts-neural", "1") === "1");
+  const [neuralVoice, setNeuralVoiceState] = useState(() => loadStored("bisa-tts-neural-voice", "Kore"));
+
+  const setVoiceURI = useCallback((v: string) => { setVoiceURIState(v); store("bisa-tts-voice", v); }, []);
+  const setPitch = useCallback((p: number) => { setPitchState(p); store("bisa-tts-pitch", String(p)); }, []);
+  const setNeural = useCallback((n: boolean) => { setNeuralState(n); store("bisa-tts-neural", n ? "1" : "0"); }, []);
+  const setNeuralVoice = useCallback((v: string) => { setNeuralVoiceState(v); store("bisa-tts-neural-voice", v); }, []);
   const [pendingDestructive, setPendingDestructive] = useState<PendingDestructive>(null);
   const [micError, setMicError] = useState<string | null>(null);
   const [online, setOnline] = useState(() => (typeof navigator === "undefined" ? true : navigator.onLine));
@@ -93,13 +126,16 @@ export function useVoiceQuiz(quiz: Quiz | null) {
   }));
 
   const stateRef = useRef({ phase, qIndex, selected, locked, pendingDestructive, timeLeft, streak, timerEnabled });
-  const ttsRef = useRef({ enabled: ttsEnabled, rate });
+  const ttsRef = useRef({ enabled: ttsEnabled, rate, voiceURI, pitch, neural, neuralVoice });
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const neuralCache = useRef(new Map<string, string>());
+  const speakSeq = useRef(0);
   const recogRef = useRef<{ stop: () => void; abort: () => void } | null>(null);
   const lockAnswerRef = useRef<(given: number | null, expired: boolean) => void>(() => {});
 
   useEffect(() => {
     stateRef.current = { phase, qIndex, selected, locked, pendingDestructive, timeLeft, streak, timerEnabled };
-    ttsRef.current = { enabled: ttsEnabled, rate };
+    ttsRef.current = { enabled: ttsEnabled, rate, voiceURI, pitch, neural, neuralVoice };
   });
 
   const totalPoints = pointsEarned.reduce((a, b) => a + b, 0);
@@ -613,7 +649,9 @@ export function useVoiceQuiz(quiz: Quiz | null) {
     best, isNewBest, failCount,
     listening, transcript, liveMessage, ttsEnabled, rate, pendingDestructive,
     micError, online, support,
+    sysVoices, voiceURI, pitch, neural, neuralVoice,
     setSelected, setTtsEnabled, setRate, setTimerEnabled,
+    setVoiceURI, setPitch, setNeural, setNeuralVoice,
     speak, stopSpeak, listenOnce, handleCommand,
     start, submit, next, advance, prev, skipCountdown, resetToLobby, help, sayScore, sayTime, readQuestion,
   };
