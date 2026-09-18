@@ -201,6 +201,18 @@ export async function updateQuiz(schoolId: string, code: string, actor: QuizActo
   return toQuizRecord(data as unknown as QuizRow);
 }
 
+export async function deleteQuiz(schoolId: string, code: string, actor: QuizActor): Promise<void> {
+  const admin = getSupabaseAdmin();
+  if (!admin) throw new Error("Supabase not configured");
+  const existing = await getQuizByCode(code);
+  if (!existing || existing.school_id !== schoolId) throw new Error("Kuis tidak ditemukan.");
+  if (actor.role !== "school" && existing.created_by !== actor.userId) {
+    throw new Error("Hanya pemilik kuis atau admin sekolah yang bisa menghapus.");
+  }
+  const { error } = await admin.from("quizzes").delete().eq("id", existing.id).eq("school_id", schoolId);
+  if (error) throw new Error(error.message);
+}
+
 export async function submitQuizScore(
   studentId: string,
   quizId: string,

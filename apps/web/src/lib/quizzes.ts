@@ -114,6 +114,17 @@ export async function updateQuizByCode(
   return data.data as DbQuiz;
 }
 
+export async function deleteQuizByCode(code: string): Promise<void> {
+  const res = await fetch(`${apiUrl}/quizzes/${encodeURIComponent(code)}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${await getValidToken()}` },
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message ?? "Gagal menghapus kuis.");
+  }
+}
+
 export async function fetchQuizByCode(code: string): Promise<Quiz | null> {
   const norm = code.trim();
   if (!norm) return null;

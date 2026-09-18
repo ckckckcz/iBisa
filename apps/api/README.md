@@ -341,6 +341,63 @@ Mengambil profil siswa, informasi kelas, dan wali guru pengampu.
 
 ---
 
+### F. Endpoint Kuis (`/quizzes`)
+*Otorisasi per rute dicantumkan pada tiap endpoint. Seluruhnya membutuhkan `Authorization: Bearer <token>`.*
+
+#### 1. `GET /quizzes`
+Mengambil daftar kuis milik sekolah.
+- **Role**: `school`, `teacher`, `student`
+- **Response `200 OK`**:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "quiz-uuid",
+      "code": "482103",
+      "title": "Kuis IPA Kelas 7",
+      "subject": "IPA",
+      "time_limit": 60,
+      "base_points": 1000,
+      "questions": [],
+      "created_by_name": "Siti Rahma",
+      "original_by_name": null
+    }
+  ]
+}
+```
+
+#### 2. `POST /quizzes/copy`
+Menyalin kuis dari Perpustakaan Soal menjadi milik guru.
+- **Role**: `school`, `teacher`
+- **Body**: `{ "code": "482103" }`
+- **Response `200 OK`**: `{ "success": true, "data": { ... } }`
+
+#### 3. `PUT /quizzes/:code`
+Memperbarui kuis (judul, mapel, waktu, poin, soal). Hanya pemilik kuis atau admin sekolah.
+- **Role**: `school`, `teacher`
+- **Response `200 OK`**: `{ "success": true, "data": { ... } }`
+
+#### 4. `DELETE /quizzes/:code`
+Menghapus kuis beserta seluruh hasil (`quiz_results`) pengerjaan murid karena *cascade*. Hanya pemilik kuis atau admin sekolah.
+- **Role**: `school`, `teacher`
+- **Response `200 OK`**:
+```json
+{
+  "success": true
+}
+```
+- **Response `400 Bad Request`** (bukan pemilik / bukan admin sekolah):
+```json
+{
+  "success": false,
+  "message": "Hanya pemilik kuis atau admin sekolah yang bisa menghapus."
+}
+```
+> Catatan: Salinan kuis oleh guru lain tetap aman — referensi `original_by` (ke tabel `users`) tidak ikut menjadi `null` saat kuis asli dihapus, karena FK menunjuk ke pengguna, bukan ke baris kuis.
+
+---
+
 ## 4. Panduan Menjalankan API Backend
 
 ```bash

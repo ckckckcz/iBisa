@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from "express";
 import { authenticate, authorize, type AuthenticatedRequest } from "../middlewares/auth.js";
-import { generateQuizDraft, createQuiz, copyQuiz, updateQuiz, listQuizzes, getQuizByCode, type ChatMessage } from "@bisa/infrastructure";
+import { generateQuizDraft, createQuiz, copyQuiz, updateQuiz, deleteQuiz, listQuizzes, getQuizByCode, type ChatMessage } from "@bisa/infrastructure";
 
 const router = Router();
 
@@ -84,6 +84,18 @@ router.put("/:code", authenticate, authorize("school", "teacher"), async (req, r
   try {
     const data = await updateQuiz(schoolId, req.params.code ?? "", { userId, role }, { title, subject, time_limit, base_points, questions });
     return res.json({ success: true, data });
+  } catch (e) {
+    return err(res, 400, e instanceof Error ? e.message : String(e));
+  }
+});
+
+router.delete("/:code", authenticate, authorize("school", "teacher"), async (req, res) => {
+  const { schoolId, userId, role } = ctx(req);
+  if (!schoolId) return err(res, 400, "Akun belum terhubung sekolah");
+  if (!userId) return err(res, 400, "Sesi tidak valid.");
+  try {
+    await deleteQuiz(schoolId, req.params.code ?? "", { userId, role });
+    return res.json({ success: true });
   } catch (e) {
     return err(res, 400, e instanceof Error ? e.message : String(e));
   }
