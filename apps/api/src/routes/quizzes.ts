@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from "express";
 import { authenticate, authorize, type AuthenticatedRequest } from "../middlewares/auth.js";
-import { generateQuizDraft, createQuiz, copyQuiz, updateQuiz, deleteQuiz, listQuizzes, getQuizByCode, type ChatMessage } from "@bisa/infrastructure";
+import { generateQuizDraft, createQuiz, copyQuiz, updateQuiz, deleteQuiz, listQuizzes, listStudentQuizzes, getQuizByCode, getStudentClassId, getTeacherAllowedClassIds, type ChatMessage } from "@bisa/infrastructure";
 
 const router = Router();
 
@@ -31,10 +31,12 @@ router.post("/ai/generate-quiz", authenticate, authorize("school", "teacher"), a
 });
 
 router.post("/", authenticate, authorize("school", "teacher"), async (req, res) => {
-  const { schoolId, userId } = ctx(req);
+  const { schoolId, userId, role } = ctx(req);
   if (!schoolId) return err(res, 400, "Akun belum terhubung sekolah");
+  if (!userId) return err(res, 401, "Sesi tidak valid.");
   try {
-    const data = await createQuiz(schoolId, userId, req.body ?? {});
+    const allowedClassIds = role === "teacher" ? await getTeacherAllowedClassIds(userId) : undefined;
+    const data = await createQuiz(schoolId, userId, req.body ?? {}, allowedClassIds);
     return res.json({ success: true, data });
   } catch (e) {
     return err(res, 400, e instanceof Error ? e.message : String(e));
@@ -42,9 +44,15 @@ router.post("/", authenticate, authorize("school", "teacher"), async (req, res) 
 });
 
 router.get("/", authenticate, authorize("school", "teacher", "student"), async (req, res) => {
-  const { schoolId } = ctx(req);
+  const { schoolId, userId, role } = ctx(req);
   if (!schoolId) return err(res, 400, "Akun belum terhubung sekolah");
   try {
+    if (role === "student") {
+      if (!userId) return err(res, 401, "Sesi tidak valid atau belum login");
+      const classId = await getStudentClassId(userId);
+      const data = classId ? await listStudentQuizzes(schoolId, classId) : [];
+      return res.json({ success: true, data });
+    }
     const data = await listQuizzes(schoolId);
     return res.json({ success: true, data });
   } catch (e) {
@@ -53,9 +61,17 @@ router.get("/", authenticate, authorize("school", "teacher", "student"), async (
 });
 
 router.get("/by-code/:code", authenticate, authorize("school", "teacher", "student"), async (req, res) => {
+  const { schoolId, userId, role } = ctx(req);
   try {
     const data = await getQuizByCode(req.params.code ?? "");
     if (!data) return err(res, 404, "Kode tidak ditemukan.");
+    if (role === "student" && schoolId) {
+      if (data.school_id !== schoolId) return err(res, 404, "Kode tidak ditemukan.");
+      const classId = userId ? await getStudentClassId(userId) : null;
+      if (!classId || !data.class_ids.includes(classId)) {
+        return err(res, 403, "Kuis tidak tersedia untuk kelasmu.");
+      }
+    }
     return res.json({ success: true, data });
   } catch (e) {
     return fail(res, e);
@@ -80,9 +96,9 @@ router.put("/:code", authenticate, authorize("school", "teacher"), async (req, r
   const { schoolId, userId, role } = ctx(req);
   if (!schoolId) return err(res, 400, "Akun belum terhubung sekolah");
   if (!userId) return err(res, 400, "Sesi tidak valid.");
-  const { title, subject, time_limit, base_points, questions } = req.body ?? {};
+  const { title, subject, time_limit, base_points, questions, class_ids } = req.body ?? {};
   try {
-    const data = await updateQuiz(schoolId, req.params.code ?? "", { userId, role }, { title, subject, time_limit, base_points, questions });
+    const data = await updateQuiz(schoolId, req.params.code ?? "", { userId, role }, { title, subject, time_limit, base_points, questions, class_ids });
     return res.json({ success: true, data });
   } catch (e) {
     return err(res, 400, e instanceof Error ? e.message : String(e));
