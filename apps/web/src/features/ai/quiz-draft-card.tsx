@@ -1,9 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { getValidToken } from '@/lib/ai-helpers';
 import { dataClear } from '@/lib/data-cache';
+import { fetchAssignableClasses, type AssignableClass } from '@/lib/quizzes';
+import { useAuth } from '@/hooks/use-auth';
 import type { QuizDraftQuestion } from '@/types/ai';
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000';
@@ -34,6 +36,27 @@ export default function QuizDraftCard({
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   const [items, setItems] = useState<QuizDraftQuestion[]>(() => clone(draft));
+  const [classes, setClasses] = useState<AssignableClass[]>([]);
+  const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
+  const [classesLoading, setClassesLoading] = useState(true);
+  const { profile } = useAuth();
+
+  useEffect(() => {
+    let live = true;
+    void fetchAssignableClasses(profile?.role).then((list) => {
+      if (!live) return;
+      setClasses(list);
+      setSelectedClassIds(list.length === 1 ? list.map((c) => c.id) : []);
+      setClassesLoading(false);
+    });
+    return () => {
+      live = false;
+    };
+  }, [profile?.role]);
+
+  function toggleClass(id: string) {
+    setSelectedClassIds((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
+  }
 
   function upd(i: number, patch: Partial<QuizDraftQuestion>) {
     setItems((prev) => prev.map((q, idx) => (idx === i ? { ...q, ...patch } : q)));
@@ -51,12 +74,14 @@ export default function QuizDraftCard({
       if (q.options.some((o) => !o.trim())) { setError(`Soal ${i + 1} opsi masih kosong.`); return; }
     }
     setError('');
+    if (classesLoading) { setError('Tunggu daftar kelas dimuat dulu.'); return; }
+    if (selectedClassIds.length === 0) { setError('Pilih minimal 1 kelas.'); return; }
     setSaving(true);
     try {
       const res = await fetch(`${apiUrl}/quizzes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${await getValidToken()}` },
-        body: JSON.stringify({ title: title.trim(), subject, questions: items }),
+        body: JSON.stringify({ title: title.trim(), subject, questions: items, class_ids: selectedClassIds }),
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.message ?? 'Gagal menyimpan.');
@@ -211,6 +236,34 @@ export default function QuizDraftCard({
         </div>
       )}
 
+      <div className="border-t border-neutral-200 bg-white px-4 py-3 sm:px-4">
+        <p className="text-xs font-medium text-neutral-600">
+          Kelas <span className="text-red-500">*</span>
+          <span className="ml-1 font-normal text-neutral-400">kuis hanya muncul di kelas yang dipilih</span>
+        </p>
+        {classesLoading ? (
+          <p className="mt-2 text-xs text-neutral-400">Memuat daftar kelas…</p>
+        ) : classes.length === 0 ? (
+          <p className="mt-2 text-xs text-amber-600">Kamu belum terdaftar mengajar kelas mana pun. Hubungi admin sekolah dulu.</p>
+        ) : (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {classes.map((c) => {
+              const active = selectedClassIds.includes(c.id);
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => toggleClass(c.id)}
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${active ? 'bg-neutral-900 text-white' : 'border border-neutral-300 text-neutral-600 hover:bg-neutral-100'}`}
+                >
+                  {c.name}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       <div className="rounded-b-lg border-t border-neutral-200 bg-neutral-50 px-3 py-4 sm:px-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <label className="min-w-0 flex-1">
@@ -233,7 +286,7 @@ export default function QuizDraftCard({
               className="h-9 w-full rounded-md border border-neutral-300 bg-white px-3 text-sm outline-none placeholder:text-neutral-400 focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900/10"
             />
           </label>
-          <Button onClick={save} disabled={saving || !items.length} className="h-9 shrink-0 rounded-md bg-neutral-900 px-5 text-sm font-medium text-white hover:bg-neutral-800 w-full sm:w-auto">
+          <Button onClick={save} disabled={saving || !items.length || classesLoading} className="h-9 shrink-0 rounded-md bg-neutral-900 px-5 text-sm font-medium text-white hover:bg-neutral-800 w-full sm:w-auto">
             {saving ? 'Menyimpan…' : `Simpan ${items.length} soal`}
           </Button>
         </div>

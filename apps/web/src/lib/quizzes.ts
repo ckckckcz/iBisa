@@ -15,6 +15,7 @@ export type DbQuiz = {
   created_by_name?: string | null;
   original_by?: string | null;
   original_by_name?: string | null;
+  class_ids?: string[];
   created_at?: string;
 };
 
@@ -100,7 +101,7 @@ export async function copyQuizByCode(code: string): Promise<DbQuiz> {
 
 export async function updateQuizByCode(
   code: string,
-  patch: { title?: string; subject?: string; time_limit?: number; base_points?: number; questions?: DbQuiz["questions"] }
+  patch: { title?: string; subject?: string; time_limit?: number; base_points?: number; questions?: DbQuiz["questions"]; class_ids?: string[] }
 ): Promise<DbQuiz> {
   const res = await fetch(`${apiUrl}/quizzes/${encodeURIComponent(code)}`, {
     method: "PUT",
@@ -129,15 +130,22 @@ export async function fetchQuizByCode(code: string): Promise<Quiz | null> {
   const norm = code.trim();
   if (!norm) return null;
   try {
-    const record = await fetchDb(`/quizzes/by-code/${encodeURIComponent(norm)}`);
-    if (record) return toPlayerQuiz(record as DbQuiz);
+    const res = await fetch(`${apiUrl}/quizzes/by-code/${encodeURIComponent(norm)}`, {
+      headers: { Authorization: `Bearer ${await getValidToken()}` },
+    });
+    if (res.status === 403 || res.status === 404) return null;
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (data?.success && data.data) return toPlayerQuiz(data.data as DbQuiz);
+    return null;
   } catch {
     /* offline → fallback lokal */
+    return getQuizByCode(norm);
   }
-  return getQuizByCode(norm);
 }
 
 export async function fetchLobbyQuizzes(): Promise<Quiz[]> {
+  const token = await getValidToken();
   let remote: Quiz[] = [];
   try {
     const records = await fetchDb("/quizzes");
@@ -145,8 +153,40 @@ export async function fetchLobbyQuizzes(): Promise<Quiz[]> {
   } catch {
     /* offline → hanya lokal */
   }
+  if (token) return remote;
   const seen = new Set(remote.map((q) => q.code));
   return [...remote, ...QUIZZES.filter((q) => !seen.has(q.code))];
+}
+
+export type AssignableClass = { id: string; name: string };
+
+export async function fetchAssignableClasses(role?: string | null): Promise<AssignableClass[]> {
+  const token = await getValidToken();
+  if (!token) return [];
+  try {
+    if (role === "school") {
+      const data = await fetchDb("/school/classes");
+      return (Array.isArray(data) ? data : []).map((c) => ({ id: String(c.id), name: String(c.name) }));
+    }
+    const res = await fetch(`${apiUrl}/teacher/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return [];
+    const body = await res.json();
+    if (!body?.success) return [];
+    const list = [...(Array.isArray(body.classesTaught) ? body.classesTaught : []), ...(Array.isArray(body.waliClasses) ? body.waliClasses : [])];
+    const seen = new Set<string>();
+    const out: AssignableClass[] = [];
+    for (const c of list) {
+      if (c?.id && c?.name && !seen.has(c.id)) {
+        seen.add(c.id);
+        out.push({ id: String(c.id), name: String(c.name) });
+      }
+    }
+    return out;
+  } catch {
+    return [];
+  }
 }
 
 export async function fetchTeacherQuizzes(): Promise<DbQuiz[]> {

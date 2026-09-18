@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowLeft01Icon, CheckmarkCircle01Icon, CheckmarkCircle02Icon } from "@hugeicons/core-free-icons";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { updateQuizByCode, getQuizTheme, type DbQuiz } from "@/lib/quizzes";
+import { updateQuizByCode, getQuizTheme, fetchAssignableClasses, type AssignableClass, type DbQuiz } from "@/lib/quizzes";
 import { dataClear } from "@/lib/data-cache";
+import { useAuth } from "@/hooks/use-auth";
 
 const LETTERS = ["A", "B", "C", "D"] as const;
 const SUBJECTS = ["Umum", "IPA", "Matematika", "Bahasa Indonesia"];
@@ -31,17 +32,37 @@ export default function QuizEditor({
   const [savedFlash, setSavedFlash] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [classes, setClasses] = useState<AssignableClass[]>([]);
+  const [classesLoading, setClassesLoading] = useState(true);
+  const [selectedClassIds, setSelectedClassIds] = useState<string[]>(quiz.class_ids ?? []);
+  const { profile } = useAuth();
+
+  useEffect(() => {
+    let live = true;
+    void fetchAssignableClasses(profile?.role).then((list) => {
+      if (!live) return;
+      setClasses(list);
+      setClassesLoading(false);
+    });
+    return () => {
+      live = false;
+    };
+  }, [profile?.role]);
 
   const theme = getQuizTheme(subject);
+
+  const classIdsChanged =
+    [...(selectedClassIds ?? [])].sort().join(",") !== [...(quiz.class_ids ?? [])].sort().join(",");
 
   const dirty = useMemo(() => {
     return !(
       title.trim() === quiz.title.trim() &&
       (subject === "Umum" ? !quiz.subject?.trim() : subject === (quiz.subject ?? "")) &&
       Number(timeLimit) === Number(quiz.time_limit) &&
-      JSON.stringify(questions) === JSON.stringify(quiz.questions)
+      JSON.stringify(questions) === JSON.stringify(quiz.questions) &&
+      !classIdsChanged
     );
-  }, [title, subject, timeLimit, questions, quiz]);
+  }, [title, subject, timeLimit, questions, quiz, classIdsChanged]);
 
   function setQ(idx: number, patch: Partial<DraftQuestion>) {
     setQuestions((cur) => cur.map((qq, i) => (i === idx ? { ...qq, ...patch } : qq)));
@@ -51,6 +72,10 @@ export default function QuizEditor({
     setQuestions((cur) =>
       cur.map((qq, i) => (i === idx ? { ...qq, options: qq.options.map((o, oo) => (oo === oi ? value : o)) as DraftQuestion["options"] } : qq))
     );
+  }
+
+  function toggleClass(id: string) {
+    setSelectedClassIds((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
   }
 
   async function save() {
@@ -73,6 +98,7 @@ export default function QuizEditor({
         time_limit: timeVal,
         base_points: quiz.base_points,
         questions: cleaned,
+        class_ids: selectedClassIds,
       });
       setSavedFlash(true);
       window.setTimeout(() => setSavedFlash(false), 2000);
@@ -138,6 +164,36 @@ export default function QuizEditor({
             </button>
           );
         })}
+      </div>
+
+      <div className="flex flex-col gap-1.5 rounded-lg border border-input bg-background p-3">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-xs font-medium text-muted-foreground">
+            Kelas
+            {selectedClassIds.length === 0 && <span className="ml-1.5 font-normal text-amber-600">kosong = tersembunyi dari murid</span>}
+          </span>
+          {classesLoading ? (
+            <span className="text-xs text-muted-foreground">Memuat…</span>
+          ) : classes.length === 0 ? (
+            <span className="text-xs text-amber-600">Kamu belum terdaftar mengajar kelas mana pun.</span>
+          ) : (
+            <div className="flex flex-wrap gap-1.5">
+              {classes.map((c) => {
+                const active = selectedClassIds.includes(c.id);
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => toggleClass(c.id)}
+                    className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${active ? `${theme.solidBg} text-white` : "border border-input bg-background text-muted-foreground hover:bg-muted"}`}
+                  >
+                    {c.name}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       <ol className="space-y-3">
