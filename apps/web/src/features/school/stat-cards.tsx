@@ -1,12 +1,31 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { HugeiconsIcon, type HugeiconsIconProps } from "@hugeicons/react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export type StatItem = {
   label: string; value: string; sub: string; delta?: string; down?: boolean;
   icon: HugeiconsIconProps["icon"];
 };
 
-export function StatCards({ items }: { items: StatItem[] }) {
+export function StatCards({ items, loading }: { items: StatItem[]; loading?: boolean }) {
+  if (loading) {
+    return (
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Card key={i}>
+            <CardContent className="flex flex-col gap-1 p-4">
+              <div className="flex items-center gap-2">
+                <Skeleton className="size-6 rounded-md" />
+                <Skeleton className="h-3 w-24" />
+              </div>
+              <Skeleton className="mt-2 h-8 w-16" />
+              <Skeleton className="h-3 w-20" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
   return (
     <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
       {items.map((s) => (
