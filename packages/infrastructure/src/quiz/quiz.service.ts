@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from "../supabase/client.js";
+import { getTeacherAllowedClassIds } from "../classes/classes.service.js";
 
 export type QuizQuestionInput = {
   question: string;
@@ -20,13 +21,15 @@ export type QuizRecord = {
   time_limit: number;
   base_points: number;
   questions: QuizQuestionInput[];
+  class_ids: string[];
   created_at: string;
 };
 
 const QUIZ_SELECT =
   "id, school_id, created_by, code, title, subject, time_limit, base_points, questions, created_at, " +
   "created_author:users!quizzes_created_by_fkey(full_name), " +
-  "original_author:users!quizzes_original_by_fkey(full_name)";
+  "original_author:users!quizzes_original_by_fkey(full_name), " +
+  "class_assignments:quiz_classes(class_id)";
 
 type QuizRow = {
   id: string;
@@ -42,6 +45,7 @@ type QuizRow = {
   created_at: string;
   created_author: { full_name: string | null } | null;
   original_author: { full_name: string | null } | null;
+  class_assignments: { class_id: string }[] | null;
 };
 
 function toQuizRecord(row: QuizRow): QuizRecord {
@@ -50,6 +54,7 @@ function toQuizRecord(row: QuizRow): QuizRecord {
     created_by_name: row.created_author?.full_name ?? null,
     original_by: row.original_by ?? null,
     original_by_name: row.original_author?.full_name ?? null,
+    class_ids: (row.class_assignments ?? []).map((a) => a.class_id),
   };
 }
 
@@ -61,6 +66,7 @@ export type QuizCreateInput = {
   time_limit?: number;
   base_points?: number;
   questions: QuizQuestionInput[];
+  class_ids?: string[];
 };
 
 function assertValidQuestions(questions: unknown): asserts questions is QuizQuestionInput[] {
@@ -82,11 +88,50 @@ function randomCode(): string {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
-export async function createQuiz(schoolId: string, createdBy: string | null, body: QuizCreateInput): Promise<QuizRecord> {
+async function assertClassIds(
+  schoolId: string,
+  classIds: string[],
+  allowedClassIds?: string[],
+  { allowEmpty = false }: { allowEmpty?: boolean } = {}
+): Promise<string[]> {
+  const unique = [...new Set(classIds.map((c) => String(c).trim()).filter(Boolean))];
+  if (unique.length === 0 && !allowEmpty) throw new Error("Pilih minimal 1 kelas.");
+  if (unique.length === 0) return [];
+  const admin = getSupabaseAdmin();
+  if (!admin) throw new Error("Supabase not configured");
+  const { data, error } = await admin.from("classes").select("id").eq("school_id", schoolId).in("id", unique);
+  if (error) throw new Error(error.message);
+  if (!data || data.length !== unique.length) throw new Error("Ada kelas yang tidak valid.");
+  if (allowedClassIds) {
+    const allowed = new Set(allowedClassIds);
+    const forbidden = unique.filter((id) => !allowed.has(id));
+    if (forbidden.length > 0) throw new Error("Kamu tidak terdaftar mengajar kelas tersebut.");
+  }
+  return unique;
+}
+
+async function replaceQuizClasses(quizId: string, classIds: string[]) {
+  const admin = getSupabaseAdmin();
+  if (!admin) throw new Error("Supabase not configured");
+  const { error: delErr } = await admin.from("quiz_classes").delete().eq("quiz_id", quizId);
+  if (delErr) throw new Error(delErr.message);
+  if (classIds.length === 0) return;
+  const rows = classIds.map((class_id) => ({ quiz_id: quizId, class_id }));
+  const { error } = await admin.from("quiz_classes").insert(rows);
+  if (error) throw new Error(error.message);
+}
+
+export async function createQuiz(
+  schoolId: string,
+  createdBy: string | null,
+  body: QuizCreateInput,
+  allowedClassIds?: string[]
+): Promise<QuizRecord> {
   const admin = getSupabaseAdmin();
   if (!admin) throw new Error("Supabase not configured");
   if (!body?.title?.trim()) throw new Error("Judul wajib.");
   assertValidQuestions(body.questions);
+  const classIds = await assertClassIds(schoolId, body.class_ids ?? [], allowedClassIds);
   let code = randomCode();
   for (let i = 0; i < 10; i++) {
     const { data } = await admin.from("quizzes").select("id").eq("code", code).maybeSingle();
@@ -106,10 +151,13 @@ export async function createQuiz(schoolId: string, createdBy: string | null, bod
       base_points: body.base_points || 1000,
       questions: body.questions,
     })
-    .select(QUIZ_SELECT)
+    .select("id")
     .single();
   if (error) throw new Error(error.message);
-  return toQuizRecord(data as unknown as QuizRow);
+  await replaceQuizClasses((data as { id: string }).id, classIds);
+  const record = await getQuizByCode(code);
+  if (!record) throw new Error("Kuis gagal dibuat.");
+  return record;
 }
 
 export async function listQuizzes(schoolId: string): Promise<QuizRecord[]> {
@@ -122,6 +170,31 @@ export async function listQuizzes(schoolId: string): Promise<QuizRecord[]> {
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return ((data ?? []) as unknown as QuizRow[]).map(toQuizRecord);
+}
+
+export async function listStudentQuizzes(schoolId: string, classId: string): Promise<QuizRecord[]> {
+  const admin = getSupabaseAdmin();
+  if (!admin) throw new Error("Supabase not configured");
+  const { data: links, error: linkErr } = await admin.from("quiz_classes").select("quiz_id").eq("class_id", classId);
+  if (linkErr) throw new Error(linkErr.message);
+  const quizIds = (links ?? []).map((l) => l.quiz_id);
+  if (quizIds.length === 0) return [];
+  const { data, error } = await admin
+    .from("quizzes")
+    .select(QUIZ_SELECT)
+    .eq("school_id", schoolId)
+    .in("id", quizIds)
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as unknown as QuizRow[]).map(toQuizRecord);
+}
+
+export async function getStudentClassId(studentId: string): Promise<string | null> {
+  const admin = getSupabaseAdmin();
+  if (!admin) throw new Error("Supabase not configured");
+  const { data, error } = await admin.from("users").select("class_id").eq("id", studentId).maybeSingle();
+  if (error) throw new Error(error.message);
+  return data?.class_id ?? null;
 }
 
 export async function getQuizByCode(code: string): Promise<QuizRecord | null> {
@@ -138,6 +211,16 @@ export async function copyQuiz(schoolId: string, actor: QuizActor, sourceCode: s
   const source = await getQuizByCode(sourceCode);
   if (!source || source.school_id !== schoolId) throw new Error("Kuis tidak ditemukan.");
   if (source.created_by === actor.userId) throw new Error("Kuis ini sudah milikmu.");
+  let classIds = source.class_ids ?? [];
+  if (actor.role === "teacher") {
+    const allowed = new Set(await getTeacherAllowedClassIds(actor.userId));
+    classIds = classIds.filter((id) => allowed.has(id));
+    if (classIds.length === 0) {
+      throw new Error("Kuis sumber tidak untuk kelas yang kamu ajar.");
+    }
+  } else if (classIds.length === 0) {
+    throw new Error("Kuis sumber belum ditetapkan ke kelas.");
+  }
   let code = randomCode();
   for (let i = 0; i < 10; i++) {
     const { data } = await admin.from("quizzes").select("id").eq("code", code).maybeSingle();
@@ -157,13 +240,16 @@ export async function copyQuiz(schoolId: string, actor: QuizActor, sourceCode: s
       base_points: source.base_points,
       questions: source.questions,
     })
-    .select(QUIZ_SELECT)
+    .select("id")
     .single();
   if (error) throw new Error(error.message);
-  return toQuizRecord(data as unknown as QuizRow);
+  await replaceQuizClasses((data as { id: string }).id, classIds);
+  const record = await getQuizByCode(code);
+  if (!record) throw new Error("Salinan kuis gagal dibuat.");
+  return record;
 }
 
-export type QuizUpdateInput = Partial<Pick<QuizCreateInput, "title" | "subject" | "time_limit" | "base_points" | "questions">>;
+export type QuizUpdateInput = Partial<Pick<QuizCreateInput, "title" | "subject" | "time_limit" | "base_points" | "questions" | "class_ids">>;
 
 export async function updateQuiz(schoolId: string, code: string, actor: QuizActor, patch: QuizUpdateInput): Promise<QuizRecord> {
   const admin = getSupabaseAdmin();
@@ -189,16 +275,23 @@ export async function updateQuiz(schoolId: string, code: string, actor: QuizActo
     assertValidQuestions(patch.questions);
     update.questions = patch.questions;
   }
-  if (Object.keys(update).length === 0) throw new Error("Tidak ada data yang diubah.");
-  const { data, error } = await admin
-    .from("quizzes")
-    .update(update)
-    .eq("id", existing.id)
-    .eq("school_id", schoolId)
-    .select(QUIZ_SELECT)
-    .single();
-  if (error) throw new Error(error.message);
-  return toQuizRecord(data as unknown as QuizRow);
+  if (Object.keys(update).length === 0 && patch.class_ids === undefined) throw new Error("Tidak ada data yang diubah.");
+  if (Object.keys(update).length > 0) {
+    const { error } = await admin
+      .from("quizzes")
+      .update(update)
+      .eq("id", existing.id)
+      .eq("school_id", schoolId);
+    if (error) throw new Error(error.message);
+  }
+  if (patch.class_ids !== undefined) {
+    const allowedIds = actor.role === "teacher" ? await getTeacherAllowedClassIds(actor.userId) : undefined;
+    const classIds = await assertClassIds(schoolId, patch.class_ids, allowedIds, { allowEmpty: true });
+    await replaceQuizClasses(existing.id, classIds);
+  }
+  const record = await getQuizByCode(code);
+  if (!record) throw new Error("Kuis tidak ditemukan.");
+  return record;
 }
 
 export async function deleteQuiz(schoolId: string, code: string, actor: QuizActor): Promise<void> {

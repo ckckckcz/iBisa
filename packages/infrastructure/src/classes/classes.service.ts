@@ -58,6 +58,15 @@ export async function getTeacherClassAssignments(schoolId: string): Promise<Teac
   return (data ?? []) as TeacherClassAssignment[];
 }
 
+export async function getTeacherAllowedClassIds(userId: string): Promise<string[]> {
+  const admin = getSupabaseAdmin();
+  if (!admin) throw new Error("Supabase not configured");
+  const { data: taught } = await admin.from("teacher_classes").select("class_id").eq("teacher_id", userId);
+  const taughtIds = (taught ?? []).map((r) => r.class_id);
+  const { data: wali } = await admin.from("classes").select("id").eq("wali_guru_id", userId);
+  return [...new Set([...taughtIds, ...(wali ?? []).map((c) => c.id)])];
+}
+
 export async function updateTeacherAssignments(
   schoolId: string,
   teacherId: string,
