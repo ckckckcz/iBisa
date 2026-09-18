@@ -32,12 +32,16 @@ function store(key: string, value: string) {
 type PendingDestructive = "restart" | "stop" | null;
 export type QuizBest = { points: number; correct: number };
 
+type RecogAlternative = { transcript: string };
+type RecogResult = { isFinal: boolean; length: number; [j: number]: RecogAlternative };
+type RecogEvent = { resultIndex: number; results: { length: number; [i: number]: RecogResult } };
+
 type RecogCtor = new () => {
   lang: string;
   continuous: boolean;
   interimResults: boolean;
   maxAlternatives: number;
-  onresult: ((e: { results: { [i: number]: { [j: number]: { transcript: string } } } }) => void) | null;
+  onresult: ((e: RecogEvent) => void) | null;
   onerror: ((e: { error: string }) => void) | null;
   onend: (() => void) | null;
   start: () => void;
@@ -58,15 +62,25 @@ const NUM_WORDS: Record<string, number> = {
   empat: 3, "4": 3, d: 3, keempat: 3,
 };
 
+const NUM_WORD_DIGITS: Record<string, string> = {
+  sebelas: "11", "dua belas": "12", "tiga belas": "13", "empat belas": "14",
+};
+
 function matchOptionIndex(t: string, options: string[]): number | null {
-  const norm = ` ${t.toLowerCase().trim()} `;
+  const low = t.toLowerCase().trim();
+  const norm = ` ${low} `;
   for (const [word, idx] of Object.entries(NUM_WORDS)) {
     const re = new RegExp(`(^|\\W)${word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(\\W|$)`, "i");
     if (re.test(norm) || norm.includes(`opsi ${word}`) || norm.includes(`jawaban ${word}`) || norm.includes(`pilihan ${word}`) || norm.includes(`huruf ${word}`) || norm.includes(`nomor ${word}`)) {
       return idx;
     }
   }
-  const low = t.toLowerCase();
+  let numeric = low;
+  for (const [word, digit] of Object.entries(NUM_WORD_DIGITS)) numeric = numeric.split(word).join(digit);
+  for (const d of numeric.match(/\d/g) ?? []) {
+    const n = Number(d);
+    if (n >= 1 && n <= 4) return n - 1;
+  }
   for (let i = 0; i < options.length; i++) {
     const opt = options[i].toLowerCase();
     if (low.includes(opt) || (low.length >= 4 && opt.includes(low))) return i;
@@ -131,6 +145,8 @@ export function useVoiceQuiz(quiz: Quiz | null) {
   const neuralCache = useRef(new Map<string, string>());
   const speakSeq = useRef(0);
   const recogRef = useRef<{ stop: () => void; abort: () => void } | null>(null);
+  const listenSeq = useRef(0);
+  const listenTimer = useRef<number | null>(null);
   const lockAnswerRef = useRef<(given: number | null, expired: boolean) => void>(() => {});
 
   useEffect(() => {
@@ -587,6 +603,29 @@ export function useVoiceQuiz(quiz: Quiz | null) {
     [quiz, help, sayScore, sayTime, start, submit, next, prev, advance, skipCountdown, resetToLobby, readQuestion, revealSummary, unknown, speak, pointsEarned]
   );
 
+  const looksUnderstood = useCallback(
+    (t: string) => {
+      const low = t.toLowerCase();
+      if (
+        has(
+          low,
+          "mulai", "start", "berikut", "lanjut", "next", "sebelum", "kembali", "mundur",
+          "jawab", "kunci", "kirim", "ulangi", "ulang", "bacakan", "bantuan", "help",
+          "skor", "poin", "nilai", "streak", "waktu", "sisa", "timer", "selesai",
+          "berhenti", "keluar", "stop", "lewati", "skip", "ya", "tidak", "batal",
+          "opsi", "nomor", "pilihan", "jawaban"
+        )
+      ) {
+        return true;
+      }
+      const s = stateRef.current;
+      const item = quiz?.questions[s.qIndex];
+      if (item && matchOptionIndex(low, item.options) != null) return true;
+      return false;
+    },
+    [quiz]
+  );
+
   const listenOnce = useCallback(() => {
     const Ctor = getRecogCtor();
     if (!Ctor) {
@@ -599,46 +638,123 @@ export function useVoiceQuiz(quiz: Quiz | null) {
       speak("Kamu sedang offline. Perintah suara butuh internet. Silakan ketuk jawaban manual.");
       return;
     }
+    if (listenSeq.current !== 0) return;
     try {
       stopSpeak();
       recogRef.current?.abort();
       const rec = new Ctor();
       rec.lang = "id-ID";
-      rec.continuous = false;
-      rec.interimResults = false;
-      rec.maxAlternatives = 1;
+      rec.continuous = true;
+      rec.interimResults = true;
+      rec.maxAlternatives = 5;
       recogRef.current = rec;
+      const seq = ++listenSeq.current;
+      let handled = false;
+      let best = "";
+      let debounce: number | null = null;
+
+      const clearDebounce = () => {
+        if (debounce != null) { window.clearTimeout(debounce); debounce = null; }
+      };
+      const clearSafety = () => {
+        if (listenTimer.current != null) { window.clearTimeout(listenTimer.current); listenTimer.current = null; }
+      };
+      const finish = (heard: string) => {
+        if (handled) return;
+        handled = true;
+        clearDebounce();
+        clearSafety();
+        setListening(false);
+        setTranscript(heard);
+        listenSeq.current = 0;
+        recogRef.current = null;
+        try { rec.stop(); } catch {}
+        if (heard) handleCommand(heard);
+        else unknown("");
+      };
+
       setListening(true);
       setMicError(null);
+      setTranscript("");
+
       rec.onresult = (e) => {
-        const heard = e.results[0]?.[0]?.transcript ?? "";
-        setTranscript(heard);
-        setListening(false);
-        handleCommand(heard);
+        if (seq !== listenSeq.current || handled) return;
+        let interim = "";
+        const finals: string[] = [];
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          const res = e.results[i];
+          if (!res) continue;
+          if (res.isFinal) {
+            const alts: string[] = [];
+            for (let j = 0; j < res.length; j++) {
+              const a = res[j]?.transcript?.trim();
+              if (a) alts.push(a);
+            }
+            const chosen = alts.find((a) => looksUnderstood(a)) ?? alts[0];
+            if (chosen) finals.push(chosen);
+          } else {
+            const it = res[0]?.transcript?.trim();
+            if (it) interim += `${it} `;
+          }
+        }
+        if (finals.length) {
+          best = finals.join(" ").trim();
+          finish(best);
+          return;
+        }
+        const current = interim.trim();
+        if (current) { best = current; setTranscript(current); }
+        clearDebounce();
+        debounce = window.setTimeout(() => finish(best), 900);
       };
+
       rec.onerror = (e) => {
-        setListening(false);
+        if (seq !== listenSeq.current || handled) return;
         if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+          handled = true;
+          clearDebounce();
+          clearSafety();
+          setListening(false);
+          listenSeq.current = 0;
+          recogRef.current = null;
           setMicError("Izin mikrofon ditolak. Aktifkan izin mic di pengaturan browser, atau lanjutkan dengan ketuk jawaban manual.");
           speak("Izin mikrofon ditolak. Aktifkan izin mic di pengaturan browser, atau ketuk jawaban manual.");
-        } else if (e.error === "no-speech" || e.error === "audio-capture") {
-          unknown("");
-        } else if (e.error === "network") {
+          return;
+        }
+        if (e.error === "network") {
+          handled = true;
+          clearDebounce();
+          clearSafety();
+          setListening(false);
+          listenSeq.current = 0;
+          recogRef.current = null;
           setMicError("Jaringan bermasalah, suara butuh internet. Coba lagi atau pakai tombol manual.");
           speak("Jaringan bermasalah. Coba lagi atau pakai tombol manual.");
-        } else {
-          unknown("");
+          return;
         }
+        finish(best);
       };
-      rec.onend = () => setListening(false);
+
+      rec.onend = () => {
+        if (seq !== listenSeq.current || handled) return;
+        finish(best);
+      };
+
+      listenTimer.current = window.setTimeout(() => {
+        if (seq === listenSeq.current) finish(best);
+      }, 8000);
+
       rec.start();
     } catch {
+      listenSeq.current = 0;
       setListening(false);
       unknown("");
     }
-  }, [handleCommand, online, speak, stopSpeak, unknown]);
+  }, [handleCommand, looksUnderstood, online, speak, stopSpeak, unknown]);
 
   useEffect(() => () => {
+    listenSeq.current = 0;
+    if (listenTimer.current != null) window.clearTimeout(listenTimer.current);
     recogRef.current?.abort();
     if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
   }, []);

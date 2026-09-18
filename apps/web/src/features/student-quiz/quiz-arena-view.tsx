@@ -62,6 +62,7 @@ export function QuizArenaView({
 }: QuizArenaViewProps) {
   const qHeadingRef = useRef<HTMLHeadingElement>(null);
   const listenOnce = vq.listenOnce;
+  const listening = vq.listening;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -69,12 +70,12 @@ export function QuizArenaView({
       if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT")) return;
       if (e.code === "Space" && !e.repeat) {
         e.preventDefault();
-        listenOnce();
+        if (!listening) listenOnce();
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [listenOnce]);
+  }, [listenOnce, listening]);
 
   useEffect(() => {
     qHeadingRef.current?.focus();
