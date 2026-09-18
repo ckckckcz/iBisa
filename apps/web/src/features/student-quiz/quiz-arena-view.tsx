@@ -172,15 +172,16 @@ export function QuizArenaView({
       </header>
 
       <div className="mx-auto flex min-h-[calc(100dvh-3.5rem)] w-full max-w-6xl flex-col gap-4 px-4 py-6">
-        {!vq.support.stt && (
+        {!vq.micSupported && (
           <div
             className="flex items-start gap-3 rounded-2xl bg-amber-50 p-4 text-sm text-amber-800 ring-1 ring-amber-200"
             role="alert"
           >
             <HugeiconsIcon icon={Alert01Icon} strokeWidth={2} className="mt-0.5 size-4 shrink-0" />
             <p>
-              Browser ini tidak mendukung perintah suara. Semua soal tetap bisa dikerjakan dengan
-              mengetuk jawaban.
+              {vq.brave
+                ? "Input suara tidak didukung di Brave. Gunakan Chrome atau Edge, atau ketuk langsung pilihan jawaban."
+                : "Browser ini tidak mendukung perintah suara. Semua soal tetap bisa dikerjakan dengan mengetuk jawaban."}
             </p>
           </div>
         )}

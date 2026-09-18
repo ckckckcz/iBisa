@@ -28,7 +28,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { QuizQuestion } from "@/types/questions";
 import type { useVoiceQuiz } from "@/hooks/use-voice-quiz";
-import { NEURAL_VOICES } from "@/hooks/use-voice-quiz";
 import { SHOW_DUMMY_DATA } from "@/lib/flags";
 
 export { useFullscreen } from "../../hooks/use-fullscreen";
@@ -69,10 +68,10 @@ export function VoiceSettings({ vq }: { vq: VQ }) {
         }}
         aria-label="Pilih suara"
         title="Pilih suara"
-        className="max-w-40 cursor-pointer rounded-lg bg-transparent px-2 py-1.5 text-xs font-semibold text-slate-600 outline-none hover:bg-slate-200"
+        className="min-w-44 max-w-56 cursor-pointer rounded-lg bg-transparent px-2 py-1.5 text-xs font-semibold text-slate-600 outline-none hover:bg-slate-200"
       >
         <optgroup label="Suara AI (natural)">
-          {NEURAL_VOICES.map((n) => (
+          {vq.neuralVoices.map((n) => (
             <option key={n.key} value={`neural:${n.key}`}>
               AI · {n.label}
             </option>
@@ -88,19 +87,6 @@ export function VoiceSettings({ vq }: { vq: VQ }) {
           </optgroup>
         )}
       </select>
-      {!vq.neural && (
-        <input
-          type="range"
-          min={0.5}
-          max={1.5}
-          step={0.1}
-          value={vq.pitch}
-          onChange={(e) => vq.setPitch(Number(e.target.value))}
-          aria-label="Nada suara"
-          title={`Nada: ${vq.pitch.toFixed(1)}`}
-          className="w-20 accent-blue-700"
-        />
-      )}
     </div>
   );
 }
@@ -568,7 +554,7 @@ export function VoiceDock({ vq }: { vq: VQ }) {
         <button
           type="button"
           onClick={vq.listenOnce}
-          disabled={!vq.support.stt || vq.listening}
+          disabled={!vq.micSupported || vq.listening}
           aria-label={vq.listening ? "Mendengarkan, silakan bicara" : "Tekan untuk bicara"}
           className={`flex size-16 shrink-0 items-center justify-center rounded-2xl shadow-sm transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 disabled:opacity-40 ${
             vq.listening

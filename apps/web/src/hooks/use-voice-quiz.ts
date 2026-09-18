@@ -7,12 +7,15 @@ import { getValidToken } from "@/lib/ai-helpers";
 export type VoicePhase = "idle" | "countdown" | "question" | "reveal" | "scoreboard" | "result";
 export type SpeechRate = 0.75 | 1 | 1.25;
 
-export const NEURAL_VOICES = [
-  { key: "Kore", label: "Kore · hangat" },
-  { key: "Fenrir", label: "Fenrir · ceria" },
-  { key: "Charon", label: "Charon · tenang" },
-  { key: "Leda", label: "Leda · lembut" },
-] as const;
+export type NeuralVoiceInfo = { key: string; label: string };
+
+export const NEURAL_VOICES: NeuralVoiceInfo[] = [
+  { key: "id-ID-GadisNeural", label: "Gadis · wanita" },
+  { key: "id-ID-ArdiNeural", label: "Ardi · pria" },
+];
+
+const SILENT_WAV =
+  "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
 
 export type SystemVoiceInfo = { voiceURI: string; name: string; lang: string };
 
@@ -28,6 +31,19 @@ function store(key: string, value: string) {
   try {
     localStorage.setItem(key, value);
   } catch {}
+}
+
+function loadNeuralDefault(): boolean {
+  try {
+    if (!localStorage.getItem("bisa-tts-default-device")) {
+      localStorage.setItem("bisa-tts-default-device", "1");
+      localStorage.setItem("bisa-tts-neural", "0");
+      return false;
+    }
+    return localStorage.getItem("bisa-tts-neural") === "1";
+  } catch {
+    return false;
+  }
 }
 type PendingDestructive = "restart" | "stop" | null;
 export type QuizBest = { points: number; correct: number };
@@ -90,6 +106,30 @@ function matchOptionIndex(t: string, options: string[]): number | null {
 
 const has = (t: string, ...keys: string[]) => keys.some((k) => t.includes(k));
 
+const NEURAL_CHUNK_CHARS = 600;
+
+function splitForSpeech(text: string, max = NEURAL_CHUNK_CHARS): string[] {
+  const clean = text.replace(/\s+/g, " ").trim();
+  if (!clean) return [];
+  if (clean.length <= max) return [clean];
+  const sentences = clean.match(/[^.!?]+[.!?]*/g) ?? [clean];
+  const chunks: string[] = [];
+  let cur = "";
+  for (const raw of sentences) {
+    const s = raw.trim();
+    if (!s) continue;
+    if (cur && cur.length + 1 + s.length > max) { chunks.push(cur); cur = ""; }
+    if (s.length > max) {
+      if (cur) { chunks.push(cur); cur = ""; }
+      for (let i = 0; i < s.length; i += max) chunks.push(s.slice(i, i + max));
+    } else {
+      cur = cur ? `${cur} ${s}` : s;
+    }
+  }
+  if (cur) chunks.push(cur);
+  return chunks;
+}
+
 function loadBest(quizId: string | undefined): QuizBest | null {
   if (typeof window === "undefined" || !quizId) return null;
   try {
@@ -124,8 +164,10 @@ export function useVoiceQuiz(quiz: Quiz | null) {
   const [sysVoices, setSysVoices] = useState<SystemVoiceInfo[]>([]);
   const [voiceURI, setVoiceURIState] = useState(() => loadStored("bisa-tts-voice", ""));
   const [pitch, setPitchState] = useState(() => Number(loadStored("bisa-tts-pitch", "1")) || 1);
-  const [neural, setNeuralState] = useState(() => loadStored("bisa-tts-neural", "1") === "1");
-  const [neuralVoice, setNeuralVoiceState] = useState(() => loadStored("bisa-tts-neural-voice", "Kore"));
+  const [neural, setNeuralState] = useState(() => loadNeuralDefault());
+  const [neuralVoice, setNeuralVoiceState] = useState(() => loadStored("bisa-tts-neural-voice", "id-ID-GadisNeural"));
+  const [neuralVoices, setNeuralVoices] = useState<NeuralVoiceInfo[]>(NEURAL_VOICES);
+  const [isBrave, setIsBrave] = useState(() => typeof navigator !== "undefined" && /Brave/i.test(navigator.userAgent));
 
   const setVoiceURI = useCallback((v: string) => { setVoiceURIState(v); store("bisa-tts-voice", v); }, []);
   const setPitch = useCallback((p: number) => { setPitchState(p); store("bisa-tts-pitch", String(p)); }, []);
@@ -138,12 +180,18 @@ export function useVoiceQuiz(quiz: Quiz | null) {
     stt: getRecogCtor() !== null,
     tts: typeof window !== "undefined" && "speechSynthesis" in window,
   }));
+  const activeNeuralVoice = neuralVoices.some((v) => v.key === neuralVoice)
+    ? neuralVoice
+    : neuralVoices[0]?.key ?? neuralVoice;
+  const micSupported = support.stt && !isBrave;
 
   const stateRef = useRef({ phase, qIndex, selected, locked, pendingDestructive, timeLeft, streak, timerEnabled });
-  const ttsRef = useRef({ enabled: ttsEnabled, rate, voiceURI, pitch, neural, neuralVoice });
+  const ttsRef = useRef({ enabled: ttsEnabled, rate, voiceURI, pitch, neural, neuralVoice: activeNeuralVoice });
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const neuralCache = useRef(new Map<string, string>());
+  const neuralCache = useRef(new Map<string, Blob>());
   const speakSeq = useRef(0);
+  const lastNarrationRef = useRef("");
+  const onlineRef = useRef(online);
   const recogRef = useRef<{ stop: () => void; abort: () => void } | null>(null);
   const listenSeq = useRef(0);
   const listenTimer = useRef<number | null>(null);
@@ -151,7 +199,8 @@ export function useVoiceQuiz(quiz: Quiz | null) {
 
   useEffect(() => {
     stateRef.current = { phase, qIndex, selected, locked, pendingDestructive, timeLeft, streak, timerEnabled };
-    ttsRef.current = { enabled: ttsEnabled, rate, voiceURI, pitch, neural, neuralVoice };
+    ttsRef.current = { enabled: ttsEnabled, rate, voiceURI, pitch, neural, neuralVoice: activeNeuralVoice };
+    onlineRef.current = online;
   });
 
   const totalPoints = pointsEarned.reduce((a, b) => a + b, 0);
@@ -169,20 +218,190 @@ export function useVoiceQuiz(quiz: Quiz | null) {
     };
   }, []);
 
-  const speak = useCallback((text: string) => {
-    setLiveMessage(text);
-    if (!ttsRef.current.enabled) return;
+  useEffect(() => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = "id-ID";
-    u.rate = ttsRef.current.rate;
-    window.speechSynthesis.speak(u);
+    const syn = window.speechSynthesis;
+    const load = () => {
+      const all = syn.getVoices();
+      const id = all.filter((v) => /^id/i.test(v.lang));
+      setSysVoices(
+        (id.length ? id : all).slice(0, 30).map((v) => ({ voiceURI: v.voiceURI, name: v.name, lang: v.lang }))
+      );
+    };
+    load();
+    syn.addEventListener("voiceschanged", load);
+    return () => syn.removeEventListener("voiceschanged", load);
   }, []);
 
-  const stopSpeak = useCallback(() => {
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = await getValidToken();
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
+        const res = await fetch(`${apiUrl}/tts/voices`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!res.ok) return;
+        const data = (await res.json()) as { voices?: NeuralVoiceInfo[] };
+        if (!cancelled && data.voices?.length) setNeuralVoices(data.voices);
+      } catch {}
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    const nav = navigator as Navigator & { brave?: { isBrave?: () => Promise<boolean> } };
+    if (!nav.brave?.isBrave) return;
+    let cancelled = false;
+    nav.brave
+      .isBrave()
+      .then((b) => {
+        if (!cancelled) setIsBrave(b);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    const unlock = () => {
+      try {
+        const audio = new Audio(SILENT_WAV);
+        audio.volume = 0;
+        audio.play().catch(() => {});
+      } catch {}
+    };
+    window.addEventListener("pointerdown", unlock, { once: true });
+    return () => window.removeEventListener("pointerdown", unlock);
+  }, []);
+
+  const fetchChunk = useCallback(async (chunk: string, voice: string): Promise<Blob> => {
+    const key = `${voice}:${chunk}`;
+    const cached = neuralCache.current.get(key);
+    if (cached) return cached;
+    const token = await getValidToken();
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
+    const res = await fetch(`${apiUrl}/tts`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ text: chunk, voice }),
+    });
+    if (!res.ok) {
+      const data = (await res.json().catch(() => null)) as { message?: string } | null;
+      throw new Error(data?.message ?? `TTS gagal (${res.status})`);
+    }
+    const blob = await res.blob();
+    if (!blob.size) throw new Error("TTS tidak mengembalikan audio");
+    if (neuralCache.current.size >= 100) {
+      const first = neuralCache.current.keys().next().value;
+      if (first) neuralCache.current.delete(first);
+    }
+    neuralCache.current.set(key, blob);
+    return blob;
+  }, []);
+
+  const halt = useCallback(() => {
+    speakSeq.current += 1;
+    const audio = audioRef.current;
+    if (audio) {
+      try { audio.pause(); } catch {}
+    }
     if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
   }, []);
+
+  const speak = useCallback(
+    (text: string) => {
+      setLiveMessage(text);
+      halt();
+      if (!ttsRef.current.enabled) return;
+      lastNarrationRef.current = text;
+      const seq = ++speakSeq.current;
+
+      const speakSystem = () => {
+        if (seq !== speakSeq.current) return;
+        if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = "id-ID";
+        u.rate = ttsRef.current.rate;
+        u.pitch = ttsRef.current.pitch;
+        const match = window.speechSynthesis.getVoices().find((v) => v.voiceURI === ttsRef.current.voiceURI);
+        if (match) u.voice = match;
+        window.speechSynthesis.speak(u);
+      };
+
+      const speakNeural = async () => {
+        const voice = ttsRef.current.neuralVoice;
+        for (const chunk of splitForSpeech(text)) {
+          if (seq !== speakSeq.current) return;
+          const blob = await fetchChunk(chunk, voice);
+          if (seq !== speakSeq.current) return;
+          await new Promise<void>((resolve, reject) => {
+            const audio = audioRef.current ?? new Audio();
+            audioRef.current = audio;
+            const url = URL.createObjectURL(blob);
+            let settled = false;
+            function cleanup() {
+              audio.removeEventListener("ended", onEnded);
+              audio.removeEventListener("error", onError);
+              audio.removeEventListener("pause", onPause);
+            }
+            function done(err?: Error) {
+              if (settled) return;
+              settled = true;
+              cleanup();
+              URL.revokeObjectURL(url);
+              if (err) reject(err);
+              else resolve();
+            }
+            function onEnded() { done(); }
+            function onError() { done(new Error("Audio gagal diputar")); }
+            function onPause() { if (seq !== speakSeq.current) done(); }
+            audio.addEventListener("ended", onEnded);
+            audio.addEventListener("error", onError);
+            audio.addEventListener("pause", onPause);
+            audio.src = url;
+            audio.play().catch((e) => done(e instanceof Error ? e : new Error("Autoplay diblokir")));
+          });
+        }
+      };
+
+      if (ttsRef.current.neural && onlineRef.current) {
+        speakNeural().catch(() => {
+          if (seq !== speakSeq.current) return;
+          speakSystem();
+        });
+      } else {
+        speakSystem();
+      }
+    },
+    [fetchChunk, halt]
+  );
+
+  const stopSpeak = halt;
+
+  const voiceSigRef = useRef<string | null>(null);
+  const voiceSig = `${neural}:${activeNeuralVoice}:${voiceURI}`;
+
+  useEffect(() => {
+    if (voiceSigRef.current === null) {
+      voiceSigRef.current = voiceSig;
+      return;
+    }
+    if (voiceSigRef.current === voiceSig) return;
+    voiceSigRef.current = voiceSig;
+    if (!ttsRef.current.enabled) return;
+    const last = lastNarrationRef.current;
+    if (!last) return;
+    speak(last);
+  }, [voiceSig, speak]);
 
   const readQuestion = useCallback(
     (idx: number) => {
@@ -756,6 +975,10 @@ export function useVoiceQuiz(quiz: Quiz | null) {
     listenSeq.current = 0;
     if (listenTimer.current != null) window.clearTimeout(listenTimer.current);
     recogRef.current?.abort();
+    if (audioRef.current) {
+      try { audioRef.current.pause(); } catch {}
+      audioRef.current = null;
+    }
     if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
   }, []);
 
@@ -765,7 +988,8 @@ export function useVoiceQuiz(quiz: Quiz | null) {
     best, isNewBest, failCount,
     listening, transcript, liveMessage, ttsEnabled, rate, pendingDestructive,
     micError, online, support,
-    sysVoices, voiceURI, pitch, neural, neuralVoice,
+    sysVoices, voiceURI, pitch, neural, neuralVoice: activeNeuralVoice, neuralVoices,
+    brave: isBrave, micSupported,
     setSelected, setTtsEnabled, setRate, setTimerEnabled,
     setVoiceURI, setPitch, setNeural, setNeuralVoice,
     speak, stopSpeak, listenOnce, handleCommand,
