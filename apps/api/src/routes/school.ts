@@ -130,10 +130,10 @@ router.put("/users/:id", async (req, res) => {
   const sid = schoolId(req);
   if (!sid) return err(res, 400, "Akun belum terhubung sekolah");
   const { id } = req.params;
-  const { full_name, whatsapp, number, gender, status, avatar_url, guardian_name, grade, subject, class_id, attendance_pct, password } = (req.body ?? {}) as MemberUpdateBody & { password?: string };
+  const { full_name, email, whatsapp, number, gender, status, avatar_url, guardian_name, grade, subject, class_id, attendance_pct, password } = (req.body ?? {}) as MemberUpdateBody & { password?: string };
   const { taught_class_ids, wali_class_id } = (req.body ?? {}) as { taught_class_ids?: string[]; wali_class_id?: string | null };
   try {
-    const data = await updateMember(id, sid, { full_name, whatsapp, number, gender, status, avatar_url, guardian_name, grade, subject, class_id, attendance_pct, password });
+    const data = await updateMember(id, sid, { email, full_name, whatsapp, number, gender, status, avatar_url, guardian_name, grade, subject, class_id, attendance_pct, password });
     if (taught_class_ids !== undefined || wali_class_id !== undefined) {
       await updateTeacherAssignments(sid, id, {
         taughtClassIds: Array.isArray(taught_class_ids) ? taught_class_ids : [],

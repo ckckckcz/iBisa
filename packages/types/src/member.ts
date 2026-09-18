@@ -41,5 +41,6 @@ export type MemberCreateBody = {
 
 // Body wire PUT /school/users/:id
 export type MemberUpdateBody = Partial<Omit<MemberCreateBody, "email" | "password">> & {
+  email?: string;
   full_name?: string;
 };

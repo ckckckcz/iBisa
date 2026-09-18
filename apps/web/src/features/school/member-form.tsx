@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,11 +28,13 @@ export function MemberForm({
   const [checked, setChecked] = useState<string[]>([]);
   const [wali, setWali] = useState("__none");
 
-  useEffect(() => {
-    if (!open) return;
+  const assignSig = open ? `${taughtClassIds.join(",")}|${waliClassId ?? "__none"}` : null;
+  const [prevAssignSig, setPrevAssignSig] = useState<string | null>(null);
+  if (assignSig !== null && prevAssignSig !== assignSig) {
+    setPrevAssignSig(assignSig);
     setChecked(taughtClassIds);
     setWali(waliClassId ?? "__none");
-  }, [open, taughtClassIds, waliClassId]);
+  }
 
   const className = classOptions.find((c) => c.id === f.class_id)?.name ?? "";
   const grade = mode === "student" ? className || f.grade : f.grade;
@@ -94,11 +96,14 @@ export function MemberForm({
 
           {!isEdit ? (
             <div className="grid grid-cols-2 gap-3">
-              <div className="grid gap-1.5"><Label>Email</Label><Input placeholder="nama@sekolah.id" value={f.email} onChange={(e) => set("email", e.target.value)} /></div>
+              <div className="grid gap-1.5"><Label>Email</Label><Input type="email" placeholder="nama@sekolah.id" value={f.email} onChange={(e) => set("email", e.target.value)} /></div>
               <div className="grid gap-1.5"><Label>Password</Label><Input type="password" placeholder="Default: NIP / NISN" value={f.password} onChange={(e) => set("password", e.target.value)} /></div>
             </div>
           ) : (
-            <div className="grid gap-1.5"><Label>Password Baru (opsional)</Label><Input type="password" placeholder="Kosongkan jika tidak diubah" value={f.password} onChange={(e) => set("password", e.target.value)} /></div>
+            <div className="flex flex-col gap-3">
+              <div className="grid gap-1.5"><Label>Email</Label><Input type="email" placeholder="nama@sekolah.id" value={f.email} onChange={(e) => set("email", e.target.value)} /></div>
+              <div className="grid gap-1.5"><Label>Password Baru (opsional)</Label><Input type="password" placeholder="Kosongkan jika tidak diubah" value={f.password} onChange={(e) => set("password", e.target.value)} /></div>
+            </div>
           )}
 
           <div className="grid gap-1.5">

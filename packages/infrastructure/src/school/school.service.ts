@@ -8,7 +8,7 @@ export type MemberPatch = {
   avatar_url?: string | null; guardian_name?: string | null;
   attendance_pct?: number | null; grade?: string | null;
   subject?: string | null; class_id?: string | null;
-  password?: string | null;
+  password?: string | null; email?: string | null;
 };
 
 const MEMBER_SELECT = "id,email,full_name,role,school_id,whatsapp,number,gender,status,avatar_url,guardian_name,attendance_pct,grade,subject,class_id,created_at";
@@ -63,9 +63,17 @@ export async function updateMember(userId: string, schoolId: string, patch: Memb
     if (pwErr) throw new Error(`Gagal mengubah password: ${pwErr.message}`);
   }
 
+  const email = patch.email === undefined ? undefined : String(patch.email).trim();
+  if (email !== undefined && email !== "") {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("Email tidak valid");
+    const { error: mailErr } = await admin.auth.admin.updateUserById(userId, { email, email_confirm: true });
+    if (mailErr) throw new Error(`Gagal mengubah email: ${mailErr.message}`);
+  }
+
   const allowed: (keyof MemberPatch)[] = ["full_name", "whatsapp", "number", "gender", "status", "avatar_url", "guardian_name", "attendance_pct", "grade", "subject", "class_id"];
   const clean: Record<string, unknown> = {};
   for (const k of allowed) if (patch[k] !== undefined) clean[k] = patch[k] === "" ? null : patch[k];
+  if (email !== undefined && email !== "") clean.email = email;
   const { data, error } = await admin.from("users").update(clean).eq("id", userId).eq("school_id", schoolId).select("id,email,full_name,whatsapp,number,gender,status,avatar_url,guardian_name,attendance_pct,grade,subject,class_id").single();
   if (error) throw new Error(error.message);
   return data;
