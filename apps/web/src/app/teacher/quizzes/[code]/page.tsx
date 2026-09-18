@@ -9,8 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import QuizEditor from "@/features/quiz/quiz-editor";
+import { ClassPickerChips } from "@/features/quiz/class-picker";
 import { QuizDetailSkeleton } from "@/features/quiz/quiz-detail-skeleton";
-import { fetchTeacherQuizzes, deleteQuizByCode, getQuizTheme, type DbQuiz } from "@/lib/quizzes";
+import { fetchTeacherQuizzes, deleteQuizByCode, getQuizTheme, fetchAssignableClasses, updateQuizByCode, type AssignableClass, type DbQuiz } from "@/lib/quizzes";
 import { dataGet, dataSet, dataClear } from "@/lib/data-cache";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -32,6 +33,23 @@ export default function TeacherQuizDetailPage() {
   const [error, setError] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
+  const [classes, setClasses] = useState<AssignableClass[]>([]);
+  const [classesLoading, setClassesLoading] = useState(true);
+  const [savingClasses, setSavingClasses] = useState(false);
+  const [classNote, setClassNote] = useState("");
+  const [classErr, setClassErr] = useState("");
+
+  useEffect(() => {
+    let live = true;
+    void fetchAssignableClasses(profile?.role).then((list) => {
+      if (!live) return;
+      setClasses(list);
+      setClassesLoading(false);
+    });
+    return () => {
+      live = false;
+    };
+  }, [profile?.role]);
 
   useEffect(() => {
     let cancelled = false;
@@ -72,6 +90,28 @@ export default function TeacherQuizDetailPage() {
       setError(e instanceof Error ? e.message : "Gagal menghapus kuis.");
       setConfirmOpen(false);
       setDeleteBusy(false);
+    }
+  }
+
+  async function toggleClass(id: string) {
+    if (!quiz || !isMine) return;
+    if (savingClasses) return;
+    const prev = quiz.class_ids ?? [];
+    const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+    setClassNote("");
+    setClassErr("");
+    setQuiz({ ...quiz, class_ids: next });
+    setSavingClasses(true);
+    try {
+      const updated = await updateQuizByCode(quiz.code, { class_ids: next });
+      setQuiz(updated);
+      dataClear("quizzes:all");
+      setClassNote("Kelas diperbarui.");
+    } catch (e) {
+      setQuiz({ ...quiz, class_ids: prev });
+      setClassErr(e instanceof Error ? e.message : "Gagal memperbarui kelas.");
+    } finally {
+      setSavingClasses(false);
     }
   }
 
@@ -164,6 +204,40 @@ export default function TeacherQuizDetailPage() {
                 <Link href="/teacher/ai" className={`inline-flex h-7 items-center justify-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-white hover:opacity-90 ${theme.solidBg}`}>
                   <HugeiconsIcon icon={Idea01Icon} size={12} /> Buka Chat AI
                 </Link>
+              </div>
+              <div className="mt-3">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-xs font-medium text-muted-foreground">Kelas</span>
+                  {(quiz.class_ids ?? []).length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {(quiz.class_ids ?? []).map((cid) => {
+                        const name = classes.find((c) => c.id === cid)?.name;
+                        return (
+                          <span key={cid} className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${theme.softBg} ${theme.softText}`}>
+                            {name ?? cid.slice(0, 8)}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <span className="text-xs text-amber-600">Belum ditugaskan — tersembunyi dari murid</span>
+                  )}
+                  {savingClasses && <span className="text-xs text-muted-foreground">Menyimpan…</span>}
+                </div>
+                {isMine && (
+                  <div className="mt-2">
+                    <ClassPickerChips
+                      classes={classes}
+                      selectedIds={quiz.class_ids ?? []}
+                      loading={classesLoading}
+                      solidClass={theme.solidBg}
+                      onToggle={toggleClass}
+                      disabled={savingClasses}
+                    />
+                    {classNote && <p className="mt-1 text-xs text-green-600">{classNote}</p>}
+                    {classErr && <p className="mt-1 text-xs text-red-600">{classErr}</p>}
+                  </div>
+                )}
               </div>
               {isCopy && (
                 <p className="mt-3 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">

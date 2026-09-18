@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { updateQuizByCode, getQuizTheme, fetchAssignableClasses, type AssignableClass, type DbQuiz } from "@/lib/quizzes";
 import { dataClear } from "@/lib/data-cache";
 import { useAuth } from "@/hooks/use-auth";
+import { ClassPickerChips } from "@/features/quiz/class-picker";
 
 const LETTERS = ["A", "B", "C", "D"] as const;
 const SUBJECTS = ["Umum", "IPA", "Matematika", "Bahasa Indonesia"];
@@ -172,27 +173,13 @@ export default function QuizEditor({
             Kelas
             {selectedClassIds.length === 0 && <span className="ml-1.5 font-normal text-amber-600">kosong = tersembunyi dari murid</span>}
           </span>
-          {classesLoading ? (
-            <span className="text-xs text-muted-foreground">Memuat…</span>
-          ) : classes.length === 0 ? (
-            <span className="text-xs text-amber-600">Kamu belum terdaftar mengajar kelas mana pun.</span>
-          ) : (
-            <div className="flex flex-wrap gap-1.5">
-              {classes.map((c) => {
-                const active = selectedClassIds.includes(c.id);
-                return (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => toggleClass(c.id)}
-                    className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${active ? `${theme.solidBg} text-white` : "border border-input bg-background text-muted-foreground hover:bg-muted"}`}
-                  >
-                    {c.name}
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          <ClassPickerChips
+            classes={classes}
+            selectedIds={selectedClassIds}
+            loading={classesLoading}
+            solidClass={theme.solidBg}
+            onToggle={toggleClass}
+          />
         </div>
       </div>
 
