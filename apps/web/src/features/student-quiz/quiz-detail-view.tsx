@@ -81,7 +81,7 @@ export function QuizDetailView({
             variant="ghost"
             size="sm"
             onClick={onBack}
-            className="gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-900"
+            className="gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900"
           >
             <HugeiconsIcon icon={ArrowLeft01Icon} size={16} strokeWidth={2.5} />
             Kembali
@@ -96,7 +96,7 @@ export function QuizDetailView({
               className="size-7 object-contain"
               priority
             />
-            <span className="text-sm font-extrabold tracking-tight">BISA Quiz</span>
+            <span className="text-sm font-semibold tracking-tight">BISA Quiz</span>
           </div>
           <div className="ml-auto flex items-center gap-2">
             <AvatarChip name={identity.name} avatarUrl={identity.avatarUrl} />
@@ -124,16 +124,16 @@ export function QuizDetailView({
             </div>
 
             <div className="min-w-0 flex-1">
-              <h1 className="text-2xl font-black tracking-tight text-slate-900 md:text-3xl">
+              <h1 className="text-2xl font-semibold tracking-tight text-slate-900 md:text-3xl">
                 {quiz.title}
               </h1>
               <div className="mt-2 flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500">
-                <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 font-bold text-blue-700 ring-1 ring-blue-200">
+                <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 font-semibold text-blue-700 ring-1 ring-blue-200">
                   <HugeiconsIcon icon={Tick02Icon} size={12} strokeWidth={3} />
                   Assessment
                 </span>
                 <span>•</span>
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 font-bold text-slate-700">
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 font-semibold text-slate-700">
                   {quiz.subject}
                 </span>
                 <span>•</span>
@@ -145,7 +145,7 @@ export function QuizDetailView({
                   </>
                 )}
                 <span>•</span>
-                <span className="font-bold text-blue-700">
+                <span className="font-semibold text-blue-700">
                   {SHOW_DUMMY_DATA ? "Tingkat Menengah" : "Nilai maks 100"}
                 </span>
               </div>
@@ -158,7 +158,7 @@ export function QuizDetailView({
                 variant="outline"
                 size="sm"
                 onClick={copyCode}
-                className="rounded-xl border-slate-300 font-bold text-slate-700 hover:bg-slate-50"
+                className="rounded-xl border-slate-300 font-semibold text-slate-700 hover:bg-slate-50"
               >
                 <HugeiconsIcon
                   icon={copied ? Tick02Icon : Copy01Icon}
@@ -172,7 +172,7 @@ export function QuizDetailView({
                 variant="outline"
                 size="sm"
                 onClick={shareQuiz}
-                className="rounded-xl border-slate-300 font-bold text-slate-700 hover:bg-slate-50"
+                className="rounded-xl border-slate-300 font-semibold text-slate-700 hover:bg-slate-50"
               >
                 Bagikan
               </Button>
@@ -182,7 +182,7 @@ export function QuizDetailView({
               <Button
                 size="lg"
                 onClick={onStartQuiz}
-                className="h-11 rounded-xl bg-blue-700 px-6 font-black tracking-wide text-white shadow-xs hover:bg-blue-800 active:scale-95"
+                className="h-11 rounded-xl bg-blue-700 px-6 font-semibold tracking-wide text-white shadow-xs hover:bg-blue-800 active:scale-95"
               >
                 <HugeiconsIcon
                   icon={ArrowRight01Icon}
@@ -199,7 +199,7 @@ export function QuizDetailView({
         <div className="flex flex-col gap-6 lg:flex-row">
           <aside className="flex w-full shrink-0 flex-col gap-4 lg:w-72">
             <div className="rounded-2xl border border-slate-300 bg-white p-5 shadow-xs">
-              <h3 className="text-sm font-extrabold text-slate-800">
+              <h3 className="text-sm font-semibold text-slate-800">
                 Fitur Aksesibilitas
               </h3>
               <ul className="mt-3 flex flex-col gap-3 text-xs text-slate-600">
@@ -208,7 +208,7 @@ export function QuizDetailView({
                     <HugeiconsIcon icon={Mic01Icon} size={16} strokeWidth={2} />
                   </span>
                   <div>
-                    <strong className="block font-bold text-slate-800">
+                    <strong className="block font-semibold text-slate-800">
                       Perintah Suara Penuh
                     </strong>
                     Ucapkan huruf atau jawaban secara langsung tanpa perlu menyentuh layar.
@@ -219,7 +219,7 @@ export function QuizDetailView({
                     <HugeiconsIcon icon={Timer01Icon} size={16} strokeWidth={2} />
                   </span>
                   <div>
-                    <strong className="block font-bold text-slate-800">
+                    <strong className="block font-semibold text-slate-800">
                       {quiz.timeLimit} Detik / Soal
                     </strong>
                     Waktu cukup untuk berpikir santai tanpa terburu-buru.
@@ -230,7 +230,7 @@ export function QuizDetailView({
                     <HugeiconsIcon icon={TrophyIcon} size={16} strokeWidth={2} />
                   </span>
                   <div>
-                    <strong className="block font-bold text-slate-800">
+                    <strong className="block font-semibold text-slate-800">
                       Streak & Poin Bonus
                     </strong>
                     Kumpulkan skor berturut-turut untuk meraih podium tertinggi.
@@ -241,7 +241,7 @@ export function QuizDetailView({
                     <HugeiconsIcon icon={KeyboardIcon} size={16} strokeWidth={2} />
                   </span>
                   <div>
-                    <strong className="block font-bold text-slate-800">
+                    <strong className="block font-semibold text-slate-800">
                       Tombol Spasi
                     </strong>
                     Tekan tombol spasi untuk mulai berbicara seketika.
@@ -251,7 +251,7 @@ export function QuizDetailView({
             </div>
 
             <div className="rounded-2xl border border-slate-300 bg-white p-5 shadow-xs">
-              <h3 className="text-sm font-extrabold text-slate-800">
+              <h3 className="text-sm font-semibold text-slate-800">
                 Panduan Belajar
               </h3>
               <p className="mt-2 text-xs leading-relaxed text-slate-500">
@@ -263,7 +263,7 @@ export function QuizDetailView({
 
           <div className="flex-1 rounded-2xl border border-slate-300 bg-white shadow-xs">
             <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-6 py-4">
-              <span className="text-sm font-extrabold text-slate-800">
+              <span className="text-sm font-semibold text-slate-800">
                 {quiz.questions.length} Soal
                 {SHOW_DUMMY_DATA
                   ? ` • ${quiz.questions.length * 10} Poin`
@@ -271,7 +271,7 @@ export function QuizDetailView({
               </span>
 
               <div className="flex items-center gap-2.5">
-                <span className="text-xs font-bold text-slate-600">
+                <span className="text-xs font-semibold text-slate-600">
                   Tampilkan Jawaban
                 </span>
                 <button
@@ -296,12 +296,12 @@ export function QuizDetailView({
             <div className="divide-y divide-slate-200">
               {quiz.questions.map((q, idx) => (
                 <div key={q.id} className="flex flex-col gap-4 p-6">
-                  <div className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  <div className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                     {idx + 1}. PILIHAN GANDA • {quiz.timeLimit} DTK
                     {SHOW_DUMMY_DATA ? " • 10 PT" : ""}
                   </div>
 
-                  <h4 className="text-base font-bold text-slate-900 leading-snug">
+                  <h4 className="text-base font-semibold text-slate-900 leading-snug">
                     {q.question}
                   </h4>
 
@@ -318,7 +318,7 @@ export function QuizDetailView({
                           }`}
                         >
                           <span
-                            className={`flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                            className={`flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
                               showAnswers && isCorrect
                                 ? "bg-blue-700 text-white"
                                 : "border border-slate-300 text-slate-400"
@@ -345,7 +345,7 @@ export function QuizDetailView({
                         className="mt-0.5 shrink-0 text-blue-700"
                       />
                       <div>
-                        <span className="font-bold">Penjelasan:</span> {q.explanation}
+                        <span className="font-semibold">Penjelasan:</span> {q.explanation}
                       </div>
                     </div>
                   )}

@@ -152,7 +152,7 @@ export function PaperQuizCard({
                 <HugeiconsIcon icon={cfg.icon} size={20} strokeWidth={1.8} />
               </span>
               <div>
-                <h3 className="text-base font-extrabold text-slate-800 sm:mt-2">
+                <h3 className="text-base font-semibold text-slate-800 sm:mt-2">
                   {subject}
                 </h3>
                 <p className="text-xs font-medium text-slate-400">
@@ -175,12 +175,12 @@ export function PaperQuizCard({
                   onClick={onSelect}
                   className="flex min-w-0 items-center gap-3 px-5 py-4 sm:px-6"
                 >
-                  <span className="shrink-0 rounded-md bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-500">
+                  <span className="shrink-0 rounded-md bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-500">
                     Kuis {i + 1}
                   </span>
 
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold text-slate-800">
+                    <p className="truncate text-sm font-semibold text-slate-800">
                       {quiz.title}
                     </p>
                     <p className="mt-0.5 truncate text-xs text-slate-400">
@@ -188,7 +188,7 @@ export function PaperQuizCard({
                       {result?.nilai != null && (
                         <>
                           {" · "}
-                          <span className="font-bold text-emerald-600 tabular-nums">
+                          <span className="font-semibold text-emerald-600 tabular-nums">
                             Nilai {result.nilai}
                           </span>
                         </>
@@ -198,11 +198,11 @@ export function PaperQuizCard({
 
                   <div className="flex shrink-0 items-center gap-2 whitespace-nowrap">
                     <div className="hidden md:block text-right">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                      <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
                         Kode
                       </p>
                       <p
-                        className="text-xs font-extrabold tracking-[0.18em] text-slate-700"
+                        className="text-xs font-semibold tracking-[0.18em] text-slate-700"
                         aria-label={`Kode ${quiz.code}`}
                       >
                         {quiz.code}
@@ -234,7 +234,7 @@ export function PaperQuizCard({
 
                     <Button
                       size="sm"
-                      className="h-8 rounded-xl bg-slate-900 px-3.5 text-xs font-bold text-white hover:bg-slate-800 active:scale-95"
+                      className="h-8 rounded-xl bg-slate-900 px-3.5 text-xs font-semibold text-white hover:bg-slate-800 active:scale-95"
                       onClick={(e) => {
                         e.stopPropagation();
                         onPlay(quiz.code);
@@ -256,7 +256,7 @@ export function PaperQuizCard({
               <div className="flex items-center px-5 sm:px-6 py-3">
                 <button
                   type="button"
-                  className="flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors"
+                  className="flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors"
                 >
                   Lihat semua {extra} kuis lainnya
                   <HugeiconsIcon

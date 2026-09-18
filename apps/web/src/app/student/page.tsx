@@ -125,7 +125,7 @@ export default function StudentLobbyPage() {
             priority
           />
           <div className="leading-tight">
-            <p className="text-sm font-extrabold tracking-tight">BISA Quiz</p>
+            <p className="text-sm font-semibold tracking-tight">BISA Quiz</p>
             <p className="text-[11px] text-slate-500">Belajar sambil main</p>
           </div>
           <div className="ml-auto flex items-center gap-2">
@@ -162,7 +162,7 @@ export default function StudentLobbyPage() {
 
       <div className="mx-auto flex min-h-[calc(100dvh-3.5rem)] w-full max-w-5xl flex-col gap-6 px-4 py-8">
         <section className="flex flex-col items-center gap-2 text-center">
-          <h1 className="text-3xl font-extrabold tracking-tight md:text-4xl">
+          <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">
             Mau main kuis apa hari ini?
           </h1>
           <p className="max-w-md text-sm text-slate-500">
@@ -173,7 +173,7 @@ export default function StudentLobbyPage() {
 
         <section aria-label="Daftar kuis" className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">
+            <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-400">
               Pilih Kuis
             </h2>
             <span className="text-xs font-semibold text-slate-400">

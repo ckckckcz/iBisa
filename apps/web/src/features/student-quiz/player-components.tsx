@@ -138,12 +138,12 @@ export function CountdownOverlay({
       aria-live="assertive"
       aria-label={value > 0 ? `Mulai dalam ${value}` : "Mulai"}
     >
-      <p className="text-sm font-bold tracking-widest text-slate-500 uppercase">
+      <p className="text-sm font-semibold tracking-widest text-slate-500 uppercase">
         Bersiap…
       </p>
       <p
         key={value}
-        className="text-[8rem] leading-none font-extrabold text-blue-700 tabular-nums"
+        className="text-[8rem] leading-none font-semibold text-blue-700 tabular-nums"
         style={{ animation: "pop-in 0.45s cubic-bezier(0.34,1.56,0.64,1)" }}
         aria-hidden="true"
       >
@@ -184,7 +184,7 @@ export function TimerBar({
       aria-label={`Sisa waktu ${timeLeft} detik dari ${timeLimit} detik`}
     >
       <span
-        className={`w-8 text-right text-lg font-extrabold tabular-nums ${
+        className={`w-8 text-right text-lg font-semibold tabular-nums ${
           urgent ? "text-red-600" : "text-slate-700"
         }`}
         aria-hidden="true"
@@ -222,7 +222,7 @@ export function AnswerReveal({
     <div className="rounded-3xl bg-white p-5 shadow-xs ring-1 ring-slate-200">
       <div className="flex flex-wrap items-center gap-2">
         <span
-          className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-base font-extrabold ${
+          className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-base font-semibold ${
             ok ? "bg-emerald-500 text-white" : "bg-red-500 text-white"
           }`}
         >
@@ -251,7 +251,7 @@ export function AnswerReveal({
       </p>
       <Button
         onClick={onNext}
-        className="mt-4 rounded-2xl bg-blue-700 font-extrabold text-white hover:bg-blue-800 active:scale-95"
+        className="mt-4 rounded-2xl bg-blue-700 font-semibold text-white hover:bg-blue-800 active:scale-95"
       >
         Lanjut <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2.5} />
       </Button>
@@ -278,10 +278,10 @@ export function Scoreboard({
 }) {
   return (
     <div className="rounded-3xl bg-white p-6 text-center shadow-xs ring-1 ring-slate-200">
-      <p className="text-xs font-bold tracking-widest text-slate-500 uppercase">
+      <p className="text-xs font-semibold tracking-widest text-slate-500 uppercase">
         Papan Skor
       </p>
-      <p className="mt-2 text-6xl font-extrabold text-blue-700 tabular-nums">
+      <p className="mt-2 text-6xl font-semibold text-blue-700 tabular-nums">
         {totalPoints.toLocaleString("id-ID")}
       </p>
       <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
@@ -290,7 +290,7 @@ export function Scoreboard({
           {correctCount}/{total} benar
         </Badge>
         {streak >= 2 && (
-          <Badge className="flex items-center gap-1 border-0 bg-orange-100 font-extrabold text-orange-700 hover:bg-orange-100">
+          <Badge className="flex items-center gap-1 border-0 bg-orange-100 font-semibold text-orange-700 hover:bg-orange-100">
             <HugeiconsIcon icon={FireIcon} size={12} strokeWidth={2} />
             Streak x{streak}
           </Badge>
@@ -305,7 +305,7 @@ export function Scoreboard({
       <Button
         onClick={onAdvance}
         size="lg"
-        className="mt-6 rounded-2xl bg-blue-700 font-extrabold text-white hover:bg-blue-800 active:scale-95"
+        className="mt-6 rounded-2xl bg-blue-700 font-semibold text-white hover:bg-blue-800 active:scale-95"
       >
         {isLast ? (
           <>
@@ -367,7 +367,7 @@ export function Podium({
       </div>
 
       {isNewBest && (
-        <Badge className="mx-auto mt-3 flex w-fit items-center justify-center gap-1 border-0 bg-amber-400 text-sm font-extrabold text-amber-950 hover:bg-amber-400">
+        <Badge className="mx-auto mt-3 flex w-fit items-center justify-center gap-1 border-0 bg-amber-400 text-sm font-semibold text-amber-950 hover:bg-amber-400">
           <HugeiconsIcon icon={Award01Icon} size={14} strokeWidth={2} />
           Rekor Baru!
         </Badge>
@@ -375,18 +375,18 @@ export function Podium({
 
       <div className="mx-auto mt-6 grid w-full max-w-sm grid-cols-2 gap-3">
         <div className="rounded-2xl bg-emerald-50 p-4 text-center ring-1 ring-emerald-100">
-          <p className="text-[11px] font-bold tracking-widest text-slate-500 uppercase">Nilai</p>
-          <p className="mt-1 text-4xl font-extrabold text-emerald-600 tabular-nums">{nilai}</p>
+          <p className="text-[11px] font-semibold tracking-widest text-slate-500 uppercase">Nilai</p>
+          <p className="mt-1 text-4xl font-semibold text-emerald-600 tabular-nums">{nilai}</p>
         </div>
         <div className="rounded-2xl bg-blue-50 p-4 text-center ring-1 ring-blue-100">
-          <p className="text-[11px] font-bold tracking-widest text-slate-500 uppercase">Poin</p>
-          <p className="mt-1 text-4xl font-extrabold text-blue-700 tabular-nums">
+          <p className="text-[11px] font-semibold tracking-widest text-slate-500 uppercase">Poin</p>
+          <p className="mt-1 text-4xl font-semibold text-blue-700 tabular-nums">
             {totalPoints.toLocaleString("id-ID")}
           </p>
         </div>
       </div>
 
-      <p className="mt-5 text-2xl font-bold text-slate-800">
+      <p className="mt-5 text-2xl font-semibold text-slate-800">
         Hebat, {playerName.trim() || "Pemain"}!
       </p>
 
@@ -405,7 +405,7 @@ export function Podium({
         <Button
           onClick={onRestart}
           size="lg"
-          className="rounded-2xl bg-blue-700 font-extrabold text-white hover:bg-blue-800 active:scale-95"
+          className="rounded-2xl bg-blue-700 font-semibold text-white hover:bg-blue-800 active:scale-95"
         >
           <HugeiconsIcon icon={Refresh01Icon} strokeWidth={2.5} /> Mainkan Lagi
         </Button>
@@ -437,7 +437,7 @@ export function ResultStats({
   return (
     <div className="flex flex-col gap-4">
       <section aria-label="Akurasi" className="rounded-3xl bg-white p-5 shadow-xs ring-1 ring-slate-200">
-        <h3 className="flex items-center gap-1.5 text-sm font-bold text-slate-800">
+        <h3 className="flex items-center gap-1.5 text-sm font-semibold text-slate-800">
           Akurasi
           <span className="text-slate-400" title="Persentase jawaban benar">
             <HugeiconsIcon icon={HelpCircleIcon} size={14} strokeWidth={2} />
@@ -454,7 +454,7 @@ export function ResultStats({
           >
             <div className="h-full rounded-full bg-emerald-500" style={{ width: `${pct}%` }} />
           </div>
-          <span className="rounded-lg bg-slate-100 px-2 py-0.5 text-xs font-extrabold text-slate-700 tabular-nums">
+          <span className="rounded-lg bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700 tabular-nums">
             {pct}%
           </span>
         </div>
@@ -462,25 +462,25 @@ export function ResultStats({
 
       <section aria-label="Statistik performa" className="rounded-3xl bg-white p-5 shadow-xs ring-1 ring-slate-200">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-bold text-slate-800">Performance Stats</h3>
+          <h3 className="text-sm font-semibold text-slate-800">Performance Stats</h3>
           <span className="text-xs text-slate-500">{total} questions</span>
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
-          <Badge className="border-0 bg-emerald-100 px-3 py-1.5 font-bold text-emerald-800 hover:bg-emerald-100">
+          <Badge className="border-0 bg-emerald-100 px-3 py-1.5 font-semibold text-emerald-800 hover:bg-emerald-100">
             <HugeiconsIcon icon={Tick02Icon} size={13} strokeWidth={2.5} className="mr-1" />
             {correctCount} Correct
           </Badge>
-          <Badge className="border-0 bg-red-100 px-3 py-1.5 font-bold text-red-700 hover:bg-red-100">
+          <Badge className="border-0 bg-red-100 px-3 py-1.5 font-semibold text-red-700 hover:bg-red-100">
             <HugeiconsIcon icon={Cancel01Icon} size={13} strokeWidth={2} className="mr-1" />
             {incorrect} Salah
           </Badge>
           {SHOW_DUMMY_DATA && (
-            <Badge className="border-0 bg-sky-100 px-3 py-1.5 font-bold text-sky-800 hover:bg-sky-100">
+            <Badge className="border-0 bg-sky-100 px-3 py-1.5 font-semibold text-sky-800 hover:bg-sky-100">
               <HugeiconsIcon icon={Clock01Icon} size={13} strokeWidth={2} className="mr-1" />
               Waktu/soal
             </Badge>
           )}
-          <Badge className="border-0 bg-orange-100 px-3 py-1.5 font-bold text-orange-700 hover:bg-orange-100">
+          <Badge className="border-0 bg-orange-100 px-3 py-1.5 font-semibold text-orange-700 hover:bg-orange-100">
             <HugeiconsIcon icon={FireIcon} size={13} strokeWidth={2} className="mr-1" />
             Streak {streak}
           </Badge>
@@ -503,7 +503,7 @@ export function ReviewList({
 }) {
   return (
     <section aria-label="Review soal" className="rounded-3xl bg-white p-5 shadow-xs ring-1 ring-slate-200">
-      <h3 className="text-sm font-bold text-slate-800">Review Questions</h3>
+      <h3 className="text-sm font-semibold text-slate-800">Review Questions</h3>
       <p className="text-xs text-slate-500">Klik soal untuk melihat jawaban</p>
       <div className="mt-3 flex flex-col gap-2">
         {questions.map((item, i) => {
@@ -523,7 +523,7 @@ export function ReviewList({
                 <span className="line-clamp-1">
                   {i + 1}. {item.question}
                 </span>
-                <span className="ml-auto shrink-0 text-xs font-bold text-blue-700 tabular-nums">
+                <span className="ml-auto shrink-0 text-xs font-semibold text-blue-700 tabular-nums">
                   +{pointsEarned[i] ?? 0}
                 </span>
               </summary>
@@ -537,13 +537,13 @@ export function ReviewList({
                         key={oi}
                         className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${
                           isKey
-                            ? "bg-emerald-50 font-bold text-emerald-800 ring-1 ring-emerald-200"
+                            ? "bg-emerald-50 font-semibold text-emerald-800 ring-1 ring-emerald-200"
                             : isGiven
                             ? "bg-red-50 font-semibold text-red-700 ring-1 ring-red-200"
                             : "text-slate-600"
                         }`}
                       >
-                        <span className="font-extrabold text-slate-400">{OPTION_LETTERS[oi]}.</span>
+                        <span className="font-semibold text-slate-400">{OPTION_LETTERS[oi]}.</span>
                         {opt}
                         {isKey && <HugeiconsIcon icon={Tick02Icon} size={14} strokeWidth={2.5} className="ml-auto shrink-0" />}
                         {!isKey && isGiven && <span className="ml-auto shrink-0 text-xs">(jawabanmu)</span>}
@@ -579,7 +579,7 @@ export function VoiceDock({ vq }: { vq: VQ }) {
           <MicSvg className="size-7" />
         </button>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold text-slate-900" aria-hidden="true">
+          <p className="text-sm font-semibold text-slate-900" aria-hidden="true">
             {vq.listening ? "Mendengarkan… silakan bicara" : "Ketuk mic atau tekan Spasi"}
           </p>
           <p className="truncate text-xs text-slate-500" aria-hidden="true">
@@ -594,7 +594,7 @@ export function VoiceDock({ vq }: { vq: VQ }) {
         <Button
           size="sm"
           onClick={vq.help}
-          className="rounded-xl bg-blue-700 font-bold text-white hover:bg-blue-800"
+          className="rounded-xl bg-blue-700 font-semibold text-white hover:bg-blue-800"
         >
           Bantuan
         </Button>
@@ -684,7 +684,7 @@ export function VoiceDock({ vq }: { vq: VQ }) {
       </div>
 
       <details className="mt-3 rounded-2xl bg-slate-50 px-4 py-3 text-xs ring-1 ring-slate-100">
-        <summary className="inline-flex cursor-pointer items-center gap-1.5 font-bold text-slate-700">
+        <summary className="inline-flex cursor-pointer items-center gap-1.5 font-semibold text-slate-700">
           <HugeiconsIcon icon={ListChecksIcon} size={14} strokeWidth={2} />
           Daftar perintah suara
         </summary>
@@ -704,7 +704,7 @@ export function VoiceDock({ vq }: { vq: VQ }) {
             ["Spasi / ketuk mic", "aktivasi mic"],
           ].map(([a, b]) => (
             <li key={a} className="flex gap-1.5">
-              <code className="font-bold text-blue-700">&ldquo;{a}&rdquo;</code>
+              <code className="font-semibold text-blue-700">&ldquo;{a}&rdquo;</code>
               <span className="text-slate-500">— {b}</span>
             </li>
           ))}
@@ -724,7 +724,7 @@ export function VoiceMenu({ vq, onExit }: { vq: VQ; onExit: () => void }) {
         <HugeiconsIcon icon={Menu01Icon} size={18} strokeWidth={2} />
       </summary>
       <div className="absolute top-11 right-0 z-50 w-60 rounded-2xl bg-white p-3 shadow-xl ring-1 ring-slate-200">
-        <p className="px-2 pt-1 text-[11px] font-bold tracking-widest text-slate-400 uppercase">
+        <p className="px-2 pt-1 text-[11px] font-semibold tracking-widest text-slate-400 uppercase">
           Pengaturan Suara
         </p>
         <button
@@ -811,7 +811,7 @@ export function OptionGrid({
               }${isWrong ? ", jawabanmu, salah" : ""}${sel ? ", dipilih" : ""}`}
               onClick={() => onSelect(i)}
               className={[
-                "relative min-h-28 rounded-2xl border-b-4 p-4 pt-8 text-center font-bold shadow-xs transition-all lg:min-h-40 lg:pt-10",
+                "relative min-h-28 rounded-2xl border-b-4 p-4 pt-8 text-center font-semibold shadow-xs transition-all lg:min-h-40 lg:pt-10",
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700",
                 OPTION_STYLES[i],
                 OPTION_TEXT[i],
@@ -824,7 +824,7 @@ export function OptionGrid({
                 .join(" ")}
             >
               <span
-                className="absolute top-2 right-2 flex size-7 items-center justify-center rounded-lg bg-black/20 text-sm font-extrabold"
+                className="absolute top-2 right-2 flex size-7 items-center justify-center rounded-lg bg-black/20 text-sm font-semibold"
                 aria-hidden="true"
               >
                 {i + 1}

@@ -113,19 +113,19 @@ export function QuizArenaView({
             />
           </button>
           {SHOW_DUMMY_DATA && (
-            <Badge className="hidden items-center gap-1 border-0 bg-amber-100 font-extrabold text-amber-800 hover:bg-amber-100 sm:inline-flex">
+            <Badge className="hidden items-center gap-1 border-0 bg-amber-100 font-semibold text-amber-800 hover:bg-amber-100 sm:inline-flex">
               <HugeiconsIcon icon={TrophyIcon} size={13} strokeWidth={2} />
               1st
             </Badge>
           )}
           {vq.streak >= 2 && (
-            <Badge className="inline-flex items-center gap-1 border-0 bg-orange-100 font-extrabold text-orange-700 hover:bg-orange-100 tabular-nums">
+            <Badge className="inline-flex items-center gap-1 border-0 bg-orange-100 font-semibold text-orange-700 hover:bg-orange-100 tabular-nums">
               <HugeiconsIcon icon={FireIcon} size={13} strokeWidth={2} />
               {vq.streak}
             </Badge>
           )}
           <div className="ml-auto flex items-center gap-2">
-            <Badge className="border border-slate-200 bg-slate-50 font-extrabold tracking-widest text-slate-600 tabular-nums hover:bg-slate-50">
+            <Badge className="border border-slate-200 bg-slate-50 font-semibold tracking-widest text-slate-600 tabular-nums hover:bg-slate-50">
               {quiz.code}
             </Badge>
             <button
@@ -231,7 +231,7 @@ export function QuizArenaView({
             </span>
             <Button
               size="sm"
-              className="rounded-xl bg-blue-700 font-bold text-white hover:bg-blue-800"
+              className="rounded-xl bg-blue-700 font-semibold text-white hover:bg-blue-800"
               onClick={() => vq.handleCommand("ya")}
             >
               Ya
@@ -250,18 +250,18 @@ export function QuizArenaView({
         {vq.q && vq.phase !== "result" && vq.phase !== "scoreboard" && (
           <div className="relative mt-3">
             <div className="absolute -top-3.5 left-1/2 z-10 -translate-x-1/2">
-              <Badge className="border-0 bg-blue-700 px-4 py-1 text-sm font-extrabold text-white tabular-nums hover:bg-blue-700">
+              <Badge className="border-0 bg-blue-700 px-4 py-1 text-sm font-semibold text-white tabular-nums hover:bg-blue-700">
                 {vq.qIndex + 1} / {total}
               </Badge>
             </div>
             <div className="rounded-3xl bg-white px-5 pt-8 pb-5 text-center shadow-xs ring-1 ring-slate-200">
-              <p className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
+              <p className="text-[11px] font-semibold tracking-widest text-slate-400 uppercase">
                 {quiz.subject}
               </p>
               <h1
                 ref={qHeadingRef}
                 tabIndex={-1}
-                className="mx-auto mt-1 max-w-3xl text-xl leading-snug font-extrabold text-slate-900 outline-none md:text-2xl"
+                className="mx-auto mt-1 max-w-3xl text-xl leading-snug font-semibold text-slate-900 outline-none md:text-2xl"
               >
                 {vq.q.question}
               </h1>
@@ -316,7 +316,7 @@ export function QuizArenaView({
                   size="lg"
                   disabled={vq.selected == null}
                   onClick={vq.submit}
-                  className="rounded-2xl bg-blue-700 font-extrabold text-white hover:bg-blue-800 disabled:opacity-40 active:scale-95"
+                  className="rounded-2xl bg-blue-700 font-semibold text-white hover:bg-blue-800 disabled:opacity-40 active:scale-95"
                 >
                   <HugeiconsIcon icon={Tick02Icon} strokeWidth={2.5} />
                   Kunci{vq.selected != null ? `: ${OPTION_LETTERS[vq.selected]}` : ""}
@@ -384,10 +384,10 @@ export function QuizArenaView({
             </div>
             <aside className="flex flex-col gap-4 lg:col-span-2">
               <div className={`rounded-3xl ${subjectBg} p-5 text-white shadow-xs`}>
-                <p className="text-xs font-bold tracking-widest text-white/80 uppercase">
+                <p className="text-xs font-semibold tracking-widest text-white/80 uppercase">
                   {quiz.subject}
                 </p>
-                <p className="mt-1 text-lg leading-snug font-extrabold">{quiz.title}</p>
+                <p className="mt-1 text-lg leading-snug font-semibold">{quiz.title}</p>
                 <p className="mt-1 text-xs text-white/85">{quiz.description}</p>
                 <div className="mt-3 flex items-center gap-2 text-xs font-semibold">
                   <AvatarChip name={identity.name} avatarUrl={identity.avatarUrl} size="sm" />
@@ -399,14 +399,14 @@ export function QuizArenaView({
                 </div>
               </div>
               <div className="rounded-3xl bg-white p-5 shadow-xs ring-1 ring-slate-200">
-                <p className="text-sm font-bold text-slate-800">Jangan berhenti di sini!</p>
+                <p className="text-sm font-semibold text-slate-800">Jangan berhenti di sini!</p>
                 <p className="mt-1 text-xs text-slate-500">
                   Ucapkan &ldquo;mulai ulang&rdquo; untuk main lagi, atau ketuk tombol di atas.
                   Perintah suara tetap aktif di halaman ini.
                 </p>
                 <Button
                   onClick={vq.start}
-                  className="mt-3 w-full rounded-2xl bg-blue-700 font-extrabold text-white hover:bg-blue-800"
+                  className="mt-3 w-full rounded-2xl bg-blue-700 font-semibold text-white hover:bg-blue-800"
                 >
                   Mainkan Lagi
                 </Button>

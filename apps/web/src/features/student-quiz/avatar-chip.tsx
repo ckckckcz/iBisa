@@ -49,13 +49,13 @@ export function AvatarChip({
         />
       ) : (
         <span
-          className={`flex ${circleClass} shrink-0 items-center justify-center rounded-full ${bg} font-extrabold text-white`}
+          className={`flex ${circleClass} shrink-0 items-center justify-center rounded-full ${bg} font-semibold text-white`}
           aria-hidden="true"
         >
           {initial}
         </span>
       )}
-      <span className="truncate text-xs font-bold text-slate-700">{clean}</span>
+      <span className="truncate text-xs font-semibold text-slate-700">{clean}</span>
     </span>
   );
 }
