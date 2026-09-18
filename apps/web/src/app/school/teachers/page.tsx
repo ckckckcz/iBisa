@@ -6,28 +6,37 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { StatCards } from "@/features/school/stat-cards";
 import { MemberTable } from "@/features/school/member-table";
+import { MemberTableSkeleton } from "@/features/school/member-table-skeleton";
 import { MemberForm } from "@/features/school/member-form";
 import { GenderBadge, StatusBadge } from "@/features/school/member-badges";
 import { initials, type Column, type FormPayload, type Member } from "@/types/school";
 import { getValidToken } from "@/lib/ai-helpers";
 import { fetchSchoolList, type BatchItemResult, type SchoolListResponse } from "@/lib/school-api";
+import { dataGet, dataSet } from "@/lib/data-cache";
 import { BookOpen01Icon, CalendarOffIcon, CheckmarkCircle01Icon, TeacherIcon } from "@hugeicons/core-free-icons";
 
 import { parseExcelOrCsvFile, downloadExcelTemplate, type ExcelMemberRow } from "@/lib/excel-import";
 import { CsvPreviewModal } from "@/features/school/csv-preview-modal";
 
 export default function TeachersPage() {
-  const [rows, setRows] = useState<Member[]>([]);
-  const [waliCount, setWaliCount] = useState(0);
+  const cachedTeachers = dataGet<Member[]>("school:teachers");
+  const cachedClasses = dataGet<{ id: string; name: string; wali_guru_id: string | null }[]>("school:classes");
+  const [rows, setRows] = useState<Member[]>(cachedTeachers ?? []);
+  const [waliCount, setWaliCount] = useState(() => {
+    if (!cachedTeachers || !cachedClasses) return 0;
+    const ids = new Set(cachedTeachers.map((x) => x.id));
+    return cachedClasses.filter((k) => k.wali_guru_id && ids.has(k.wali_guru_id)).length;
+  });
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Member | null>(null);
   const [saving, setSaving] = useState(false);
-  const [classes, setClasses] = useState<{ id: string; name: string; wali_guru_id: string | null }[]>([]);
+  const [classes, setClasses] = useState<{ id: string; name: string; wali_guru_id: string | null }[]>(cachedClasses ?? []);
   const [assignments, setAssignments] = useState<{ teacher_id: string; class_id: string }[]>([]);
 
   const [previewItems, setPreviewItems] = useState<ExcelMemberRow[]>([]);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [batchSubmitting, setBatchSubmitting] = useState(false);
+  const [loaded, setLoaded] = useState(() => cachedTeachers !== null);
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
@@ -38,8 +47,10 @@ export default function TeachersPage() {
   ) {
     if (!t.success) return;
     setRows(t.data);
+    dataSet<Member[]>("school:teachers", t.data);
     if (c?.success) {
       setClasses(c.data);
+      dataSet("school:classes", c.data);
       const ids = new Set(t.data.map((x) => x.id));
       setWaliCount(c.data.filter((k) => k.wali_guru_id && ids.has(k.wali_guru_id)).length);
     }
@@ -68,6 +79,7 @@ export default function TeachersPage() {
         ]);
         if (!cancelled) applyTeacherData(t, c, a);
       } catch {}
+      if (!cancelled) setLoaded(true);
     })();
     return () => { cancelled = true; };
   }, [apiUrl]);
@@ -200,7 +212,7 @@ export default function TeachersPage() {
         <h1 className="text-xl font-semibold">Teacher Overview</h1>
         <p className="text-sm text-muted-foreground">Manage and monitor teachers</p>
       </div>
-      <StatCards items={stats} />
+      <StatCards items={stats} loading={!loaded} />
       <div className="flex justify-end">
         <div className="flex">
           <Button className="rounded-r-none" onClick={() => { setEditing(null); setOpen(true); }}>Add Teacher</Button>
@@ -215,6 +227,7 @@ export default function TeachersPage() {
           <input id="excel-teacher-input" type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleExcelFileSelect} />
         </div>
       </div>
+      {loaded ? (
       <MemberTable
         rows={rows} columns={columns} searchPlaceholder="Search Teachers"
         searchKeys={["full_name", "number", "subject"]}
@@ -225,6 +238,9 @@ export default function TeachersPage() {
         ]}
         exportName="teachers" onEdit={(m) => { setEditing(m); setOpen(true); }} onDelete={remove}
       />
+      ) : (
+      <MemberTableSkeleton />
+      )}
       <MemberForm open={open} onOpenChange={setOpen} mode="teacher" initial={editing} classOptions={classOptions} taughtClassIds={editingTaught} waliClassId={editingWali} saving={saving} apiUrl={apiUrl} onSubmit={submit} />
       <CsvPreviewModal
         open={previewOpen}

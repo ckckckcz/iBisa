@@ -4,11 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowLeft01Icon, Copy01Icon, Tick02Icon, Idea01Icon, Edit02Icon, CheckmarkCircle02Icon, Copy02Icon } from "@hugeicons/core-free-icons";
+import { ArrowLeft01Icon, Copy01Icon, Tick02Icon, Idea01Icon, Edit02Icon, CheckmarkCircle02Icon, Copy02Icon, TrashIcon } from "@hugeicons/core-free-icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import QuizEditor from "@/features/quiz/quiz-editor";
-import { fetchTeacherQuizzes, getQuizTheme, type DbQuiz } from "@/lib/quizzes";
+import { QuizDetailSkeleton } from "@/features/quiz/quiz-detail-skeleton";
+import { fetchTeacherQuizzes, deleteQuizByCode, getQuizTheme, type DbQuiz } from "@/lib/quizzes";
+import { dataGet, dataSet, dataClear } from "@/lib/data-cache";
 import { useAuth } from "@/hooks/use-auth";
 
 const LETTERS = ["A", "B", "C", "D"] as const;
@@ -18,26 +21,30 @@ export default function TeacherQuizDetailPage() {
   const router = useRouter();
   const { profile } = useAuth();
   const rawCode = decodeURIComponent(params.code ?? "");
-  const [quiz, setQuiz] = useState<DbQuiz | null>(null);
-  const [loading, setLoading] = useState(true);
+  const cachedQuizzes = dataGet<DbQuiz[]>("quizzes:all");
+  const [quiz, setQuiz] = useState<DbQuiz | null>(() =>
+    cachedQuizzes ? (cachedQuizzes.find((r) => r.code === rawCode) ?? null) : null
+  );
+  const [loading, setLoading] = useState(() => cachedQuizzes === null);
   const [copied, setCopied] = useState(false);
   const [editing, setEditing] = useState(false);
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleteBusy, setDeleteBusy] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      setLoading(true);
-      setError("");
       try {
         const rows = await fetchTeacherQuizzes();
+        dataSet("quizzes:all", rows);
         const found = rows.find((r) => r.code === rawCode) ?? null;
         if (cancelled) return;
-        if (!found) setError("Kode tidak ditemukan.");
+        if (!found && dataGet<DbQuiz[]>("quizzes:all") === null) setError("Kode tidak ditemukan.");
         setQuiz(found);
       } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Gagal memuat soal.");
+        if (!cancelled && dataGet<DbQuiz[]>("quizzes:all") === null) setError(e instanceof Error ? e.message : "Gagal memuat soal.");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -52,6 +59,20 @@ export default function TeacherQuizDetailPage() {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1500);
     } catch {}
+  }
+
+  async function confirmDelete() {
+    if (!quiz) return;
+    setDeleteBusy(true);
+    try {
+      await deleteQuizByCode(quiz.code);
+      dataClear("quizzes:all");
+      router.push("/teacher/quizzes");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Gagal menghapus kuis.");
+      setConfirmOpen(false);
+      setDeleteBusy(false);
+    }
   }
 
   const theme = quiz ? getQuizTheme(quiz.subject) : null;
@@ -79,9 +100,14 @@ export default function TeacherQuizDetailPage() {
           <HugeiconsIcon icon={ArrowLeft01Icon} size={14} /> Daftar Soal
         </Button>
         {isMine && (
-          <Button size="sm" variant="outline" onClick={() => setEditing(true)} className="gap-1.5">
-            <HugeiconsIcon icon={Edit02Icon} size={12} /> Edit soal
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="destructive" onClick={() => setConfirmOpen(true)} className="gap-1.5 text-red-600">
+              <HugeiconsIcon icon={TrashIcon} size={12} /> Hapus
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setEditing(true)} className="gap-1.5">
+              <HugeiconsIcon icon={Edit02Icon} size={12} /> Edit soal
+            </Button>
+          </div>
         )}
       </div>
 
@@ -92,7 +118,7 @@ export default function TeacherQuizDetailPage() {
       )}
 
       {loading ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">Memuat...</p>
+        <QuizDetailSkeleton />
       ) : error || !quiz || !theme ? (
         <div className="rounded-lg border border-dashed border-neutral-300 bg-white px-6 py-10 text-center">
           <p className="text-sm text-muted-foreground">{error || "Kuis tidak ditemukan."}</p>
@@ -177,6 +203,23 @@ export default function TeacherQuizDetailPage() {
           </ol>
         </>
       )}
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={(open) => {
+          if (!open && !deleteBusy) setConfirmOpen(false);
+        }}
+        title="Hapus kuis?"
+        description={
+          quiz ? (
+            <>
+              Kuis <span className="font-semibold text-neutral-800 dark:text-neutral-200">“{quiz.title}”</span> beserta nilai pengerjaan murid akan dihapus permanen. Tindakan ini tidak bisa dibatalkan.
+            </>
+          ) : undefined
+        }
+        busy={deleteBusy}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

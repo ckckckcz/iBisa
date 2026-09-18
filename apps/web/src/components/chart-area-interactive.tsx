@@ -71,6 +71,23 @@ export function ChartAreaInteractive({ data, loading }: { data: { date: string; 
       ? "Pengerjaan kuis — Semua bulan"
       : `Pengerjaan kuis — ${monthLabel(activeMonth)}`
 
+  if (loading) {
+    return (
+      <Card className="@container/card">
+        <CardHeader>
+          <Skeleton className="h-5 w-44" />
+          <Skeleton className="h-4 w-64" />
+          <CardAction>
+            <Skeleton className="h-8 w-44" />
+          </CardAction>
+        </CardHeader>
+        <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
+          <Skeleton className="aspect-auto h-62.5 w-full" />
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
     <Card className="@container/card">
       <CardHeader>

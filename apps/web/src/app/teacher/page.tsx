@@ -7,6 +7,7 @@ import { SectionCards } from "@/components/section-cards";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { getValidToken } from "@/lib/ai-helpers";
+import { dataGet, dataSet } from "@/lib/data-cache";
 import { quizStatus } from "@/lib/quizzes";
 import { ModuleTableSkeleton } from "@/components/module-table-skeleton";
 import { EvaluasiTab } from "@/features/teacher/evaluasi-tab";
@@ -54,24 +55,40 @@ function toTableRows(quizzes: NonNullable<TeacherDashboard["stats"]>["quizzes"],
 }
 
 export default function TeacherPage() {
-  const [data, setData] = useState<TeacherDashboard | null>(null);
-  const [results, setResults] = useState<QuizResultItem[] | null>(null);
+  const [data, setData] = useState<TeacherDashboard | null>(() => dataGet<TeacherDashboard>("teacher:dash"));
+  const [results, setResults] = useState<QuizResultItem[] | null>(() => dataGet<QuizResultItem[]>("teacher:results"));
+  const [failed, setFailed] = useState(false);
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
   useEffect(() => {
+    let cancelled = false;
     void (async () => {
       const token = await getValidToken();
-      if (!token) return;
+      if (!token) {
+        if (!cancelled) setFailed(true);
+        return;
+      }
       const headers = { Authorization: `Bearer ${token}` };
       const [me, quiz] = await Promise.allSettled([
         fetch(`${apiUrl}/teacher/me`, { headers }).then((r) => r.json()),
         fetch(`${apiUrl}/teacher/quiz-results`, { headers }).then((r) => r.json()),
       ]);
-      if (me.status === "fulfilled" && me.value.success) setData(me.value);
-      if (quiz.status === "fulfilled" && quiz.value.success) setResults(quiz.value.data);
+      if (cancelled) return;
+      if (me.status === "fulfilled" && me.value.success) {
+        setData(me.value);
+        dataSet("teacher:dash", me.value);
+      } else if (!dataGet<TeacherDashboard>("teacher:dash")) {
+        setFailed(true);
+      }
+      if (quiz.status === "fulfilled" && quiz.value.success) {
+        setResults(quiz.value.data);
+        dataSet("teacher:results", quiz.value.data);
+      }
     })();
+    return () => { cancelled = true; };
   }, [apiUrl]);
 
+  const loading = data === null && !failed;
   const stats = data?.stats;
   const tableRows = useMemo(
     () => toTableRows(stats?.quizzes ?? [], data?.students?.length ?? 0),
@@ -117,44 +134,53 @@ export default function TeacherPage() {
       <div className="@container/main flex flex-1 flex-col gap-2">
         <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
           <div className="px-4 lg:px-6">
-            <h1 className="text-2xl font-semibold tracking-tight">
-              Selamat datang,{" "}
-              {data === null ? (
-                <Skeleton className="inline-block h-[1.3em] w-44 align-baseline" />
-              ) : (
-                <>{data?.profile?.full_name ?? "Guru BISA"}!</>
-              )}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1 max-w-3xl">
-              Platform LMS inklusif untuk tunanetra, tunarungu, dan tunawicara. Pantau{" "}
-              <span className="font-medium text-foreground">progres belajar</span> dan{" "}
-              <span className="font-medium text-foreground">hasil kuis</span>.
-            </p>
-
-            {(data?.classesTaught?.length ?? 0) > 0 || (data?.waliClasses?.length ?? 0) > 0 ? (
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                {(data?.classesTaught?.length ?? 0) > 0 ? (
-                  <>
-                    <span className="text-xs font-semibold text-muted-foreground">Kelas Binaan:</span>
-                    {data?.classesTaught?.map((c) => (
-                      <Badge key={c.id} variant="secondary">
-                        Kelas {c.name}
-                      </Badge>
-                    ))}
-                  </>
-                ) : null}
-                {(data?.waliClasses?.length ?? 0) > 0 ? (
-                  <>
-                    <span className="text-xs font-semibold text-muted-foreground">Wali Kelas:</span>
-                    {data?.waliClasses?.map((c) => (
-                      <Badge key={c.id} variant="secondary">
-                        Kelas {c.name}
-                      </Badge>
-                    ))}
-                  </>
-                ) : null}
+            {loading ? (
+              <div className="space-y-3">
+                <Skeleton className="h-8 w-72 max-w-full" />
+                <Skeleton className="h-4 w-full max-w-3xl" />
+                <div className="flex flex-wrap gap-2">
+                  <Skeleton className="h-6 w-24 rounded-full" />
+                  <Skeleton className="h-6 w-28 rounded-full" />
+                </div>
               </div>
-            ) : null}
+            ) : (
+              <>
+                <h1 className="text-2xl font-semibold tracking-tight">
+                  Selamat datang,{" "}
+                  {data?.profile?.full_name ?? "Guru BISA"}!
+                </h1>
+                <p className="text-sm text-muted-foreground mt-1 max-w-3xl">
+                  Platform LMS inklusif untuk tunanetra, tunarungu, dan tunawicara. Pantau{" "}
+                  <span className="font-medium text-foreground">progres belajar</span> dan{" "}
+                  <span className="font-medium text-foreground">hasil kuis</span>.
+                </p>
+
+                {(data?.classesTaught?.length ?? 0) > 0 || (data?.waliClasses?.length ?? 0) > 0 ? (
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    {(data?.classesTaught?.length ?? 0) > 0 ? (
+                      <>
+                        <span className="text-xs font-semibold text-muted-foreground">Kelas Binaan:</span>
+                        {data?.classesTaught?.map((c) => (
+                          <Badge key={c.id} variant="secondary">
+                            Kelas {c.name}
+                          </Badge>
+                        ))}
+                      </>
+                    ) : null}
+                    {(data?.waliClasses?.length ?? 0) > 0 ? (
+                      <>
+                        <span className="text-xs font-semibold text-muted-foreground">Wali Kelas:</span>
+                        {data?.waliClasses?.map((c) => (
+                          <Badge key={c.id} variant="secondary">
+                            Kelas {c.name}
+                          </Badge>
+                        ))}
+                      </>
+                    ) : null}
+                  </div>
+                ) : null}
+              </>
+            )}
           </div>
 
           <SectionCards
@@ -162,12 +188,18 @@ export default function TeacherPage() {
             totalQuizzes={stats?.totalQuizzes ?? 0}
             engagementPct={stats?.engagementPct ?? 0}
             needsHelpCount={stats?.needsHelpCount ?? 0}
-            loading={data === null}
+            loading={loading}
           />
           <div className="px-4 lg:px-6">
-            <ChartAreaInteractive data={stats?.chart ?? []} loading={data === null} />
+            <ChartAreaInteractive data={stats?.chart ?? []} loading={loading} />
           </div>
-          {stats ? (
+          {failed ? (
+            <div className="px-4 lg:px-6">
+              <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                Gagal memuat data. Silakan muat ulang halaman.
+              </div>
+            </div>
+          ) : stats ? (
             <DataTable key="real-data" data={tableRows} tabs={tabs} />
           ) : (
             <ModuleTableSkeleton />

@@ -15,7 +15,9 @@ import {
 } from "@hugeicons/core-free-icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { QuizDetailSkeleton } from "@/features/quiz/quiz-detail-skeleton";
 import { fetchTeacherQuizzes, copyQuizByCode, getQuizTheme, type DbQuiz } from "@/lib/quizzes";
+import { dataGet, dataSet } from "@/lib/data-cache";
 import { useAuth } from "@/hooks/use-auth";
 
 const LETTERS = ["A", "B", "C", "D"] as const;
@@ -25,33 +27,34 @@ export default function TeacherLibraryDetailPage() {
   const router = useRouter();
   const { profile } = useAuth();
   const rawCode = decodeURIComponent(params.code ?? "");
-  const [quiz, setQuiz] = useState<DbQuiz | null>(null);
-  const [loading, setLoading] = useState(true);
+  const cachedQuizzes = dataGet<DbQuiz[]>("quizzes:all");
+  const [quiz, setQuiz] = useState<DbQuiz | null>(() =>
+    cachedQuizzes ? (cachedQuizzes.find((r) => r.code === rawCode) ?? null) : null
+  );
+  const [loading, setLoading] = useState(() => cachedQuizzes === null);
   const [copied, setCopied] = useState(false);
   const [copying, setCopying] = useState(false);
   const [copiedOk, setCopiedOk] = useState(false);
   const [error, setError] = useState("");
-  const [tick, setTick] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      setLoading(true);
-      setError("");
       try {
         const rows = await fetchTeacherQuizzes();
+        dataSet("quizzes:all", rows);
         const found = rows.find((r) => r.code === rawCode) ?? null;
         if (cancelled) return;
-        if (!found) setError("Kode tidak ditemukan.");
+        if (!found && dataGet<DbQuiz[]>("quizzes:all") === null) setError("Kode tidak ditemukan.");
         setQuiz(found);
       } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Gagal memuat soal.");
+        if (!cancelled && dataGet<DbQuiz[]>("quizzes:all") === null) setError(e instanceof Error ? e.message : "Gagal memuat soal.");
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
     return () => { cancelled = true; };
-  }, [rawCode, tick]);
+  }, [rawCode]);
 
   async function copy() {
     if (!quiz) return;
@@ -70,7 +73,8 @@ export default function TeacherLibraryDetailPage() {
       await copyQuizByCode(quiz.code);
       setCopiedOk(true);
       window.setTimeout(() => setCopiedOk(false), 2500);
-      setTick((t) => t + 1);
+      const fresh = await fetchTeacherQuizzes();
+      dataSet("quizzes:all", fresh);
       router.push("/teacher/quizzes");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Gagal menyalin kuis.");
@@ -114,7 +118,7 @@ export default function TeacherLibraryDetailPage() {
       )}
 
       {loading ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">Memuat...</p>
+        <QuizDetailSkeleton />
       ) : error || !quiz || !theme ? (
         <div className="rounded-lg border border-dashed border-neutral-300 bg-white px-6 py-10 text-center">
           <p className="text-sm text-muted-foreground">{error || "Kuis tidak ditemukan."}</p>

@@ -6,6 +6,7 @@ import { ArrowLeft01Icon, CheckmarkCircle01Icon, CheckmarkCircle02Icon } from "@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { updateQuizByCode, getQuizTheme, type DbQuiz } from "@/lib/quizzes";
+import { dataClear } from "@/lib/data-cache";
 
 const LETTERS = ["A", "B", "C", "D"] as const;
 const SUBJECTS = ["Umum", "IPA", "Matematika", "Bahasa Indonesia"];
@@ -75,6 +76,7 @@ export default function QuizEditor({
       });
       setSavedFlash(true);
       window.setTimeout(() => setSavedFlash(false), 2000);
+      dataClear("quizzes:all");
       onSaved?.(updated);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Gagal menyimpan perubahan.");

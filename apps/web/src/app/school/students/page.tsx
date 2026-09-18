@@ -5,11 +5,13 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { StatCards } from "@/features/school/stat-cards";
 import { MemberTable } from "@/features/school/member-table";
+import { MemberTableSkeleton } from "@/features/school/member-table-skeleton";
 import { MemberForm } from "@/features/school/member-form";
 import { studentColumns } from "@/features/school/student-columns";
 import { type ClassOption, type FormPayload, type Member } from "@/types/school";
 import { getValidToken } from "@/lib/ai-helpers";
 import { fetchSchoolList, type BatchItemResult } from "@/lib/school-api";
+import { dataGet, dataSet } from "@/lib/data-cache";
 import { CalendarOffIcon, Chart01Icon, CheckmarkCircle01Icon, StudentsIcon, UnfoldMoreIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 
@@ -17,8 +19,8 @@ import { parseExcelOrCsvFile, downloadExcelTemplate, type ExcelMemberRow } from 
 import { CsvPreviewModal } from "@/features/school/csv-preview-modal";
 
 export default function StudentsPage() {
-  const [rows, setRows] = useState<Member[]>([]);
-  const [classes, setClasses] = useState<ClassOption[]>([]);
+  const [rows, setRows] = useState<Member[]>(() => dataGet<Member[]>("school:students") ?? []);
+  const [classes, setClasses] = useState<ClassOption[]>(() => dataGet<ClassOption[]>("school:classes") ?? []);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Member | null>(null);
   const [saving, setSaving] = useState(false);
@@ -26,6 +28,7 @@ export default function StudentsPage() {
   const [previewItems, setPreviewItems] = useState<ExcelMemberRow[]>([]);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [batchSubmitting, setBatchSubmitting] = useState(false);
+  const [loaded, setLoaded] = useState(() => dataGet<unknown>("school:students") !== null);
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
@@ -35,8 +38,8 @@ export default function StudentsPage() {
       fetchSchoolList<Member[]>(apiUrl, token, "students"),
       fetchSchoolList<ClassOption[]>(apiUrl, token, "classes").catch(() => null),
     ]);
-    if (s.success) setRows(s.data);
-    if (c?.success) setClasses(c.data);
+    if (s.success) { setRows(s.data); dataSet<Member[]>("school:students", s.data); }
+    if (c?.success) { setClasses(c.data); dataSet<ClassOption[]>("school:classes", c.data); }
   }
 
   useEffect(() => {
@@ -49,9 +52,10 @@ export default function StudentsPage() {
           fetchSchoolList<ClassOption[]>(apiUrl, token, "classes").catch(() => null),
         ]);
         if (cancelled) return;
-        if (s.success) setRows(s.data);
-        if (c?.success) setClasses(c.data);
+        if (s.success) { setRows(s.data); dataSet<Member[]>("school:students", s.data); }
+        if (c?.success) { setClasses(c.data); dataSet<ClassOption[]>("school:classes", c.data); }
       } catch {}
+      if (!cancelled) setLoaded(true);
     })();
     return () => { cancelled = true; };
   }, [apiUrl]);
@@ -159,7 +163,7 @@ export default function StudentsPage() {
         <h1 className="text-xl font-semibold">Student Overview</h1>
         <p className="text-sm text-muted-foreground">Manage and monitor students</p>
       </div>
-      <StatCards items={stats} />
+      <StatCards items={stats} loading={!loaded} />
       <div className="flex justify-end">
         <div className="flex">
           <Button className="rounded-r-none" onClick={() => { setEditing(null); setOpen(true); }}>Add Student</Button>
@@ -174,6 +178,7 @@ export default function StudentsPage() {
           <input id="excel-student-input" type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleExcelFileSelect} />
         </div>
       </div>
+      {loaded ? (
       <MemberTable
         rows={rows} columns={columns} searchPlaceholder="Search Students"
         searchKeys={["full_name", "number", "guardian_name", "grade"]}
@@ -184,6 +189,9 @@ export default function StudentsPage() {
         ]}
         exportName="students" onEdit={(m) => { setEditing(m); setOpen(true); }} onDelete={remove}
       />
+      ) : (
+      <MemberTableSkeleton />
+      )}
       <MemberForm open={open} onOpenChange={setOpen} mode="student" initial={editing} classOptions={classes} saving={saving} apiUrl={apiUrl} onSubmit={submit} />
       <CsvPreviewModal
         open={previewOpen}

@@ -10,9 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { StatCards } from "@/features/school/stat-cards";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { Member } from "@/types/school";
 import { getValidToken } from "@/lib/ai-helpers";
 import { fetchSchoolList } from "@/lib/school-api";
+import { dataGet, dataSet } from "@/lib/data-cache";
 import { BookOpen01Icon, Chart01Icon, StudentsIcon, TeacherIcon, ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 
@@ -21,14 +23,15 @@ type Guru = { id: string; full_name: string };
 
 export default function ClassesPage() {
   const router = useRouter();
-  const [rows, setRows] = useState<Kelas[]>([]);
-  const [gurus, setGurus] = useState<Guru[]>([]);
-  const [students, setStudents] = useState<Member[]>([]);
+  const [rows, setRows] = useState<Kelas[]>(() => dataGet<Kelas[]>("school:classes") ?? []);
+  const [gurus, setGurus] = useState<Guru[]>(() => dataGet<Guru[]>("school:teachers") ?? []);
+  const [students, setStudents] = useState<Member[]>(() => dataGet<Member[]>("school:students") ?? []);
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Kelas | null>(null);
   const [form, setForm] = useState({ name: "", tingkat: "7", wali_guru_id: "" });
   const [saving, setSaving] = useState(false);
+  const [loaded, setLoaded] = useState(() => dataGet<unknown>("school:classes") !== null);
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
   async function load() {
@@ -38,9 +41,9 @@ export default function ClassesPage() {
       fetchSchoolList<Guru[]>(apiUrl, token, "teachers"),
       fetchSchoolList<Member[]>(apiUrl, token, "students"),
     ]);
-    if (c.success) setRows(c.data);
-    if (g.success) setGurus(g.data);
-    if (s.success) setStudents(s.data);
+    if (c.success) { setRows(c.data); dataSet<Kelas[]>("school:classes", c.data); }
+    if (g.success) { setGurus(g.data); dataSet<Guru[]>("school:teachers", g.data); }
+    if (s.success) { setStudents(s.data); dataSet<Member[]>("school:students", s.data); }
   }
 
   useEffect(() => {
@@ -54,10 +57,11 @@ export default function ClassesPage() {
           fetchSchoolList<Member[]>(apiUrl, token, "students"),
         ]);
         if (cancelled) return;
-        if (c.success) setRows(c.data);
-        if (g.success) setGurus(g.data);
-        if (s.success) setStudents(s.data);
+        if (c.success) { setRows(c.data); dataSet<Kelas[]>("school:classes", c.data); }
+        if (g.success) { setGurus(g.data); dataSet<Guru[]>("school:teachers", g.data); }
+        if (s.success) { setStudents(s.data); dataSet<Member[]>("school:students", s.data); }
       } catch {}
+      if (!cancelled) setLoaded(true);
     })();
     return () => { cancelled = true; };
   }, [apiUrl]);
@@ -133,7 +137,7 @@ export default function ClassesPage() {
         <h1 className="text-xl font-semibold">Class Overview</h1>
         <p className="text-sm text-muted-foreground">Manage classes and see enrolled students</p>
       </div>
-      <StatCards items={stats} />
+      <StatCards items={stats} loading={!loaded} />
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative">
@@ -145,6 +149,23 @@ export default function ClassesPage() {
         </div>
       </div>
 
+      {!loaded ? (
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Card key={i}>
+              <CardContent className="flex flex-col gap-2 p-4">
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-5 w-20" />
+                  <Skeleton className="h-4 w-16 rounded-full" />
+                </div>
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-3 w-36" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {filtered.map((k) => {
           const n = countByClass.get(k.id) ?? 0;
@@ -180,6 +201,7 @@ export default function ClassesPage() {
           <p className="py-8 text-center text-sm text-muted-foreground sm:col-span-2 xl:col-span-3">Belum ada kelas</p>
         )}
       </div>
+      )}
 
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent className="overflow-y-auto sm:max-w-md">

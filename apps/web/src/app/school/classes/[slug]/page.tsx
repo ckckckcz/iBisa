@@ -6,10 +6,13 @@ import { Button } from "@/components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
 import { MemberTable } from "@/features/school/member-table";
+import { MemberTableSkeleton } from "@/features/school/member-table-skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 import { studentColumns } from "@/features/school/student-columns";
 import type { Member } from "@/types/school";
 import { getValidToken } from "@/lib/ai-helpers";
 import { fetchSchoolList } from "@/lib/school-api";
+import { dataGet, dataSet } from "@/lib/data-cache";
 
 type Kelas = { id: string; name: string; tingkat: string; wali_guru_id: string | null };
 type Guru = { id: string; full_name: string };
@@ -18,10 +21,18 @@ export default function ClassStudentsPage() {
   const params = useParams<{ slug: string }>();
   const router = useRouter();
   const slug = params.slug;
-  const [kelas, setKelas] = useState<Kelas | null>(null);
-  const [wali, setWali] = useState("-");
-  const [students, setStudents] = useState<Member[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const cachedKelas = dataGet<Kelas[]>("school:classes");
+  const cachedGurus = dataGet<Guru[]>("school:teachers");
+  const cachedStudents = dataGet<Member[]>("school:students");
+  const [kelas, setKelas] = useState<Kelas | null>(() => (cachedKelas?.find((k) => k.id === slug) ?? null));
+  const [wali, setWali] = useState(() => {
+    const k = cachedKelas?.find((c) => c.id === slug);
+    if (!k) return "-";
+    const w = cachedGurus?.find((x) => x.id === k.wali_guru_id);
+    return w?.full_name ?? "Tanpa wali";
+  });
+  const [students, setStudents] = useState<Member[]>(() => (cachedStudents?.filter((m) => m.class_id === slug) ?? []));
+  const [loaded, setLoaded] = useState(() => cachedKelas !== null || cachedStudents !== null);
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
   useEffect(() => {
@@ -35,6 +46,9 @@ export default function ClassStudentsPage() {
           fetchSchoolList<Member[]>(apiUrl, token, "students"),
         ]);
         if (cancelled) return;
+        if (c.success) dataSet("school:classes", c.data);
+        if (g.success) dataSet("school:teachers", g.data);
+        if (s.success) dataSet("school:students", s.data);
         const found = (c.success ? c.data : []).find((k) => k.id === slug) ?? null;
         setKelas(found);
         if (found) {
@@ -58,7 +72,13 @@ export default function ClassStudentsPage() {
         </Button>
       </div>
       {!loaded ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">Memuat...</p>
+        <div className="flex flex-col gap-4">
+          <div>
+            <Skeleton className="h-7 w-64" />
+            <Skeleton className="mt-2 h-4 w-80" />
+          </div>
+          <MemberTableSkeleton />
+        </div>
       ) : !kelas ? (
         <p className="py-8 text-center text-sm text-muted-foreground">Kelas tidak ditemukan</p>
       ) : (

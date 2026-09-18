@@ -7,6 +7,7 @@ import { SectionCards } from "@/components/section-cards";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ModuleTableSkeleton } from "@/components/module-table-skeleton";
 import { getValidToken } from "@/lib/ai-helpers";
+import { dataGet, dataSet } from "@/lib/data-cache";
 import { quizStatus } from "@/lib/quizzes";
 import { EvaluasiTab } from "@/features/teacher/evaluasi-tab";
 import { ProfilSiswaTab, type ProfilStudent } from "@/features/teacher/profil-siswa-tab";
@@ -49,18 +50,25 @@ function toTableRows(quizzes: NonNullable<SchoolDashboard["stats"]>["quizzes"], 
 }
 
 export default function SchoolPage() {
-  const [data, setData] = useState<SchoolDashboard | null>(null);
-  const [students, setStudents] = useState<ProfilStudent[] | null>(null);
-  const [results, setResults] = useState<QuizResultItem[] | null>(null);
-  const [classes, setClasses] = useState<SchoolClass[]>([]);
+  const [data, setData] = useState<SchoolDashboard | null>(() =>
+    dataGet<SchoolDashboard>("school:dash")
+  );
+  const [students, setStudents] = useState<ProfilStudent[] | null>(() =>
+    dataGet<ProfilStudent[]>("school:students")
+  );
+  const [results, setResults] = useState<QuizResultItem[] | null>(() =>
+    dataGet<QuizResultItem[]>("school:results")
+  );
+  const [classes, setClasses] = useState<SchoolClass[]>(() => dataGet<SchoolClass[]>("school:classes") ?? []);
   const [failed, setFailed] = useState(false);
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
   useEffect(() => {
+    let cancelled = false;
     void (async () => {
       const token = await getValidToken();
       if (!token) {
-        setFailed(true);
+        if (!cancelled) setFailed(true);
         return;
       }
       const headers = { Authorization: `Bearer ${token}` };
@@ -74,12 +82,29 @@ export default function SchoolPage() {
         get("/school/students"),
         get("/school/classes"),
       ]);
-      if (dash.status === "fulfilled" && dash.value.success) setData(dash.value.data);
-      else setFailed(true);
-      if (quiz.status === "fulfilled" && quiz.value.success) setResults(quiz.value.data);
-      if (stud.status === "fulfilled" && stud.value.success) setStudents(stud.value.data);
-      if (cls.status === "fulfilled" && cls.value.success) setClasses(cls.value.data);
+      if (cancelled) return;
+      if (dash.status === "fulfilled" && dash.value.success) {
+        setData(dash.value.data);
+        dataSet("school:dash", dash.value.data);
+      } else if (!dataGet<SchoolDashboard>("school:dash")) {
+        setFailed(true);
+      }
+      if (quiz.status === "fulfilled" && quiz.value.success) {
+        setResults(quiz.value.data);
+        dataSet("school:results", quiz.value.data);
+      }
+      if (stud.status === "fulfilled" && stud.value.success) {
+        setStudents(stud.value.data);
+        dataSet<ProfilStudent[]>("school:students", stud.value.data);
+      }
+      if (cls.status === "fulfilled" && cls.value.success) {
+        setClasses(cls.value.data);
+        dataSet<SchoolClass[]>("school:classes", cls.value.data);
+      }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, [apiUrl]);
 
   const loading = data === null && !failed;
@@ -128,19 +153,24 @@ export default function SchoolPage() {
       <div className="@container/main flex flex-1 flex-col gap-2">
         <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
           <div className="px-4 lg:px-6">
-            <h1 className="text-2xl font-semibold tracking-tight">
-              Selamat datang,{" "}
-              {loading ? (
-                <Skeleton className="inline-block h-[1.3em] w-44 align-baseline" />
-              ) : (
-                <>{data?.profile?.full_name ?? "Sekolah BISA"}!</>
-              )}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1 max-w-3xl">
-              Kelola <span className="font-medium text-foreground">siswa ABK</span>, pantau{" "}
-              <span className="font-medium text-foreground">kelas inklusi</span> dan{" "}
-              <span className="font-medium text-foreground">guru pendamping</span> — data terpusat untuk pendampingan adaptif.
-            </p>
+            {loading ? (
+              <div className="space-y-3">
+                <Skeleton className="h-8 w-72 max-w-full" />
+                <Skeleton className="h-4 w-full max-w-3xl" />
+              </div>
+            ) : (
+              <>
+                <h1 className="text-2xl font-semibold tracking-tight">
+                  Selamat datang,{" "}
+                  {data?.profile?.full_name ?? "Sekolah BISA"}!
+                </h1>
+                <p className="text-sm text-muted-foreground mt-1 max-w-3xl">
+                  Kelola <span className="font-medium text-foreground">siswa ABK</span>, pantau{" "}
+                  <span className="font-medium text-foreground">kelas inklusi</span> dan{" "}
+                  <span className="font-medium text-foreground">guru pendamping</span> — data terpusat untuk pendampingan adaptif.
+                </p>
+              </>
+            )}
           </div>
           <SectionCards
             activeStudents={stats?.activeStudents ?? 0}
@@ -152,7 +182,17 @@ export default function SchoolPage() {
           <div className="px-4 lg:px-6">
             <ChartAreaInteractive data={stats?.chart ?? []} loading={loading} />
           </div>
-          {loading ? <ModuleTableSkeleton /> : <DataTable data={tableRows} tabs={tabs} />}
+          {failed ? (
+            <div className="px-4 lg:px-6">
+              <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                Gagal memuat data. Silakan muat ulang halaman.
+              </div>
+            </div>
+          ) : loading ? (
+            <ModuleTableSkeleton />
+          ) : (
+            <DataTable data={tableRows} tabs={tabs} />
+          )}
         </div>
       </div>
     </div>

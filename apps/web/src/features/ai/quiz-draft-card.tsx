@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { getValidToken } from '@/lib/ai-helpers';
+import { dataClear } from '@/lib/data-cache';
 import type { QuizDraftQuestion } from '@/types/ai';
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000';
@@ -60,6 +61,7 @@ export default function QuizDraftCard({
       const data = await res.json();
       if (!data.success) throw new Error(data.message ?? 'Gagal menyimpan.');
       if (!data.data?.code) throw new Error('Server tidak mengembalikan kode kuis.');
+      dataClear('quizzes:all');
       onSaved(data.data.code as string);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Gagal menyimpan.');

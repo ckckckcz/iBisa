@@ -15,7 +15,9 @@ import {
   Copy02Icon,
 } from "@hugeicons/core-free-icons";
 import { Input } from "@/components/ui/input";
+import { QuizGridSkeleton } from "@/features/quiz/quiz-grid-skeleton";
 import { fetchTeacherQuizzes, copyQuizByCode, type DbQuiz } from "@/lib/quizzes";
+import { dataGet, dataSet } from "@/lib/data-cache";
 import { useAuth } from "@/hooks/use-auth";
 
 function fmtDate(s?: string) {
@@ -30,30 +32,30 @@ function fmtDate(s?: string) {
 export default function TeacherLibraryPage() {
   const { profile } = useAuth();
   const router = useRouter();
-  const [rows, setRows] = useState<DbQuiz[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [rows, setRows] = useState<DbQuiz[]>(() => dataGet<DbQuiz[]>("quizzes:all") ?? []);
+  const [loading, setLoading] = useState(() => dataGet<DbQuiz[]>("quizzes:all") === null);
   const [error, setError] = useState("");
   const [q, setQ] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
   const [copiedQuiz, setCopiedQuiz] = useState<string | null>(null);
-  const [tick, setTick] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      setLoading(true);
-      setError("");
       try {
         const data = await fetchTeacherQuizzes();
-        if (!cancelled) setRows(data);
+        if (!cancelled) {
+          setRows(data);
+          dataSet("quizzes:all", data);
+        }
       } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Gagal memuat perpustakaan soal.");
+        if (!cancelled && dataGet<DbQuiz[]>("quizzes:all") === null) setError(e instanceof Error ? e.message : "Gagal memuat perpustakaan soal.");
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
     return () => { cancelled = true; };
-  }, [tick]);
+  }, []);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -80,7 +82,8 @@ export default function TeacherLibraryPage() {
       const kuis = await copyQuizByCode(code);
       setCopiedQuiz(kuis.code);
       window.setTimeout(() => setCopiedQuiz(null), 2500);
-      setTick((t) => t + 1);
+      const fresh = await fetchTeacherQuizzes();
+      dataSet("quizzes:all", fresh);
       router.push("/teacher/quizzes");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Gagal menyalin kuis.");
@@ -94,7 +97,7 @@ export default function TeacherLibraryPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Perpustakaan Soal</h1>
-          <p className="text-sm text-muted-foreground">Semua kuis di sekolahmu — salin untuk jadikan milikmu · {rows.length} kuis total</p>
+          <p className="text-sm text-muted-foreground">Semua kuis di sekolahmu. salin untuk jadikan milikmu · {rows.length} kuis total</p>
         </div>
         <Link href="/teacher/ai" className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/80">
           <HugeiconsIcon icon={Add01Icon} size={14} /> Buat soal di Chat AI
@@ -124,7 +127,7 @@ export default function TeacherLibraryPage() {
       )}
 
       {loading ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">Memuat...</p>
+        <QuizGridSkeleton />
       ) : filtered.length === 0 ? (
         <div className="rounded-lg border border-dashed border-neutral-300 bg-white px-6 py-10 text-center">
           <p className="text-sm font-medium text-neutral-700">Belum ada kuis di sekolah</p>
